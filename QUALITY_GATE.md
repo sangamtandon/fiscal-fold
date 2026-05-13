@@ -129,6 +129,25 @@ Check off each item. If any item fails, fix it before merging.
 - [ ] "All clear" card shows when NO bucket across all 3 macros is running hot
 - [ ] "All clear" card has a fade-in animation on page load
 
+### Sprint 9 — Cycle End & Sweep
+- [ ] When cycle end date is in the past, payday banner appears at the top of the dashboard
+- [ ] Tapping the payday banner navigates to `/#/payday`
+- [ ] Payday page shows last month scorecard (total spent, % budget used, carry-forward amount)
+- [ ] Payday page shows macro progress bars (Needs / Wants / Future) with spend amounts
+- [ ] Sweep preview lists all Wants+Future buckets with remaining balance > 0
+- [ ] Sweep preview shows correct total carry-forward amount
+- [ ] If all budgets spent, sweep section shows "nothing to carry forward" message
+- [ ] Next month's budget preview shows correct base allocations (salary × ratios)
+- [ ] Future allocation in preview includes sweep bonus (+swept amount badge)
+- [ ] "Sweep & Start New Cycle →" button creates a new cycle and navigates to dashboard
+- [ ] New cycle has correct date range (same duration as old cycle, starting day after old end)
+- [ ] New cycle Future allocation = base + sweep amount
+- [ ] All bucket structure from old cycle is copied to new cycle with proportional allocation
+- [ ] All active commitments reset to `isPaid: false` in new cycle
+- [ ] Success toast "New cycle started! 🎉" appears on dashboard
+- [ ] Button is disabled on tap to prevent double-submission
+- [ ] Back button on payday page navigates to dashboard
+
 ---
 
 ## ✅ Final Checks

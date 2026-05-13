@@ -1,0 +1,240 @@
+/* ============================================
+   PAYDAY RITUAL PAGE — Sprint 9 Styles
+   ============================================ */
+
+.pd-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: calc(var(--space-10) + var(--bottom-safe));
+  animation: page-enter var(--duration-slow) var(--ease-out);
+}
+
+/* ---- Header ---- */
+.pd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0 var(--space-1);
+}
+
+.pd-back {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  min-width: 80px;
+  text-align: left;
+}
+
+.pd-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.pd-subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* ---- Sections ---- */
+.pd-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pd-section__title {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+.pd-section__hint {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin: 0;
+}
+
+/* ---- Scorecard ---- */
+.pd-scorecard {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.pd-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-2);
+}
+
+.pd-stat--highlight .pd-stat__value {
+  color: var(--accent-primary);
+}
+
+.pd-stat__value {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.pd-stat__label {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+}
+
+/* ---- Macro rows (scorecard breakdown) ---- */
+.pd-macro-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.pd-macro-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pd-macro-row__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pd-macro-row__label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  width: 44px;
+  flex-shrink: 0;
+}
+
+.pd-macro-row__bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.pd-macro-row__fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  transition: width var(--transition-slow);
+}
+
+.pd-macro-row__spent {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  width: 70px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ---- Sweep preview ---- */
+.pd-sweep-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pd-sweep-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.pd-sweep-row:last-child {
+  border-bottom: none;
+}
+
+.pd-sweep-row__emoji {
+  font-size: 18px;
+  width: 28px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pd-sweep-row__name {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.pd-sweep-row__amount {
+  font-size: var(--text-sm);
+  color: var(--accent-primary);
+  flex-shrink: 0;
+}
+
+.pd-sweep-total {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border-subtle);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ---- Allocation preview ---- */
+.pd-alloc-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.pd-alloc-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pd-alloc-row__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.pd-alloc-row__label {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.pd-alloc-row__amount {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.pd-alloc-row__bonus {
+  font-size: var(--text-xs);
+  color: var(--accent-primary);
+  background: rgba(52, 211, 153, 0.12);
+  border-radius: var(--radius-full);
+  padding: 2px var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ---- CTA ---- */
+.pd-cta {
+  margin-top: var(--space-2);
+}

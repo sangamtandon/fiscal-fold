@@ -11,6 +11,7 @@ import { route, navigate, initRouter, currentRoute } from './router.js';
 import { renderOnboarding } from './pages/onboarding.js';
 import { openTransactionModal } from './pages/transaction-modal.js';
 import { renderCommitmentsPage, getDueSoonCommitments, renderCommitmentDueRow } from './pages/commitments.js';
+import { renderPaydayPage } from './pages/payday.js';
 import {
   getUser,
   isOnboardingComplete,
@@ -23,6 +24,7 @@ import {
   getMacroSummary,
   getMacroReserved,
   getCommitments,
+  isCycleExpired,
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
 import { formatCurrency, timeAgo, percent, daysRemaining } from './utils/helpers.js';
@@ -169,6 +171,7 @@ function registerRoutes() {
 
     const safeToSpend = getSafeToSpend();
     const daysLeft = daysRemaining(cycle.endDate);
+    const cycleExpired = isCycleExpired();
     const needsSummary = getMacroSummary('needs');
     const wantsSummary = getMacroSummary('wants');
     const futureSummary = getMacroSummary('future');
@@ -197,6 +200,20 @@ function registerRoutes() {
 
     container.innerHTML = `
       <div class="flex flex-col gap-6">
+        <!-- Payday Banner — shown when cycle has expired -->
+        ${cycleExpired ? `
+          <div class="card payday-banner" id="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
+            <div class="flex items-center gap-3">
+              <span style="font-size: 28px;">🎉</span>
+              <div style="flex: 1; min-width: 0;">
+                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">Payday! Your cycle has ended.</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">Sweep your savings and start a fresh cycle.</p>
+              </div>
+              <span style="color: var(--accent-primary); font-size: var(--text-base);">→</span>
+            </div>
+          </div>
+        ` : ''}
+
         <!-- Safe to Spend Hero -->
         <div class="card card--accent text-center" style="padding: var(--space-8) var(--space-5);">
           <p class="text-secondary" style="font-size: var(--text-sm); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">Safe to Spend</p>
@@ -297,6 +314,13 @@ function registerRoutes() {
       });
     });
 
+    // Wire payday banner → navigate to payday ritual
+    if (cycleExpired) {
+      container.querySelector('#payday-banner')?.addEventListener('click', () => {
+        navigate('/payday');
+      });
+    }
+
     // Wire leak warning cards → open modal pre-targeted to the hot bucket
     container.querySelectorAll('.leak-warning-card[data-leak-bucket-id]').forEach(card => {
       card.addEventListener('click', () => {
@@ -391,6 +415,12 @@ function registerRoutes() {
   route('/commitments', (container) => {
     updateShellVisibility();
     renderCommitmentsPage(container);
+  });
+
+  // Payday ritual page
+  route('/payday', (container) => {
+    updateShellVisibility();
+    renderPaydayPage(container);
   });
 }
 

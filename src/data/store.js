@@ -104,6 +104,16 @@ export function getCurrentCycle() {
 }
 
 /**
+ * Returns true if the current cycle's end date is in the past.
+ * @returns {boolean}
+ */
+export function isCycleExpired() {
+  const cycle = getCurrentCycle();
+  if (!cycle) return false;
+  return new Date() > new Date(cycle.endDate);
+}
+
+/**
  * Get all micro-buckets for the current cycle.
  * @param {import('./models.js').MacroType} [macroType] - Optional filter
  * @returns {import('./models.js').MicroBucket[]}
@@ -480,7 +490,8 @@ export function removeCommitment(id) {
 
 /**
  * Execute the end-of-cycle sweep.
- * Moves all remaining Wants funds to Future.
+ * Moves all remaining Wants and Future funds forward (recorded in the sweep).
+ * The sweep amount should be added to the next cycle's Future allocation by the caller.
  * @returns {import('./models.js').Sweep|null}
  */
 export function runSweep() {
@@ -488,10 +499,11 @@ export function runSweep() {
   if (!cycle) return null;
 
   const wantsBuckets = getBuckets('wants');
+  const futureBuckets = getBuckets('future');
   const breakdown = [];
   let totalSwept = 0;
 
-  wantsBuckets.forEach(b => {
+  [...wantsBuckets, ...futureBuckets].forEach(b => {
     const remaining = Math.max(0, b.allocated - b.spent);
     if (remaining > 0) {
       breakdown.push({
@@ -516,21 +528,53 @@ export function runSweep() {
   };
 
   _state.sweeps.push(sweep);
-
-  // Update cycle record
   cycle.sweepAmount = totalSwept;
-
-  // Add to Future bucket (first one, or create a sweep bucket)
-  const futureBuckets = getBuckets('future');
-  if (futureBuckets.length > 0) {
-    futureBuckets[0].allocated += totalSwept;
-  }
 
   save();
   notify('sweeps');
   notify('buckets');
   notify('cycles');
   return sweep;
+}
+
+/**
+ * Copy buckets from one cycle to a new cycle, proportionally re-allocating
+ * based on each bucket's share within its macro type.
+ * @param {string} oldCycleId
+ * @param {string} newCycleId
+ * @param {{ needs: number, wants: number, future: number }} newAllocations
+ */
+export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
+  const oldBuckets = _state.buckets
+    .filter(b => b.cycleId === oldCycleId)
+    .sort((a, b) => a.sortOrder - b.sortOrder);
+
+  ['needs', 'wants', 'future'].forEach(macroType => {
+    const macroBuckets = oldBuckets.filter(b => b.macroType === macroType);
+    if (macroBuckets.length === 0) return;
+
+    const oldTotal = macroBuckets.reduce((s, b) => s + b.allocated, 0);
+    const newTotal = newAllocations[macroType];
+
+    macroBuckets.forEach(b => {
+      const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / macroBuckets.length;
+      _state.buckets.push({
+        id: uid(),
+        cycleId: newCycleId,
+        macroType,
+        name: b.name,
+        emoji: b.emoji,
+        allocated: Math.round(newTotal * proportion),
+        spent: 0,
+        isPinned: b.isPinned,
+        sortOrder: b.sortOrder,
+        createdAt: new Date().toISOString(),
+      });
+    });
+  });
+
+  save();
+  notify('buckets');
 }
 
 /**
