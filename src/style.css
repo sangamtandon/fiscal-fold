@@ -679,6 +679,11 @@ input, select, textarea {
   }
 }
 
+/* Insight cards */
+.insight-all-clear {
+  animation: page-enter var(--duration-slow) var(--ease-out);
+}
+
 /* ---- Toast / Snackbar ---- */
 .toast {
   position: fixed;

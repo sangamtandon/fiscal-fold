@@ -181,7 +181,7 @@ function registerRoutes() {
 
     // Build leak warnings
     const leaks = [];
-    const buckets = getBuckets('wants');
+    const buckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
     const totalCycleDays = Math.ceil((new Date(cycle.endDate) - new Date(cycle.startDate)) / (1000 * 60 * 60 * 24));
     const elapsed = totalCycleDays - daysLeft;
     const timePercent = totalCycleDays > 0 ? (elapsed / totalCycleDays) * 100 : 0;
@@ -267,22 +267,22 @@ function registerRoutes() {
 
         <!-- Leak Warnings -->
         ${leaks.length > 0 ? leaks.map(b => `
-          <div class="card" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent);">
+          <div class="card leak-warning-card" data-leak-bucket-id="${b.id}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
             <div class="flex items-center gap-3">
               <span style="font-size: 24px;">⚡</span>
-              <div>
+              <div style="flex: 1; min-width: 0;">
                 <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${b.name} is running hot</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">${percent(b.spent, b.allocated)}% spent with ${daysLeft} days left. Want to re-balance?</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">${percent(b.spent, b.allocated)}% spent with ${daysLeft} days left. Tap to re-balance →</p>
               </div>
             </div>
           </div>
         `).join('') : `
-          <div class="card" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.06), transparent);">
+          <div class="card insight-all-clear" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.06), transparent);">
             <div class="flex items-center gap-3">
               <span style="font-size: 24px;">✅</span>
               <div>
                 <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">All clear</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">You're on pace this cycle. Keep it up!</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">All buckets are on pace this cycle. Keep it up!</p>
               </div>
             </div>
           </div>
@@ -294,6 +294,13 @@ function registerRoutes() {
     container.querySelectorAll('.quick-bucket[data-bucket-id]').forEach(chip => {
       chip.addEventListener('click', () => {
         openTransactionModal(chip.dataset.bucketId);
+      });
+    });
+
+    // Wire leak warning cards → open modal pre-targeted to the hot bucket
+    container.querySelectorAll('.leak-warning-card[data-leak-bucket-id]').forEach(card => {
+      card.addEventListener('click', () => {
+        openTransactionModal(card.dataset.leakBucketId);
       });
     });
 
