@@ -5,48 +5,35 @@
 
 ---
 
-## ✅ Last Completed: Sprint 6 — Trade-Off Mechanic
+## ✅ Last Completed: Sprint 7 — Commitments Layer
 
-- **Branch:** `sprint-6/trade-off` → merged to `main` as `v0.6.0`
-- **Note:** All 3 tasks were implemented as part of Sprint 5 (the logging flow naturally contained the trade-off path).
-- **Key behaviour:**
-  - `_decideAfterBucket()` detects when amount > bucket remaining and routes to trade-off
-  - `_renderTradeOff()` lists all donor buckets with available balances; single-source only (Phase 1)
-  - `_renderTradeOffConfirm()` shows the split card: target covers X, donor borrows Y
-  - `addTradeOffTransaction()` atomically deducts from both buckets and stores `borrowedFrom` reference
-  - Trade-off transactions render with "from [bucket]" amber badge in the dashboard feed
-- **Acceptance:** ✅ Logging ₹500 to a ₹200 bucket triggers trade-off drawer. Borrowing completes the transaction. Both balances correct.
-
----
-
-## 🔜 Next Up: Sprint 7 — Commitments Layer
-
-- **Branch:** `sprint-5/transactions` → merged to `main` as `v0.5.0`
+- **Branch:** `sprint-7/commitments` → merged to `main` as `v0.7.0`
 - **Key files added/modified:**
-  - `src/utils/toast.js` — Extracted `showToast` utility (decouples from main.js)
-  - `src/router.js` — Added `rerender()` export (force re-render current route)
-  - `src/pages/transaction-modal.js` — Full 4-step transaction modal
-  - `src/pages/transaction-modal.css` — Modal styles
-  - `src/main.js` — Wired FAB + quick-bucket chips to modal; imports from toast.js
-- **Capabilities unlocked:**
-  - Users can tap FAB (or any Quick Bucket chip) to log an expense
-  - Amount entry via numeric keypad + quick-amount chips (₹50/100/200/500)
-  - Bucket picker grouped by macro type (Needs / Wants / Future) with remaining balance shown
-  - If bucket has insufficient funds → trade-off flow lets user borrow from another bucket
-  - "Log anyway (go over budget)" escape hatch when no donor buckets exist
-  - Dashboard updates reactively after every logged transaction
+  - `src/pages/commitments.js` — Commitments management page with list, add/edit/delete, mark-paid
+  - `src/pages/commitments.css` — All styles for commitments page and dashboard due-soon widget
+  - `src/data/store.js` — Added `getMacroReserved()`, updated `getSafeToSpend()`, reset commitments on new cycle
+  - `src/main.js` — `/commitments` route, Settings row wiring, dashboard reserved hints + due-soon section
+- **Key behaviour:**
+  - `getMacroReserved(macroType)` sums unpaid active commitments; `getSafeToSpend()` subtracts wants reserved
+  - Commitments page: emoji picker, name, amount, macro category (Needs/Wants/Future), due date chips + custom input
+  - `_dueStatus()` computes paid / overdue / due-today / due-soon / upcoming per commitment
+  - New cycle creation resets all active commitments to `isPaid: false`
+  - Dashboard macro bars show 🔒 reserved hint when unpaid commitments exist for that macro type
+  - Dashboard shows "Due Soon" card with overdue/due-today/due-soon commitments
+  - Settings → Commitments row navigates to `/commitments`
+- **Acceptance:** ✅ Add Rent + Netflix → Safe to Spend reflects true available balance. Mark paid removes reservation. New cycle resets paid status.
 
 ---
 
-## 🔜 Next Up: Sprint 7 — Commitments Layer
+## 🔜 Next Up: Sprint 8 — Leak Warnings
 
-- **Branch to create:** `sprint-7/commitments`
-- **PRD section:** §7 in `docs/IMPLEMENTATION_PLAN.md`
+- **Branch to create:** `sprint-8/leak-warnings`
+- **PRD section:** §8 in `docs/IMPLEMENTATION_PLAN.md`
 - **Tasks:**
-  - 7.1 — Commitments management UI (add/edit/delete/toggle from Settings)
-  - 7.2 — Auto-deduction logic on cycle start; "reserved" vs "spent" distinction
-  - 7.3 — Due-date tracking + visual indicator; mark-as-paid flow
-- **Acceptance criteria:** User adds Rent (₹25,000) and Netflix (₹649) as commitments. New cycle auto-deducts these. Safe to Spend reflects the true available balance.
+  - 8.1 — Pace-based leak detection (bucket spending % vs. cycle time %)
+  - 8.2 — Inline warning cards on dashboard with "re-balance" CTA
+  - 8.3 — Budget health score / summary
+- **Acceptance criteria:** A bucket that is 80%+ spent before 50% of cycle time triggers a warning card on the dashboard.
 
 ---
 
@@ -86,5 +73,6 @@ main
 ├── v0.3.0  Sprint 3: Onboarding Flow
 ├── v0.4.0  Sprint 4: Dashboard Core Layout
 ├── v0.5.0  Sprint 5: 3-Tap FAB Logging
-└── v0.6.0  Sprint 6: Trade-Off Mechanic (HEAD)
+├── v0.6.0  Sprint 6: Trade-Off Mechanic
+└── v0.7.0  Sprint 7: Commitments Layer (HEAD)
 ```
