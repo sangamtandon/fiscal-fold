@@ -1,0 +1,467 @@
+/* ============================================
+   ONBOARDING — Sprint 3 Styles
+   ============================================ */
+
+.onboarding {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.onboarding__inner {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-6) var(--space-5);
+  gap: var(--space-6);
+}
+
+/* ---- Progress Indicator ---- */
+.onboarding__progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: var(--space-2) 0;
+}
+
+.onboarding__step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  background: var(--bg-elevated);
+  color: var(--text-tertiary);
+  border: 2px solid var(--border);
+  transition: all var(--duration-normal) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.onboarding__step-dot.is-active {
+  background: var(--accent-primary-dim);
+  color: var(--accent-primary);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 12px var(--accent-primary-glow);
+  transform: scale(1.1);
+}
+
+.onboarding__step-dot.is-done {
+  background: var(--accent-primary);
+  color: var(--text-inverse);
+  border-color: var(--accent-primary);
+  font-size: 14px;
+}
+
+.onboarding__step-line {
+  width: 40px;
+  height: 2px;
+  background: var(--border);
+  transition: background var(--duration-normal);
+}
+
+.onboarding__step-line.is-done {
+  background: var(--accent-primary);
+}
+
+/* ---- Step Header ---- */
+.onboarding__step-header {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.onboarding__icon {
+  font-size: 48px;
+  margin-bottom: var(--space-3);
+  animation: icon-bounce 0.6s var(--ease-spring);
+}
+
+@keyframes icon-bounce {
+  0% { transform: scale(0.3) translateY(20px); opacity: 0; }
+  60% { transform: scale(1.1) translateY(-4px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); }
+}
+
+.onboarding__title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-2);
+  line-height: var(--leading-tight);
+}
+
+.onboarding__subtitle {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  max-width: 300px;
+  margin: 0 auto;
+  line-height: var(--leading-relaxed);
+}
+
+/* ---- Step Content ---- */
+.onboarding__content {
+  flex: 1;
+  animation: step-enter 0.4s var(--ease-out);
+}
+
+@keyframes step-enter {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ---- Navigation ---- */
+.onboarding__nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) 0;
+  padding-bottom: calc(var(--space-4) + var(--bottom-safe));
+}
+
+.onboarding__nav .btn-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ---- Step 1: Name Input ---- */
+.onboarding__name-input {
+  font-size: var(--text-xl) !important;
+  font-weight: var(--weight-semibold);
+  text-align: center;
+  padding: var(--space-5) var(--space-4) !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--bg-card) !important;
+}
+
+.onboarding__preview {
+  padding: var(--space-4) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: var(--space-4);
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+/* ---- Step 2: Salary Input ---- */
+.onboarding__salary-input-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4) 0;
+}
+
+.onboarding__currency-symbol {
+  font-family: var(--font-mono);
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-tertiary);
+}
+
+.onboarding__salary-field {
+  max-width: 220px;
+}
+
+/* Date Grid */
+.onboarding__date-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.onboarding__date-chip {
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  text-align: center;
+}
+
+.onboarding__date-chip:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+.onboarding__date-chip.is-active {
+  background: var(--accent-primary-dim);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  font-weight: var(--weight-bold);
+}
+
+/* ---- Step 3: Preset & Donut ---- */
+.onboarding__preset-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  -webkit-overflow-scrolling: touch;
+}
+
+.onboarding__preset-chip {
+  flex-shrink: 0;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: 80px;
+  transition: all var(--duration-fast);
+}
+
+.onboarding__preset-chip:hover {
+  border-color: var(--border-hover);
+}
+
+.onboarding__preset-chip.is-active {
+  background: var(--accent-primary-dim);
+  border-color: var(--accent-primary);
+}
+
+.onboarding__preset-label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.onboarding__preset-ratio {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.onboarding__preset-chip.is-active .onboarding__preset-label {
+  color: var(--accent-primary);
+}
+
+/* Donut Chart */
+.onboarding__donut-wrap {
+  position: relative;
+  width: 180px;
+  height: 180px;
+  margin: var(--space-4) auto;
+}
+
+.onboarding__donut {
+  width: 100%;
+  height: 100%;
+  transform: rotate(0deg);
+}
+
+.onboarding__donut-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Allocation Cards */
+.onboarding__alloc-cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.onboarding__alloc-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.onboarding__alloc-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+/* Custom Sliders */
+.onboarding__sliders {
+  margin-top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  animation: step-enter 0.3s var(--ease-out);
+}
+
+.onboarding__slider-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.onboarding__slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+  outline: none;
+  cursor: pointer;
+}
+
+.onboarding__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--accent-primary-glow);
+  transition: transform var(--duration-fast);
+}
+
+.onboarding__slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.onboarding__slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: var(--radius-full);
+  background: var(--accent-primary);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 8px var(--accent-primary-glow);
+}
+
+/* ---- Step 4: Bucket Setup ---- */
+.onboarding__bucket-sections {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.onboarding__bucket-section {
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+
+.onboarding__bucket-section:last-child {
+  border-bottom: none;
+}
+
+.onboarding__bucket-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.onboarding__bucket-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  animation: step-enter 0.3s var(--ease-out);
+}
+
+.onboarding__bucket-emoji {
+  font-size: 20px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.onboarding__bucket-name {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--duration-fast);
+}
+
+.onboarding__bucket-name:focus {
+  border-bottom-color: var(--accent-primary);
+}
+
+.onboarding__bucket-pin,
+.onboarding__bucket-remove {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+}
+
+.onboarding__bucket-pin:hover,
+.onboarding__bucket-remove:hover {
+  background: var(--bg-elevated);
+}
+
+.onboarding__bucket-pin.is-active {
+  color: var(--accent-primary);
+}
+
+.onboarding__bucket-remove {
+  font-size: 18px;
+  font-weight: var(--weight-bold);
+}
+
+.onboarding__bucket-remove:hover {
+  color: var(--warn);
+}
+
+.onboarding__add-bucket-btn {
+  width: 100%;
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  border-radius: var(--radius-md);
+  background: transparent;
+  border: 1px dashed var(--border);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+}
+
+.onboarding__add-bucket-btn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+  background: var(--accent-primary-dim);
+}

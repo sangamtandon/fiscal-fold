@@ -1,11 +1,13 @@
 /**
  * Fiscal Fold — Main Entry Point
  * App Shell: Header + Router + FAB
- * Integrated with Store (Sprint 2)
+ * Integrated with Store (Sprint 2) + Onboarding (Sprint 3)
  */
 
 import './style.css';
+import './pages/onboarding.css';
 import { route, navigate, initRouter, currentRoute } from './router.js';
+import { renderOnboarding } from './pages/onboarding.js';
 import {
   getUser,
   isOnboardingComplete,
@@ -122,7 +124,7 @@ function updateShellVisibility() {
 // ---- Register Pages ----
 
 function registerRoutes() {
-  // Onboarding (placeholder — Sprint 3)
+  // Landing page (entry point for new users)
   route('/onboarding', (container) => {
     updateShellVisibility();
     container.innerHTML = `
@@ -150,13 +152,19 @@ function registerRoutes() {
     `;
 
     document.getElementById('btn-start-onboarding').addEventListener('click', () => {
-      showToast('Onboarding flow coming in Sprint 3 ✨');
+      navigate('/onboarding/wizard');
     });
 
     document.getElementById('btn-skip-to-demo').addEventListener('click', () => {
       seedDemoData();
       navigate('/dashboard');
     });
+  });
+
+  // Onboarding wizard (4-step flow)
+  route('/onboarding/wizard', (container) => {
+    updateShellVisibility();
+    renderOnboarding(container);
   });
 
   // Dashboard — now reads from the store
