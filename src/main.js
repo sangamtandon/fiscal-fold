@@ -8,6 +8,7 @@ import './style.css';
 import './pages/onboarding.css';
 import { route, navigate, initRouter, currentRoute } from './router.js';
 import { renderOnboarding } from './pages/onboarding.js';
+import { openTransactionModal } from './pages/transaction-modal.js';
 import {
   getUser,
   isOnboardingComplete,
@@ -22,6 +23,7 @@ import {
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
 import { formatCurrency, timeAgo, percent, daysRemaining } from './utils/helpers.js';
+import { showToast } from './utils/toast.js';
 
 // ---- App Shell ----
 
@@ -64,34 +66,15 @@ function renderAppShell() {
     navigate('/settings');
   });
 
-  // FAB click (will be wired to logging flow in Sprint 5)
+  // FAB click — open transaction modal
   document.getElementById('fab-add').addEventListener('click', () => {
-    showToast('Transaction logging coming in Sprint 5 ✨');
+    openTransactionModal();
   });
 }
 
 // ---- Toast System ----
 
-let toastTimeout = null;
-
-/**
- * Show a brief toast notification.
- * @param {string} message
- * @param {'default'|'success'} [type='default']
- * @param {number} [duration=2500]
- */
-export function showToast(message, type = 'default', duration = 2500) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
-
-  toast.textContent = message;
-  toast.className = `toast is-visible ${type === 'success' ? 'toast--success' : ''}`;
-
-  clearTimeout(toastTimeout);
-  toastTimeout = setTimeout(() => {
-    toast.classList.remove('is-visible');
-  }, duration);
-}
+export { showToast };
 
 // ---- Update Header ----
 
@@ -224,7 +207,7 @@ function registerRoutes() {
             </div>
             <div class="quick-buckets">
               ${quickBuckets.map(b => `
-                <div class="quick-bucket">
+                <div class="quick-bucket" data-bucket-id="${b.id}">
                   <div class="quick-bucket__emoji">${b.emoji}</div>
                   <span class="quick-bucket__name">${b.name}</span>
                 </div>
@@ -288,6 +271,13 @@ function registerRoutes() {
         `}
       </div>
     `;
+
+    // Wire quick-bucket chips → open modal pre-targeted
+    container.querySelectorAll('.quick-bucket[data-bucket-id]').forEach(chip => {
+      chip.addEventListener('click', () => {
+        openTransactionModal(chip.dataset.bucketId);
+      });
+    });
 
     // Safe To Spend count-up animation
     const heroAmount = document.getElementById('hero-amount');
