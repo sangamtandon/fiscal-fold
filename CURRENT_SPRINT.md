@@ -5,40 +5,30 @@
 
 ---
 
-## ✅ Last Completed: Sprint 2 — Data Layer & State Management
+## ✅ Last Completed: Sprint 3 — Onboarding Flow
 
-- **Branch:** `sprint-2/data-layer` → merged to `main` as `v0.2.0`
+- **Branch:** `sprint-3/onboarding` → merged to `main` as `v0.3.0`
 - **Key files created:**
-  - `src/data/models.js` — All data type definitions (JSDoc typedefs)
-  - `src/data/store.js` — Reactive state manager (pub/sub, localStorage, 25+ methods)
-  - `src/data/seed.js` — Demo data generator + dev toolbar
+  - `src/pages/onboarding.js` — 4-step wizard logic
+  - `src/pages/onboarding.css` — Onboarding styles, donut chart, animations
 - **Key files modified:**
-  - `src/main.js` — Rewired from hardcoded data to reactive store reads
-- **Store methods available for next sprint:**
-  - `setUser()`, `completeOnboarding()`, `createCycle()`, `addBucket()`
-  - `addTransaction()`, `addTradeOffTransaction()`
-  - `getSafeToSpend()`, `getMacroSummary()`, `getBuckets()`
-  - `subscribe(key, callback)` for reactive UI updates
+  - `src/main.js` — Integrated the wizard into the routing logic
+- **Capabilities unlocked:**
+  - Users can now configure their profile, anchor date, budget ratios, and micro-buckets.
+  - Automatically initializes the store with real data upon completion.
 
 ---
 
-## 🔜 Next Up: Sprint 3 — Onboarding Flow
+## 🔜 Next Up: Sprint 4 — Dashboard Core Layout
 
-- **Branch to create:** `sprint-3/onboarding`
-- **PRD section:** §3 (Onboarding Flow) in `PRD.md`
+- **Branch to create:** `sprint-4/dashboard`
+- **PRD section:** §4 (Dashboard Core Layout) in `PRD.md`
 - **Tasks:**
-  - 3.1 — Step 1: Identity (name input, greeting preview)
-  - 3.2 — Step 2: The Anchor (salary input, date picker)
-  - 3.3 — Step 3: The Golden Rule (ratio selector, live chart)
-  - 3.4 — Step 4: Emotional Anchors (micro-bucket setup)
-  - 3.5 — Onboarding Completion (pro-rate, create cycle, transition)
-- **Dependencies from Sprint 2:**
-  - `setUser(data)` — store user name, salary, date, ratios
-  - `createCycle({ startDate, endDate, salary, allocations })` — first budget cycle
-  - `addBucket({ macroType, name, emoji, allocated, isPinned })` — micro-buckets
-  - `completeOnboarding()` — set flag
-  - `PRESETS`, `BUCKET_TEMPLATES`, `EMOJI_PALETTE` from `models.js`
-- **Acceptance criteria:** New user completes onboarding in <2 minutes, lands on dashboard with fully configured cycle. Refresh preserves state.
+  - 4.1 — Safe to Spend Hero (Large dynamic number, text gradient, "Safe to Spend" label, cycle days remaining)
+  - 4.2 — Macro Health Bars (Needs, Wants, Future bars. Show remaining balance, spent balance, and visual progress)
+  - 4.3 — Quick Buckets Row (Horizontal scroll list of "pinned" micro-buckets for fast access)
+  - 4.4 — Recent Transactions Feed (List of latest 5 transactions with emoji, amount, time, and note)
+- **Acceptance criteria:** Dashboard accurately reflects the store state. Safe to Spend calculation is correct. Macro bars show accurate percentages. Quick buckets are interactive.
 
 ---
 
@@ -56,8 +46,8 @@ Read these files for context:
 - CURRENT_SPRINT.md (current status and next sprint details)
 - QUALITY_GATE.md (pre-merge checklist)
 
-Current sprint: Sprint 3 — Onboarding Flow
-Create branch sprint-3/onboarding and build tasks 3.1 through 3.5.
+Current sprint: Sprint 4 — Dashboard Core Layout
+Create branch sprint-4/dashboard and build tasks 4.1 through 4.4.
 Run the quality gate when done, then merge to main and update CURRENT_SPRINT.md.
 ```
 
@@ -74,5 +64,6 @@ _None currently._
 ```
 main
 ├── v0.1.0  Sprint 1: Project scaffold, design system & app shell
-└── v0.2.0  Sprint 2: Data layer, state management & seed data (HEAD)
+├── v0.2.0  Sprint 2: Data layer, state management & seed data
+└── v0.3.0  Sprint 3: Onboarding Flow (HEAD)
 ```
