@@ -6,9 +6,11 @@
 
 import './style.css';
 import './pages/onboarding.css';
+import './pages/commitments.css';
 import { route, navigate, initRouter, currentRoute } from './router.js';
 import { renderOnboarding } from './pages/onboarding.js';
 import { openTransactionModal } from './pages/transaction-modal.js';
+import { renderCommitmentsPage, getDueSoonCommitments, renderCommitmentDueRow } from './pages/commitments.js';
 import {
   getUser,
   isOnboardingComplete,
@@ -19,6 +21,7 @@ import {
   getTransactions,
   getSafeToSpend,
   getMacroSummary,
+  getMacroReserved,
   getCommitments,
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
@@ -169,8 +172,12 @@ function registerRoutes() {
     const needsSummary = getMacroSummary('needs');
     const wantsSummary = getMacroSummary('wants');
     const futureSummary = getMacroSummary('future');
+    const needsReserved = getMacroReserved('needs');
+    const wantsReserved = getMacroReserved('wants');
+    const futureReserved = getMacroReserved('future');
     const recentTxns = getTransactions({ limit: 5 });
     const quickBuckets = getQuickBuckets();
+    const dueSoon = getDueSoonCommitments();
 
     // Build leak warnings
     const leaks = [];
@@ -218,10 +225,21 @@ function registerRoutes() {
 
         <!-- Macro Health Bars -->
         <div class="flex flex-col gap-4" id="macro-bars-container">
-          ${renderMacroBar('Needs', needsSummary, 'needs')}
-          ${renderMacroBar('Wants', wantsSummary, 'wants')}
-          ${renderMacroBar('Future', futureSummary, 'future')}
+          ${renderMacroBar('Needs', needsSummary, 'needs', needsReserved)}
+          ${renderMacroBar('Wants', wantsSummary, 'wants', wantsReserved)}
+          ${renderMacroBar('Future', futureSummary, 'future', futureReserved)}
         </div>
+
+        <!-- Commitments Due Soon -->
+        ${dueSoon.length > 0 ? `
+          <div class="card" style="padding: var(--space-4);">
+            <div class="section-header" style="margin-bottom: var(--space-3);">
+              <span class="section-header__title">Due Soon</span>
+              <button class="btn btn-ghost" style="font-size: var(--text-xs);" onclick="window.location.hash='#/commitments'">Manage →</button>
+            </div>
+            ${dueSoon.map(c => renderCommitmentDueRow(c)).join('')}
+          </div>
+        ` : ''}
 
         <!-- Recent Transactions -->
         <div>
@@ -334,7 +352,7 @@ function registerRoutes() {
           ${renderSettingsRow('💰', 'Monthly Salary', user ? formatCurrency(user.salary) : '—')}
           ${renderSettingsRow('📅', 'Salary Date', user ? `${user.salaryDate}${ordinalSuffix(user.salaryDate)} of month` : '—')}
           ${renderSettingsRow('📦', 'Manage Buckets', `${allBuckets.length} active`)}
-          ${renderSettingsRow('🔄', 'Commitments', `${commitments.length} recurring`)}
+          ${renderSettingsRow('🔄', 'Commitments', `${commitments.length} recurring`, '/commitments')}
         </div>
 
         <div class="card flex flex-col gap-4">
@@ -352,6 +370,20 @@ function registerRoutes() {
     document.getElementById('btn-back-dashboard').addEventListener('click', () => {
       navigate('/dashboard');
     });
+
+    // Wire Commitments row
+    const settingsRows = container.querySelectorAll('.settings-row-clickable');
+    settingsRows.forEach(row => {
+      if (row.dataset.settingsTarget) {
+        row.addEventListener('click', () => navigate(row.dataset.settingsTarget));
+      }
+    });
+  });
+
+  // Commitments management page
+  route('/commitments', (container) => {
+    updateShellVisibility();
+    renderCommitmentsPage(container);
   });
 }
 
@@ -361,11 +393,12 @@ function registerRoutes() {
  * @param {string} label
  * @param {{ allocated: number, spent: number, remaining: number, percent: number }} summary
  * @param {string} type
+ * @param {number} [reserved=0]
  */
-function renderMacroBar(label, summary, type) {
+function renderMacroBar(label, summary, type, reserved = 0) {
   const remainingPct = 100 - summary.percent;
   let fillClass = `health-bar__fill--${type}`;
-  
+
   if (remainingPct <= 0) {
     fillClass = 'health-bar__fill--depleted';
   } else if (remainingPct <= 20 && type === 'wants') {
@@ -390,7 +423,14 @@ function renderMacroBar(label, summary, type) {
         <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
         <span class="text-tertiary" style="font-size: var(--text-xs);">${Math.max(0, remainingPct)}% remaining</span>
       </div>
-      
+      ${reserved > 0 ? `
+        <div class="cm-reserved-hint">
+          <span>🔒</span>
+          <span class="cm-reserved-hint__amount">${formatCurrency(reserved)}</span>
+          <span>reserved (unpaid commitments)</span>
+        </div>
+      ` : ''}
+
       <div class="macro-card__buckets">
         <div class="macro-card__buckets-inner">
           ${buckets.length > 0 ? buckets.map(b => {
@@ -428,9 +468,9 @@ function renderTransaction(emoji, name, amount, time, borrowedFromName, note) {
   `;
 }
 
-function renderSettingsRow(emoji, label, value) {
+function renderSettingsRow(emoji, label, value, target) {
   return `
-    <div class="flex items-center gap-3" style="padding: var(--space-2) 0; cursor: pointer;">
+    <div class="flex items-center gap-3 settings-row-clickable" style="padding: var(--space-2) 0; cursor: pointer;"${target ? ` data-settings-target="${target}"` : ''}>
       <span style="font-size: 18px;">${emoji}</span>
       <span class="font-medium" style="flex: 1; font-size: var(--text-sm);">${label}</span>
       <span class="text-tertiary" style="font-size: var(--text-sm);">${value}</span>

@@ -157,12 +157,26 @@ export function getCommitments() {
 }
 
 /**
- * Calculate the "Safe to Spend" amount — total remaining in Wants buckets.
+ * Get total reserved (unpaid active commitments) for a macro type.
+ * Reserved = committed but not yet paid — subtracted from available balance.
+ * @param {import('./models.js').MacroType} macroType
+ * @returns {number}
+ */
+export function getMacroReserved(macroType) {
+  return _state.commitments
+    .filter(c => c.isActive && !c.isPaid && c.macroType === macroType)
+    .reduce((sum, c) => sum + c.amount, 0);
+}
+
+/**
+ * Calculate the "Safe to Spend" amount — total remaining in Wants buckets minus unpaid commitments.
  * @returns {number}
  */
 export function getSafeToSpend() {
   const wantsBuckets = getBuckets('wants');
-  return wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent), 0);
+  const remaining = wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent), 0);
+  const reserved = getMacroReserved('wants');
+  return Math.max(0, remaining - reserved);
 }
 
 /**
@@ -262,6 +276,10 @@ export function createCycle({ startDate, endDate, salary, allocations }) {
 
   _state.cycles.push(cycle);
   _state.currentCycleId = cycle.id;
+
+  // Reset all active commitments to unpaid for the new cycle
+  _state.commitments.forEach(c => { if (c.isActive) c.isPaid = false; });
+
   save();
   notify('cycles');
   return cycle;
