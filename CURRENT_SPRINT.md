@@ -5,35 +5,31 @@
 
 ---
 
-## ✅ Last Completed: Sprint 7 — Commitments Layer
+## ✅ Last Completed: Sprint 8 — Leak Warnings & Insights
 
-- **Branch:** `sprint-7/commitments` → merged to `main` as `v0.7.0`
-- **Key files added/modified:**
-  - `src/pages/commitments.js` — Commitments management page with list, add/edit/delete, mark-paid
-  - `src/pages/commitments.css` — All styles for commitments page and dashboard due-soon widget
-  - `src/data/store.js` — Added `getMacroReserved()`, updated `getSafeToSpend()`, reset commitments on new cycle
-  - `src/main.js` — `/commitments` route, Settings row wiring, dashboard reserved hints + due-soon section
+- **Branch:** `sprint-8/leak-warnings` → merged to `main` as `v0.8.0`
+- **Key files modified:**
+  - `src/main.js` — extended leak detection, tappable warning cards, all-clear animation
+  - `src/style.css` — added `.insight-all-clear` fade-in animation class
+  - `QUALITY_GATE.md` — Sprint 3–8 regression checklist added
 - **Key behaviour:**
-  - `getMacroReserved(macroType)` sums unpaid active commitments; `getSafeToSpend()` subtracts wants reserved
-  - Commitments page: emoji picker, name, amount, macro category (Needs/Wants/Future), due date chips + custom input
-  - `_dueStatus()` computes paid / overdue / due-today / due-soon / upcoming per commitment
-  - New cycle creation resets all active commitments to `isPaid: false`
-  - Dashboard macro bars show 🔒 reserved hint when unpaid commitments exist for that macro type
-  - Dashboard shows "Due Soon" card with overdue/due-today/due-soon commitments
-  - Settings → Commitments row navigates to `/commitments`
-- **Acceptance:** ✅ Add Rent + Netflix → Safe to Spend reflects true available balance. Mark paid removes reservation. New cycle resets paid status.
+  - Leak detection now scans all 3 macro types (Needs + Wants + Future), not just Wants
+  - Warning cards have `data-leak-bucket-id` and open `openTransactionModal(bucketId)` on tap
+  - "All clear" card uses `insight-all-clear` class with `page-enter` fade-in animation
+  - "All clear" only shows when NO bucket across all 3 macros is running hot
+- **Acceptance:** ✅ Bucket ≥80% spent before 50% cycle → warning card tappable → opens modal. All buckets healthy → "All clear" with animation.
 
 ---
 
-## 🔜 Next Up: Sprint 8 — Leak Warnings
+## 🔜 Next Up: Sprint 9 — Cycle End & Sweep
 
-- **Branch to create:** `sprint-8/leak-warnings`
-- **PRD section:** §8 in `docs/IMPLEMENTATION_PLAN.md`
+- **Branch to create:** `sprint-9/cycle-sweep`
+- **PRD section:** §9 in `docs/IMPLEMENTATION_PLAN.md`
 - **Tasks:**
-  - 8.1 — Pace-based leak detection (bucket spending % vs. cycle time %)
-  - 8.2 — Inline warning cards on dashboard with "re-balance" CTA
-  - 8.3 — Budget health score / summary
-- **Acceptance criteria:** A bucket that is 80%+ spent before 50% of cycle time triggers a warning card on the dashboard.
+  - 9.1 — Detect when a cycle ends (current date ≥ cycle.endDate)
+  - 9.2 — Sweep unspent Wants + Future balances to Future allocation for next cycle
+  - 9.3 — Show sweep summary screen before creating next cycle
+- **Acceptance criteria:** When a cycle expires, user is prompted to sweep. Unspent balances roll forward into Future. New cycle starts with correct allocations.
 
 ---
 
@@ -51,8 +47,8 @@ Read these files for context:
 - CURRENT_SPRINT.md (current status and next sprint details)
 - QUALITY_GATE.md (pre-merge checklist)
 
-Current sprint: Sprint 7 — Commitments Layer
-Create branch sprint-7/commitments and build tasks 7.1 through 7.3.
+Current sprint: Sprint 8 — Leak Warnings & Insights
+Create branch sprint-8/leak-warnings and build tasks 8.1 through 8.3.
 Run the quality gate when done, then merge to main and update CURRENT_SPRINT.md.
 ```
 
@@ -74,5 +70,6 @@ main
 ├── v0.4.0  Sprint 4: Dashboard Core Layout
 ├── v0.5.0  Sprint 5: 3-Tap FAB Logging
 ├── v0.6.0  Sprint 6: Trade-Off Mechanic
-└── v0.7.0  Sprint 7: Commitments Layer (HEAD)
+├── v0.7.0  Sprint 7: Commitments Layer
+└── v0.8.0  Sprint 8: Leak Warnings & Insights (HEAD)
 ```
