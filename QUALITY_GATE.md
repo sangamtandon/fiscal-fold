@@ -88,6 +88,47 @@ Check off each item. If any item fails, fix it before merging.
 (Add more as sprints are completed)
 -->
 
+### Sprint 3 — Onboarding Flow
+- [ ] 4-step wizard completes without errors
+- [ ] First budget cycle is created with correct allocations
+- [ ] "Back" navigation between wizard steps works
+- [ ] Pro-rate logic works for mid-cycle starts (salary date already passed)
+
+### Sprint 4 — Dashboard Core Layout
+- [ ] Macro bars (Needs / Wants / Future) expand to show micro-buckets
+- [ ] Count-up animation plays on Safe to Spend hero on load
+- [ ] Depleted bar shows amber/warn color when ≤20% remaining (Wants)
+
+### Sprint 5 — 3-Tap FAB Logging
+- [ ] FAB opens transaction modal
+- [ ] Bucket list shows all macro sections
+- [ ] Amount input accepts decimal values
+- [ ] Logging a transaction updates bucket spent amount and Safe to Spend
+- [ ] Toast confirms successful log
+
+### Sprint 6 — Trade-Off Mechanic
+- [ ] When a bucket is over-allocated, trade-off drawer opens
+- [ ] Selecting a source bucket deducts from it and logs a trade-off transaction
+- [ ] Trade-off transactions show "from [bucket]" badge in recent transactions
+
+### Sprint 7 — Commitments Layer
+- [ ] Settings → Commitments row navigates to `/commitments`
+- [ ] Add new commitment: emoji, name, amount, category, due date all save correctly
+- [ ] Edit existing commitment updates fields correctly
+- [ ] Mark commitment paid: Safe to Spend increases (reservation released)
+- [ ] Toggle pause/resume: paused commitments show at 55% opacity, excluded from reserved calculation
+- [ ] Delete commitment: removes from list, updates reserved amount
+- [ ] Dashboard macro bars show 🔒 reserved hint when unpaid active commitments exist
+- [ ] Dashboard "Due Soon" card shows overdue/due-today/due-soon commitments
+- [ ] New cycle resets all active commitments to `isPaid: false`
+
+### Sprint 8 — Leak Warnings
+- [ ] A bucket that is ≥80% spent while cycle is <50% elapsed triggers a ⚡ warning card
+- [ ] Warning cards appear for buckets in ANY macro (Needs, Wants, Future — not just Wants)
+- [ ] Tapping a warning card opens the transaction modal pre-targeted to that bucket
+- [ ] "All clear" card shows when NO bucket across all 3 macros is running hot
+- [ ] "All clear" card has a fade-in animation on page load
+
 ---
 
 ## ✅ Final Checks
