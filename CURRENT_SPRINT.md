@@ -5,29 +5,34 @@
 
 ---
 
-## ✅ Last Completed: Sprint 4 — Dashboard Core Layout
+## ✅ Last Completed: Sprint 5 — Adding Transactions & FAB
 
-- **Branch:** `sprint-4/dashboard` → merged to `main` as `v0.4.0`
-- **Key files modified:**
-  - `src/main.js` — Built out the `/dashboard` route logic and `renderMacroBar`
-  - `src/style.css` — Added styles for animations, Quick Buckets horizontal scroll, and Macro Bar expand/collapse
+- **Branch:** `sprint-5/transactions` → merged to `main` as `v0.5.0`
+- **Key files added/modified:**
+  - `src/utils/toast.js` — Extracted `showToast` utility (decouples from main.js)
+  - `src/router.js` — Added `rerender()` export (force re-render current route)
+  - `src/pages/transaction-modal.js` — Full 4-step transaction modal
+  - `src/pages/transaction-modal.css` — Modal styles
+  - `src/main.js` — Wired FAB + quick-bucket chips to modal; imports from toast.js
 - **Capabilities unlocked:**
-  - Dashboard fully reflects store state.
-  - Safe to spend count-up animation adds delight.
-  - Users can drill down into Macro groups to see individual Micro-Buckets.
+  - Users can tap FAB (or any Quick Bucket chip) to log an expense
+  - Amount entry via numeric keypad + quick-amount chips (₹50/100/200/500)
+  - Bucket picker grouped by macro type (Needs / Wants / Future) with remaining balance shown
+  - If bucket has insufficient funds → trade-off flow lets user borrow from another bucket
+  - "Log anyway (go over budget)" escape hatch when no donor buckets exist
+  - Dashboard updates reactively after every logged transaction
 
 ---
 
-## 🔜 Next Up: Sprint 5 — Adding Transactions & FAB
+## 🔜 Next Up: Sprint 6 — Transaction History & Filtering
 
-- **Branch to create:** `sprint-5/transactions`
-- **PRD section:** §5 (Transaction Logging) in `PRD.md`
-- **Tasks:**
-  - 5.1 — Floating Action Button (FAB component and logic to trigger transaction modal)
-  - 5.2 — Transaction Modal UI (Amount keypad, Bucket selector, Note input)
-  - 5.3 — Trade-Off Logic (If target bucket lacks funds, trigger 'Borrow from' UI constraint)
-  - 5.4 — Store Integration (`addTransaction`, `addTradeOffTransaction` bindings)
-- **Acceptance criteria:** Users can log a transaction. If they overspend a bucket, they MUST borrow from another bucket. Dashboard updates reactively immediately after logging.
+- **Branch to create:** `sprint-6/history`
+- **Suggested tasks:**
+  - 6.1 — Full transaction history page (`/history` route or bottom-sheet)
+  - 6.2 — Filter by macro type / bucket
+  - 6.3 — Refund / delete transaction action
+  - 6.4 — Running total per bucket view
+- **Acceptance criteria:** Users can review all past transactions, filter by category, and delete/refund mistakes.
 
 ---
 
@@ -45,8 +50,8 @@ Read these files for context:
 - CURRENT_SPRINT.md (current status and next sprint details)
 - QUALITY_GATE.md (pre-merge checklist)
 
-Current sprint: Sprint 5 — Adding Transactions & FAB
-Create branch sprint-5/transactions and build tasks 5.1 through 5.4.
+Current sprint: Sprint 6 — Transaction History & Filtering
+Create branch sprint-6/history and build the tasks listed in CURRENT_SPRINT.md.
 Run the quality gate when done, then merge to main and update CURRENT_SPRINT.md.
 ```
 
@@ -65,5 +70,6 @@ main
 ├── v0.1.0  Sprint 1: Project scaffold, design system & app shell
 ├── v0.2.0  Sprint 2: Data layer, state management & seed data
 ├── v0.3.0  Sprint 3: Onboarding Flow
-└── v0.4.0  Sprint 4: Dashboard Core Layout (HEAD)
+├── v0.4.0  Sprint 4: Dashboard Core Layout
+└── v0.5.0  Sprint 5: Adding Transactions & FAB (HEAD)
 ```

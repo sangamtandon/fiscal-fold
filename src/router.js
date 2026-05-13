@@ -32,6 +32,14 @@ export function currentRoute() {
 }
 
 /**
+ * Force re-render of the current route without changing the URL.
+ * Use after in-page mutations (e.g., logging a transaction while already on /dashboard).
+ */
+export function rerender() {
+  window.dispatchEvent(new Event('hashchange'));
+}
+
+/**
  * Initialize the router — listens for hash changes and renders the first route.
  * @param {string} containerId - The ID of the mount container element.
  */
