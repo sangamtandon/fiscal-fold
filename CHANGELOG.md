@@ -6,6 +6,24 @@ Versioning follows sprint tags: `v0.{sprint}.0`.
 
 ---
 
+## [0.3.0] — 2026-05-13 — Sprint 3: Onboarding Flow
+
+### Added
+- **Onboarding Wizard** (`src/pages/onboarding.js`) — 4-step "All Clear" setup flow
+  - Step 1: Name input with live greeting preview
+  - Step 2: Salary input with comma formatting and date chip selector
+  - Step 3: Interactive SVG donut chart, preset chips (Balanced, Growth, Safe Play), and custom sliders
+  - Step 4: Micro-bucket editor with templates, rename, pin, remove, and add functionality
+- **Onboarding CSS** (`src/pages/onboarding.css`) — progress dots, donut chart styling, animated sliders
+- **Pro-ration logic** — automatically calculates pro-rated salary if starting mid-cycle
+- **Auto-setup** — automatically creates the User profile, the first BudgetCycle, and the chosen MicroBuckets upon completion
+
+### Changed
+- `src/main.js` — Replaced placeholder onboarding route with the real wizard component
+- `src/main.js` — Added a landing page with "Get Started" and "Skip to Demo" options
+
+---
+
 ## [0.2.0] — 2026-05-13 — Sprint 2: Data Layer & State Management
 
 ### Added
