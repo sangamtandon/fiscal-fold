@@ -5,30 +5,29 @@
 
 ---
 
-## ✅ Last Completed: Sprint 3 — Onboarding Flow
+## ✅ Last Completed: Sprint 4 — Dashboard Core Layout
 
-- **Branch:** `sprint-3/onboarding` → merged to `main` as `v0.3.0`
-- **Key files created:**
-  - `src/pages/onboarding.js` — 4-step wizard logic
-  - `src/pages/onboarding.css` — Onboarding styles, donut chart, animations
+- **Branch:** `sprint-4/dashboard` → merged to `main` as `v0.4.0`
 - **Key files modified:**
-  - `src/main.js` — Integrated the wizard into the routing logic
+  - `src/main.js` — Built out the `/dashboard` route logic and `renderMacroBar`
+  - `src/style.css` — Added styles for animations, Quick Buckets horizontal scroll, and Macro Bar expand/collapse
 - **Capabilities unlocked:**
-  - Users can now configure their profile, anchor date, budget ratios, and micro-buckets.
-  - Automatically initializes the store with real data upon completion.
+  - Dashboard fully reflects store state.
+  - Safe to spend count-up animation adds delight.
+  - Users can drill down into Macro groups to see individual Micro-Buckets.
 
 ---
 
-## 🔜 Next Up: Sprint 4 — Dashboard Core Layout
+## 🔜 Next Up: Sprint 5 — Adding Transactions & FAB
 
-- **Branch to create:** `sprint-4/dashboard`
-- **PRD section:** §4 (Dashboard Core Layout) in `PRD.md`
+- **Branch to create:** `sprint-5/transactions`
+- **PRD section:** §5 (Transaction Logging) in `PRD.md`
 - **Tasks:**
-  - 4.1 — Safe to Spend Hero (Large dynamic number, text gradient, "Safe to Spend" label, cycle days remaining)
-  - 4.2 — Macro Health Bars (Needs, Wants, Future bars. Show remaining balance, spent balance, and visual progress)
-  - 4.3 — Quick Buckets Row (Horizontal scroll list of "pinned" micro-buckets for fast access)
-  - 4.4 — Recent Transactions Feed (List of latest 5 transactions with emoji, amount, time, and note)
-- **Acceptance criteria:** Dashboard accurately reflects the store state. Safe to Spend calculation is correct. Macro bars show accurate percentages. Quick buckets are interactive.
+  - 5.1 — Floating Action Button (FAB component and logic to trigger transaction modal)
+  - 5.2 — Transaction Modal UI (Amount keypad, Bucket selector, Note input)
+  - 5.3 — Trade-Off Logic (If target bucket lacks funds, trigger 'Borrow from' UI constraint)
+  - 5.4 — Store Integration (`addTransaction`, `addTradeOffTransaction` bindings)
+- **Acceptance criteria:** Users can log a transaction. If they overspend a bucket, they MUST borrow from another bucket. Dashboard updates reactively immediately after logging.
 
 ---
 
@@ -46,8 +45,8 @@ Read these files for context:
 - CURRENT_SPRINT.md (current status and next sprint details)
 - QUALITY_GATE.md (pre-merge checklist)
 
-Current sprint: Sprint 4 — Dashboard Core Layout
-Create branch sprint-4/dashboard and build tasks 4.1 through 4.4.
+Current sprint: Sprint 5 — Adding Transactions & FAB
+Create branch sprint-5/transactions and build tasks 5.1 through 5.4.
 Run the quality gate when done, then merge to main and update CURRENT_SPRINT.md.
 ```
 
@@ -65,5 +64,6 @@ _None currently._
 main
 ├── v0.1.0  Sprint 1: Project scaffold, design system & app shell
 ├── v0.2.0  Sprint 2: Data layer, state management & seed data
-└── v0.3.0  Sprint 3: Onboarding Flow (HEAD)
+├── v0.3.0  Sprint 3: Onboarding Flow
+└── v0.4.0  Sprint 4: Dashboard Core Layout (HEAD)
 ```

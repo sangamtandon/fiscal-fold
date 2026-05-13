@@ -6,6 +6,20 @@ Versioning follows sprint tags: `v0.{sprint}.0`.
 
 ---
 
+## [0.4.0] — 2026-05-13 — Sprint 4: Dashboard Core Layout
+
+### Added
+- **Safe to Spend Hero** (`src/main.js`) — Large dynamic display showing the core "Safe to Spend" metric with a custom counting-up animation on load.
+- **Quick Buckets Row** (`src/main.js`, `src/style.css`) — A horizontal scrolling list of pinned buckets for quick access right under the hero.
+- **Expandable Macro Bars** (`src/main.js`, `src/style.css`) — Clicking on a Needs, Wants, or Future macro bar now expands downwards via CSS grid to reveal the individual micro-buckets, their remaining amounts, and specific progress bars.
+- **Enhanced Recent Transactions** (`src/main.js`) — Transactions now properly display optional notes.
+
+### Changed
+- Dashboard components now pull live data mapping to `getQuickBuckets()` and other local store accessors.
+- Removed stub data from the Dashboard route.
+
+---
+
 ## [0.3.0] — 2026-05-13 — Sprint 3: Onboarding Flow
 
 ### Added
