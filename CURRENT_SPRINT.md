@@ -5,31 +5,30 @@
 
 ---
 
-## ✅ Last Completed: Sprint 8 — Leak Warnings & Insights
+## ✅ Last Completed: Sprint 9 — Cycle End & Sweep
 
-- **Branch:** `sprint-8/leak-warnings` → merged to `main` as `v0.8.0`
+- **Branch:** `sprint-9/payday-ritual` → merged to `main` as `v0.9.0`
 - **Key files modified:**
-  - `src/main.js` — extended leak detection, tappable warning cards, all-clear animation
-  - `src/style.css` — added `.insight-all-clear` fade-in animation class
-  - `QUALITY_GATE.md` — Sprint 3–8 regression checklist added
+  - `src/data/store.js` — added `isCycleExpired()`, updated `runSweep()` (Wants+Future), added `copyBucketsToNewCycle()`
+  - `src/main.js` — dashboard payday banner (cycleExpired guard), `/payday` route
+  - `src/pages/payday.js` — new page: scorecard, sweep preview, new cycle allocation preview, confirm action
+  - `src/pages/payday.css` — new styles for payday page
+  - `QUALITY_GATE.md` — Sprint 9 regression checklist added
 - **Key behaviour:**
-  - Leak detection now scans all 3 macro types (Needs + Wants + Future), not just Wants
-  - Warning cards have `data-leak-bucket-id` and open `openTransactionModal(bucketId)` on tap
-  - "All clear" card uses `insight-all-clear` class with `page-enter` fade-in animation
-  - "All clear" only shows when NO bucket across all 3 macros is running hot
-- **Acceptance:** ✅ Bucket ≥80% spent before 50% cycle → warning card tappable → opens modal. All buckets healthy → "All clear" with animation.
+  - `isCycleExpired()` returns true when `new Date() > new Date(cycle.endDate)`
+  - `runSweep()` now sweeps both Wants AND Future buckets (not just Wants)
+  - `copyBucketsToNewCycle()` copies bucket structure with proportional re-allocation per macro
+  - Dashboard shows green payday banner when cycle expires → navigates to `/payday`
+  - Payday page shows last cycle scorecard, sweep preview, next cycle allocation preview
+  - Confirm button creates new cycle (same duration), adds sweep amount to Future, copies buckets, resets commitments
+- **Acceptance:** ✅ Expired cycle → payday banner → sweep & start → new cycle with correct allocations, bucket structure copied.
 
 ---
 
-## 🔜 Next Up: Sprint 9 — Cycle End & Sweep
+## 🔜 Next Up: Sprint 10
 
-- **Branch to create:** `sprint-9/cycle-sweep`
-- **PRD section:** §9 in `docs/IMPLEMENTATION_PLAN.md`
-- **Tasks:**
-  - 9.1 — Detect when a cycle ends (current date ≥ cycle.endDate)
-  - 9.2 — Sweep unspent Wants + Future balances to Future allocation for next cycle
-  - 9.3 — Show sweep summary screen before creating next cycle
-- **Acceptance criteria:** When a cycle expires, user is prompted to sweep. Unspent balances roll forward into Future. New cycle starts with correct allocations.
+- **PRD section:** §10 in `docs/IMPLEMENTATION_PLAN.md`
+- Check PRD for Sprint 10 tasks.
 
 ---
 
@@ -71,5 +70,6 @@ main
 ├── v0.5.0  Sprint 5: 3-Tap FAB Logging
 ├── v0.6.0  Sprint 6: Trade-Off Mechanic
 ├── v0.7.0  Sprint 7: Commitments Layer
-└── v0.8.0  Sprint 8: Leak Warnings & Insights (HEAD)
+├── v0.8.0  Sprint 8: Leak Warnings & Insights
+└── v0.9.0  Sprint 9: Cycle End & Sweep (HEAD)
 ```
