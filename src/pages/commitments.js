@@ -16,6 +16,7 @@ import {
   addCommitment,
   updateCommitment,
   removeCommitment,
+  getState,
 } from '../data/store.js';
 import { formatCurrency } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
@@ -64,18 +65,11 @@ export function renderCommitmentsPage(container) {
 }
 
 function _render(container) {
-  const all = [
-    ...getCommitments(), // active only
-    // also show inactive ones
-    ...(window.__fiscalFoldStore?.commitments || []).filter(c => !c.isActive),
-  ];
-
-  // Pull inactive directly — getCommitments() filters to isActive only
-  // Re-import store state to get inactive ones too
-  const active = getCommitments();
-
-  // Sort by due date
-  const sorted = [...active].sort((a, b) => a.dueDate - b.dueDate);
+  const all = getState().commitments;
+  const sorted = [...all].sort((a, b) => {
+    if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+    return a.dueDate - b.dueDate;
+  });
 
   container.innerHTML = `
     <div class="cm-page">
@@ -118,7 +112,7 @@ function _render(container) {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.cmPaid;
-      const c = getCommitments().find(x => x.id === id);
+      const c = getState().commitments.find(x => x.id === id);
       if (!c) return;
       updateCommitment(id, { isPaid: !c.isPaid });
       _render(container);
@@ -130,7 +124,7 @@ function _render(container) {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.cmDelete;
-      const c = getCommitments().find(x => x.id === id);
+      const c = getState().commitments.find(x => x.id === id);
       removeCommitment(id);
       _render(container);
       showToast(`${c?.name || 'Commitment'} removed`);
@@ -141,17 +135,18 @@ function _render(container) {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.cmToggle;
-      const c = getCommitments().find(x => x.id === id);
+      const c = getState().commitments.find(x => x.id === id);
       if (!c) return;
       updateCommitment(id, { isActive: !c.isActive });
       _render(container);
+      showToast(c.isActive ? `${c.name} paused` : `${c.name} resumed`, 'success');
     });
   });
 
   container.querySelectorAll('[data-cm-edit]').forEach(row => {
     row.addEventListener('click', () => {
       const id = row.dataset.cmEdit;
-      const c = getCommitments().find(x => x.id === id);
+      const c = getState().commitments.find(x => x.id === id);
       if (c) _openForm(container, c);
     });
   });
@@ -162,13 +157,13 @@ function _renderRow(c) {
   const { text: statusText, cls: statusCls } = _statusLabel[status];
 
   return `
-    <div class="cm-row" data-cm-edit="${c.id}">
+    <div class="cm-row${c.isActive ? '' : ' cm-row--inactive'}" data-cm-edit="${c.id}">
       <div class="cm-row__emoji">${c.emoji}</div>
 
       <div class="cm-row__body">
         <div class="cm-row__top">
           <span class="cm-row__name">${c.name}</span>
-          ${statusText ? `<span class="badge ${statusCls} cm-row__status">${statusText}</span>` : ''}
+          ${!c.isActive ? `<span class="badge cm-row__status" style="opacity:.6">Paused</span>` : statusText ? `<span class="badge ${statusCls} cm-row__status">${statusText}</span>` : ''}
         </div>
         <div class="cm-row__meta">
           <span class="text-mono" style="color:${_macroColor[c.macroType]};font-size:var(--text-xs);font-weight:600">${_macroLabel[c.macroType]}</span>
@@ -179,12 +174,20 @@ function _renderRow(c) {
       <div class="cm-row__right">
         <span class="cm-row__amount text-mono">${formatCurrency(c.amount)}</span>
         <div class="cm-row__actions">
+          ${c.isActive ? `
+            <button
+              class="cm-action-btn cm-action-btn--paid ${c.isPaid ? 'is-paid' : ''}"
+              data-cm-paid="${c.id}"
+              title="${c.isPaid ? 'Mark unpaid' : 'Mark paid'}"
+              aria-label="${c.isPaid ? 'Mark unpaid' : 'Mark paid'}"
+            >✓</button>
+          ` : ''}
           <button
-            class="cm-action-btn cm-action-btn--paid ${c.isPaid ? 'is-paid' : ''}"
-            data-cm-paid="${c.id}"
-            title="${c.isPaid ? 'Mark unpaid' : 'Mark paid'}"
-            aria-label="${c.isPaid ? 'Mark unpaid' : 'Mark paid'}"
-          >✓</button>
+            class="cm-action-btn cm-action-btn--toggle"
+            data-cm-toggle="${c.id}"
+            title="${c.isActive ? 'Pause' : 'Resume'}"
+            aria-label="${c.isActive ? 'Pause commitment' : 'Resume commitment'}"
+          >${c.isActive ? '⏸' : '▶'}</button>
           <button
             class="cm-action-btn cm-action-btn--delete"
             data-cm-delete="${c.id}"
@@ -338,7 +341,7 @@ function _renderForm(existing, pageContainer) {
   });
 
   // Name
-  _formDrawer.querySelector('#cf-name').addEventListener('input', e => { state.name = e.target.value.trim(); });
+  _formDrawer.querySelector('#cf-name').addEventListener('input', e => { state.name = e.target.value; });
 
   // Amount
   _formDrawer.querySelector('#cf-amount').addEventListener('input', e => { state.amount = e.target.value; });
@@ -373,28 +376,29 @@ function _renderForm(existing, pageContainer) {
 
   // Save
   _formDrawer.querySelector('#cf-save').addEventListener('click', () => {
+    const name = state.name.trim();
     const amount = parseFloat(state.amount);
-    if (!state.name) { showToast('Please enter a name'); return; }
+    if (!name) { showToast('Please enter a name'); return; }
     if (!amount || amount <= 0) { showToast('Please enter an amount'); return; }
 
     if (isEdit) {
       updateCommitment(existing.id, {
         emoji: state.emoji,
-        name: state.name,
+        name,
         amount,
         dueDate: state.dueDate,
         macroType: state.macroType,
       });
-      showToast(`${state.name} updated`, 'success');
+      showToast(`${name} updated`, 'success');
     } else {
       addCommitment({
         emoji: state.emoji,
-        name: state.name,
+        name,
         amount,
         dueDate: state.dueDate,
         macroType: state.macroType,
       });
-      showToast(`${state.name} added`, 'success');
+      showToast(`${name} added`, 'success');
     }
 
     _closeForm();

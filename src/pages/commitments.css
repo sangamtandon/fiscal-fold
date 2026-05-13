@@ -169,6 +169,16 @@
   color: white;
 }
 
+.cm-action-btn--toggle:active {
+  background: var(--bg-card);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+.cm-row--inactive {
+  opacity: 0.55;
+}
+
 /* ---- Add button ---- */
 .cm-add-btn {
   margin-top: var(--space-2);
