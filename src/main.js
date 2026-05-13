@@ -1,10 +1,25 @@
 /**
  * Fiscal Fold — Main Entry Point
  * App Shell: Header + Router + FAB
+ * Integrated with Store (Sprint 2)
  */
 
 import './style.css';
 import { route, navigate, initRouter, currentRoute } from './router.js';
+import {
+  getUser,
+  isOnboardingComplete,
+  getCurrentCycle,
+  getBuckets,
+  getBucketById,
+  getQuickBuckets,
+  getTransactions,
+  getSafeToSpend,
+  getMacroSummary,
+  getCommitments,
+} from './data/store.js';
+import { seedDemoData, renderDevToolbar } from './data/seed.js';
+import { formatCurrency, timeAgo, percent, daysRemaining } from './utils/helpers.js';
 
 // ---- App Shell ----
 
@@ -79,14 +94,14 @@ export function showToast(message, type = 'default', duration = 2500) {
 // ---- Update Header ----
 
 /**
- * Update the header greeting (called after onboarding or login).
- * @param {string} name
+ * Update the header greeting from store data.
  */
-export function updateHeaderGreeting(name) {
+export function updateHeaderGreeting() {
+  const user = getUser();
   const el = document.getElementById('header-greeting');
   const sub = document.getElementById('header-subtitle');
-  if (el && name) {
-    el.textContent = `Hey, ${name} 👋`;
+  if (el && user?.name) {
+    el.textContent = `Hey, ${user.name} 👋`;
     sub.textContent = 'Your finances, your rules.';
   }
 }
@@ -139,29 +154,62 @@ function registerRoutes() {
     });
 
     document.getElementById('btn-skip-to-demo').addEventListener('click', () => {
+      seedDemoData();
       navigate('/dashboard');
     });
   });
 
-  // Dashboard (placeholder — Sprint 4)
+  // Dashboard — now reads from the store
   route('/dashboard', (container) => {
     updateShellVisibility();
-    updateHeaderGreeting('User');
+    updateHeaderGreeting();
+
+    const cycle = getCurrentCycle();
+    const user = getUser();
+
+    // If no data, redirect to onboarding
+    if (!cycle || !user) {
+      navigate('/onboarding');
+      return;
+    }
+
+    const safeToSpend = getSafeToSpend();
+    const daysLeft = daysRemaining(cycle.endDate);
+    const needsSummary = getMacroSummary('needs');
+    const wantsSummary = getMacroSummary('wants');
+    const futureSummary = getMacroSummary('future');
+    const recentTxns = getTransactions({ limit: 5 });
+
+    // Build leak warnings
+    const leaks = [];
+    const buckets = getBuckets('wants');
+    const totalCycleDays = Math.ceil((new Date(cycle.endDate) - new Date(cycle.startDate)) / (1000 * 60 * 60 * 24));
+    const elapsed = totalCycleDays - daysLeft;
+    const timePercent = totalCycleDays > 0 ? (elapsed / totalCycleDays) * 100 : 0;
+
+    buckets.forEach(b => {
+      if (b.allocated > 0) {
+        const spentPct = (b.spent / b.allocated) * 100;
+        if (spentPct >= 80 && timePercent < 50) {
+          leaks.push(b);
+        }
+      }
+    });
 
     container.innerHTML = `
       <div class="flex flex-col gap-6">
         <!-- Safe to Spend Hero -->
         <div class="card card--accent text-center" style="padding: var(--space-8) var(--space-5);">
           <p class="text-secondary" style="font-size: var(--text-sm); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">Safe to Spend</p>
-          <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount">₹42,800</p>
-          <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">18 days left in cycle</p>
+          <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount">${formatCurrency(safeToSpend)}</p>
+          <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">${daysLeft} days left in cycle</p>
         </div>
 
         <!-- Macro Health Bars -->
         <div class="flex flex-col gap-4">
-          ${renderMacroBar('Needs', '₹52,400', '₹31,600', 60, 'needs')}
-          ${renderMacroBar('Wants', '₹42,800', '₹7,600', 15, 'wants')}
-          ${renderMacroBar('Future', '₹33,600', '₹0', 0, 'future')}
+          ${renderMacroBar('Needs', needsSummary, 'needs')}
+          ${renderMacroBar('Wants', wantsSummary, 'wants')}
+          ${renderMacroBar('Future', futureSummary, 'future')}
         </div>
 
         <!-- Recent Transactions -->
@@ -171,42 +219,66 @@ function registerRoutes() {
             <button class="btn btn-ghost" style="font-size: var(--text-xs);">See all</button>
           </div>
           <div class="flex flex-col gap-2">
-            ${renderTransaction('🍕', 'Dining Out', 450, '2h ago')}
-            ${renderTransaction('🚕', 'Transport', 280, '5h ago')}
-            ${renderTransaction('🛒', 'Groceries', 1240, 'Yesterday')}
-            ${renderTransaction('☕', 'Chai & Snacks', 80, 'Yesterday')}
-            ${renderTransaction('🎬', 'Entertainment', 599, '2 days ago')}
+            ${recentTxns.length > 0 
+              ? recentTxns.map(t => {
+                  const bucket = getBucketById(t.bucketId);
+                  return renderTransaction(
+                    bucket?.emoji || '📝',
+                    bucket?.name || 'Unknown',
+                    t.amount,
+                    timeAgo(t.timestamp),
+                    t.borrowedFrom ? getBucketById(t.borrowedFrom)?.name : null
+                  );
+                }).join('')
+              : '<p class="text-tertiary text-center" style="padding: var(--space-6); font-size: var(--text-sm);">No transactions yet. Tap + to log your first!</p>'
+            }
           </div>
         </div>
 
-        <!-- Leak Warning -->
-        <div class="card" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent);">
-          <div class="flex items-center gap-3">
-            <span style="font-size: 24px;">⚡</span>
-            <div>
-              <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">Dining is running hot</p>
-              <p class="text-tertiary" style="font-size: var(--text-xs);">80% spent with 18 days left. Want to re-balance?</p>
+        <!-- Leak Warnings -->
+        ${leaks.length > 0 ? leaks.map(b => `
+          <div class="card" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent);">
+            <div class="flex items-center gap-3">
+              <span style="font-size: 24px;">⚡</span>
+              <div>
+                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${b.name} is running hot</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">${percent(b.spent, b.allocated)}% spent with ${daysLeft} days left. Want to re-balance?</p>
+              </div>
             </div>
           </div>
-        </div>
+        `).join('') : `
+          <div class="card" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.06), transparent);">
+            <div class="flex items-center gap-3">
+              <span style="font-size: 24px;">✅</span>
+              <div>
+                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">All clear</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">You're on pace this cycle. Keep it up!</p>
+              </div>
+            </div>
+          </div>
+        `}
       </div>
     `;
   });
 
-  // Settings (placeholder — Sprint 10)
+  // Settings — now reads from the store
   route('/settings', (container) => {
     updateShellVisibility();
+
+    const user = getUser();
+    const allBuckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
+    const commitments = getCommitments();
 
     container.innerHTML = `
       <div class="flex flex-col gap-6">
         <h1 style="font-size: var(--text-xl); font-weight: var(--weight-bold);">Settings</h1>
 
         <div class="card flex flex-col gap-4">
-          ${renderSettingsRow('👤', 'Profile Name', 'User')}
-          ${renderSettingsRow('💰', 'Monthly Salary', '₹1,68,000')}
-          ${renderSettingsRow('📅', 'Salary Date', '1st of month')}
-          ${renderSettingsRow('📦', 'Manage Buckets', '12 active')}
-          ${renderSettingsRow('🔄', 'Commitments', '4 recurring')}
+          ${renderSettingsRow('👤', 'Profile Name', user?.name || 'Not set')}
+          ${renderSettingsRow('💰', 'Monthly Salary', user ? formatCurrency(user.salary) : '—')}
+          ${renderSettingsRow('📅', 'Salary Date', user ? `${user.salaryDate}${ordinalSuffix(user.salaryDate)} of month` : '—')}
+          ${renderSettingsRow('📦', 'Manage Buckets', `${allBuckets.length} active`)}
+          ${renderSettingsRow('🔄', 'Commitments', `${commitments.length} recurring`)}
         </div>
 
         <div class="card flex flex-col gap-4">
@@ -229,34 +301,40 @@ function registerRoutes() {
 
 // ---- Helper Renderers ----
 
-function renderMacroBar(label, remaining, spent, spentPercent, type) {
+/**
+ * @param {string} label
+ * @param {{ allocated: number, spent: number, remaining: number, percent: number }} summary
+ * @param {string} type
+ */
+function renderMacroBar(label, summary, type) {
   const fillClass = `health-bar__fill--${type}`;
+  const remainingPct = 100 - summary.percent;
   return `
     <div class="card" style="padding: var(--space-4);">
       <div class="flex items-center justify-between mb-2">
         <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
-        <span class="text-mono text-secondary" style="font-size: var(--text-sm);">${remaining}</span>
+        <span class="text-mono text-secondary" style="font-size: var(--text-sm);">${formatCurrency(summary.remaining)}</span>
       </div>
       <div class="health-bar health-bar--lg">
-        <div class="${fillClass} health-bar__fill" style="width: ${100 - spentPercent}%;"></div>
+        <div class="${fillClass} health-bar__fill" style="width: ${remainingPct}%;"></div>
       </div>
       <div class="flex justify-between mt-2">
-        <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${spent}</span>
-        <span class="text-tertiary" style="font-size: var(--text-xs);">${100 - spentPercent}% remaining</span>
+        <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
+        <span class="text-tertiary" style="font-size: var(--text-xs);">${remainingPct}% remaining</span>
       </div>
     </div>
   `;
 }
 
-function renderTransaction(emoji, name, amount, time) {
+function renderTransaction(emoji, name, amount, time, borrowedFromName) {
   return `
     <div class="card" style="padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: var(--space-3);">
       <span style="font-size: 22px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border-radius: var(--radius-md);">${emoji}</span>
       <div style="flex: 1; min-width: 0;">
         <p class="font-medium" style="font-size: var(--text-sm);">${name}</p>
-        <p class="text-tertiary" style="font-size: var(--text-xs);">${time}</p>
+        <p class="text-tertiary" style="font-size: var(--text-xs);">${time}${borrowedFromName ? ` · <span class="badge badge--amber" style="font-size: 10px; padding: 1px 6px;">from ${borrowedFromName}</span>` : ''}</p>
       </div>
-      <span class="text-mono font-semibold" style="font-size: var(--text-sm);">−₹${amount.toLocaleString('en-IN')}</span>
+      <span class="text-mono font-semibold" style="font-size: var(--text-sm);">−${formatCurrency(amount)}</span>
     </div>
   `;
 }
@@ -272,8 +350,31 @@ function renderSettingsRow(emoji, label, value) {
   `;
 }
 
+/**
+ * Get ordinal suffix for a number (1st, 2nd, 3rd, etc.)
+ * @param {number} n
+ * @returns {string}
+ */
+function ordinalSuffix(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
 // ---- Boot ----
 
-renderAppShell();
-registerRoutes();
-initRouter('router-mount');
+function boot() {
+  renderAppShell();
+  registerRoutes();
+
+  // Determine starting route
+  const hasData = isOnboardingComplete();
+  if (!window.location.hash) {
+    window.location.hash = hasData ? '#/dashboard' : '#/onboarding';
+  }
+
+  initRouter('router-mount');
+  renderDevToolbar();
+}
+
+boot();
