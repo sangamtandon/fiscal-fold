@@ -5,7 +5,21 @@
 
 ---
 
-## ✅ Last Completed: Sprint 5 — Adding Transactions & FAB
+## ✅ Last Completed: Sprint 6 — Trade-Off Mechanic
+
+- **Branch:** `sprint-6/trade-off` → merged to `main` as `v0.6.0`
+- **Note:** All 3 tasks were implemented as part of Sprint 5 (the logging flow naturally contained the trade-off path).
+- **Key behaviour:**
+  - `_decideAfterBucket()` detects when amount > bucket remaining and routes to trade-off
+  - `_renderTradeOff()` lists all donor buckets with available balances; single-source only (Phase 1)
+  - `_renderTradeOffConfirm()` shows the split card: target covers X, donor borrows Y
+  - `addTradeOffTransaction()` atomically deducts from both buckets and stores `borrowedFrom` reference
+  - Trade-off transactions render with "from [bucket]" amber badge in the dashboard feed
+- **Acceptance:** ✅ Logging ₹500 to a ₹200 bucket triggers trade-off drawer. Borrowing completes the transaction. Both balances correct.
+
+---
+
+## 🔜 Next Up: Sprint 7 — Commitments Layer
 
 - **Branch:** `sprint-5/transactions` → merged to `main` as `v0.5.0`
 - **Key files added/modified:**
@@ -24,15 +38,15 @@
 
 ---
 
-## 🔜 Next Up: Sprint 6 — Transaction History & Filtering
+## 🔜 Next Up: Sprint 7 — Commitments Layer
 
-- **Branch to create:** `sprint-6/history`
-- **Suggested tasks:**
-  - 6.1 — Full transaction history page (`/history` route or bottom-sheet)
-  - 6.2 — Filter by macro type / bucket
-  - 6.3 — Refund / delete transaction action
-  - 6.4 — Running total per bucket view
-- **Acceptance criteria:** Users can review all past transactions, filter by category, and delete/refund mistakes.
+- **Branch to create:** `sprint-7/commitments`
+- **PRD section:** §7 in `docs/IMPLEMENTATION_PLAN.md`
+- **Tasks:**
+  - 7.1 — Commitments management UI (add/edit/delete/toggle from Settings)
+  - 7.2 — Auto-deduction logic on cycle start; "reserved" vs "spent" distinction
+  - 7.3 — Due-date tracking + visual indicator; mark-as-paid flow
+- **Acceptance criteria:** User adds Rent (₹25,000) and Netflix (₹649) as commitments. New cycle auto-deducts these. Safe to Spend reflects the true available balance.
 
 ---
 
@@ -50,8 +64,8 @@ Read these files for context:
 - CURRENT_SPRINT.md (current status and next sprint details)
 - QUALITY_GATE.md (pre-merge checklist)
 
-Current sprint: Sprint 6 — Transaction History & Filtering
-Create branch sprint-6/history and build the tasks listed in CURRENT_SPRINT.md.
+Current sprint: Sprint 7 — Commitments Layer
+Create branch sprint-7/commitments and build tasks 7.1 through 7.3.
 Run the quality gate when done, then merge to main and update CURRENT_SPRINT.md.
 ```
 
@@ -71,5 +85,6 @@ main
 ├── v0.2.0  Sprint 2: Data layer, state management & seed data
 ├── v0.3.0  Sprint 3: Onboarding Flow
 ├── v0.4.0  Sprint 4: Dashboard Core Layout
-└── v0.5.0  Sprint 5: Adding Transactions & FAB (HEAD)
+├── v0.5.0  Sprint 5: 3-Tap FAB Logging
+└── v0.6.0  Sprint 6: Trade-Off Mechanic (HEAD)
 ```
