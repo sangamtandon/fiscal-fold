@@ -581,8 +581,9 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
  * Add bonus or variable income.
  * @param {number} amount
  * @param {string} [targetBucketId] - If provided, allocates to this bucket. Otherwise adds to cycle salary.
+ * @param {string} [note]
  */
-export function addIncome(amount, targetBucketId) {
+export function addIncome(amount, targetBucketId, note = '') {
   const cycle = getCurrentCycle();
   if (!cycle) return;
 
@@ -590,6 +591,19 @@ export function addIncome(amount, targetBucketId) {
     const bucket = _state.buckets.find(b => b.id === targetBucketId);
     if (bucket) {
       bucket.allocated += amount;
+      // Record income transaction for history — does NOT modify spent
+      _state.transactions.push({
+        id: uid(),
+        cycleId: _state.currentCycleId,
+        bucketId: targetBucketId,
+        amount,
+        type: 'income',
+        note: note || '',
+        borrowedFrom: null,
+        borrowedAmount: 0,
+        timestamp: new Date().toISOString(),
+      });
+      notify('transactions');
     }
   } else {
     cycle.salary += amount;
@@ -598,6 +612,14 @@ export function addIncome(amount, targetBucketId) {
   save();
   notify('cycles');
   notify('buckets');
+}
+
+/**
+ * Get all transactions across all cycles, newest first.
+ * @returns {import('./models.js').Transaction[]}
+ */
+export function getAllTransactions() {
+  return [..._state.transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 }
 
 // ---- Lifecycle ----

@@ -509,6 +509,16 @@ function renderBucketItem(bucket, macroType) {
   `;
 }
 
+function refreshBucketSections(container) {
+  const sectionsEl = container.querySelector('#bucket-sections');
+  if (sectionsEl) {
+    sectionsEl.innerHTML =
+      renderBucketSection('needs', 'Needs') +
+      renderBucketSection('wants', 'Wants') +
+      renderBucketSection('future', 'Future');
+  }
+}
+
 function wireUpBucketEvents(container) {
   // Name editing
   container.addEventListener('input', (e) => {
@@ -540,7 +550,7 @@ function wireUpBucketEvents(container) {
       const id = removeBtn.dataset.id;
       const macro = removeBtn.dataset.macro;
       formData.buckets[macro] = formData.buckets[macro].filter(b => b.id !== id);
-      renderStep4(container.closest('#step-content') || container);
+      refreshBucketSections(container);
     }
 
     if (addBtn) {
@@ -554,7 +564,7 @@ function wireUpBucketEvents(container) {
           pct: 0,
           isPinned: false,
         });
-        renderStep4(container.closest('#step-content') || container);
+        refreshBucketSections(container);
         // Focus the new input
         requestAnimationFrame(() => {
           const inputs = document.querySelectorAll(`[data-macro="${macro}"] .onboarding__bucket-name`);
