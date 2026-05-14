@@ -477,6 +477,12 @@ function registerRoutes() {
     const macroBarsContainer = document.getElementById('macro-bars-container');
     if (macroBarsContainer) {
       macroBarsContainer.addEventListener('click', (e) => {
+        const unallocatedBtn = e.target.closest('[data-unallocated-macro]');
+        if (unallocatedBtn) {
+          e.stopPropagation();
+          navigate(`/settings#unallocated-${unallocatedBtn.dataset.unallocatedMacro}`);
+          return;
+        }
         const card = e.target.closest('.macro-card');
         if (card) {
           card.classList.toggle('is-expanded');
@@ -519,7 +525,7 @@ function registerRoutes() {
 
 /**
  * @param {string} label
- * @param {{ allocated: number, spent: number, remaining: number, percent: number }} summary
+ * @param {{ allocated: number, spent: number, remaining: number, percent: number, cycleAllocation: number, unallocated: number }} summary
  * @param {string} type
  * @param {number} [reserved=0]
  */
@@ -527,6 +533,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
   const remainingPct = 100 - summary.percent;
   const isOverspent = summary.percent > 100;
   const isFresh = summary.spent === 0 && summary.allocated > 0;
+  const unallocated = summary.unallocated ?? 0;
   let fillClass = `health-bar__fill--${type}`;
 
   if (isFresh) {
@@ -556,6 +563,15 @@ function renderMacroBar(label, summary, type, reserved = 0) {
         <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
         <span class="text-tertiary" style="font-size: var(--text-xs);">${isFresh ? 'Nothing tracked yet' : `${Math.max(0, remainingPct)}% remaining`}</span>
       </div>
+      ${unallocated !== 0 ? `
+        <button class="macro-card__unallocated" data-unallocated-macro="${type}"
+          style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer; text-align: left;">
+          <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
+          <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'unallocated — tap to assign' : 'over-allocated — tap to fix'}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs);">›</span>
+        </button>
+      ` : ''}
       ${reserved > 0 ? `
         <div class="cm-reserved-hint">
           <span>🔒</span>
