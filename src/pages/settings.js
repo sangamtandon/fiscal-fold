@@ -14,6 +14,7 @@ import {
   addBucket,
   updateBucket,
   removeBucket,
+  resetState,
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
@@ -118,6 +119,25 @@ function _render(container) {
         </button>
       </div>
 
+      <!-- Danger Zone -->
+      <div class="card settings-section settings-danger-zone">
+        <h2 class="settings-section__heading settings-danger-zone__heading">Danger Zone</h2>
+        <div class="settings-field">
+          <div class="settings-danger-zone__desc">
+            <span class="settings-field__label">Reset All Data</span>
+            <span class="settings-danger-zone__sub">Permanently deletes all transactions, buckets, and profile data.</span>
+          </div>
+          <button class="btn settings-danger-zone__btn" id="btn-reset-data">Reset</button>
+        </div>
+        <div class="settings-danger-zone__confirm" id="reset-confirm" hidden>
+          <p class="settings-danger-zone__warn">⚠️ This cannot be undone. All your financial data will be erased.</p>
+          <div class="settings-danger-zone__actions">
+            <button class="btn btn-ghost btn-sm" id="btn-reset-cancel">Cancel</button>
+            <button class="btn settings-danger-zone__btn-confirm btn-sm" id="btn-reset-confirm">Yes, delete everything</button>
+          </div>
+        </div>
+      </div>
+
       <button class="btn btn-ghost w-full" id="btn-back" style="margin-top: var(--space-2);">
         ← Back to Dashboard
       </button>
@@ -197,6 +217,26 @@ function _wireEvents(container) {
   container.querySelector('#btn-export-json').addEventListener('click', () => {
     exportAllDataJSON();
     showToast('All data exported as JSON ✓');
+  });
+
+  const btnReset = container.querySelector('#btn-reset-data');
+  const resetConfirm = container.querySelector('#reset-confirm');
+  const btnResetCancel = container.querySelector('#btn-reset-cancel');
+  const btnResetConfirm = container.querySelector('#btn-reset-confirm');
+
+  btnReset.addEventListener('click', () => {
+    resetConfirm.hidden = false;
+    btnReset.disabled = true;
+  });
+
+  btnResetCancel.addEventListener('click', () => {
+    resetConfirm.hidden = true;
+    btnReset.disabled = false;
+  });
+
+  btnResetConfirm.addEventListener('click', () => {
+    resetState();
+    window.location.reload();
   });
 
   // Profile field edit buttons
