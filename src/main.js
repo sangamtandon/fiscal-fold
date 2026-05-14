@@ -480,7 +480,7 @@ function registerRoutes() {
         const unallocatedBtn = e.target.closest('[data-unallocated-macro]');
         if (unallocatedBtn) {
           e.stopPropagation();
-          navigate('/onboarding');
+          navigate(`/settings#unallocated-${unallocatedBtn.dataset.unallocatedMacro}`);
           return;
         }
         const card = e.target.closest('.macro-card');
@@ -568,7 +568,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
           style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer; text-align: left;">
           <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
           <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
-          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'unallocated — redo setup' : 'over-allocated — redo setup'}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'unallocated — assign in Settings' : 'over-allocated — fix in Settings'}</span>
           <span class="text-tertiary" style="font-size: var(--text-xs);">›</span>
         </button>
       ` : ''}
