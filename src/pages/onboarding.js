@@ -338,7 +338,7 @@ function renderStep3(container) {
   });
 
   // Custom sliders
-  container.querySelectorAll('.onboarding__slider input[type="range"]').forEach(slider => {
+  container.querySelectorAll('input.onboarding__slider').forEach(slider => {
     slider.addEventListener('input', () => {
       const needsVal = parseInt(container.querySelector('#slider-needs').value, 10);
       const wantsVal = parseInt(container.querySelector('#slider-wants').value, 10);
