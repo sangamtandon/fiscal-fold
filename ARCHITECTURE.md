@@ -12,7 +12,7 @@
 | **Styling** | Vanilla CSS | Custom properties (design tokens), dark-first |
 | **Routing** | Custom hash router | `src/router.js` — lightweight, cleanup lifecycle |
 | **State** | Reactive pub/sub store | `src/data/store.js` — localStorage persistence |
-| **PWA** | Service worker (planned) | Sprint 11 — offline support & install prompt |
+| **PWA** | Service worker | Sprint 11 — offline support & install prompt ✅ |
 | **Typography** | Inter + JetBrains Mono | Google Fonts, swap strategy |
 
 ---
@@ -25,7 +25,8 @@ fiscal-fold/
 ├── package.json                # Vite dev/build scripts
 ├── public/
 │   ├── manifest.json           # PWA manifest (name, icons, theme)
-│   └── favicon.svg             # Geometric origami triangle logo
+│   ├── sw.js                   # Service worker — offline cache + install prompt
+│   └── favicon.svg             # Geometric origami triangle logo (also used as PWA icon)
 ├── src/
 │   ├── main.js                 # App shell, route registration, FAB, toast
 │   ├── router.js               # Hash-based client-side router

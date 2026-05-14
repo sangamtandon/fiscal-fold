@@ -194,6 +194,13 @@ button {
   font-size: inherit;
 }
 
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
 input, select, textarea {
   font-family: inherit;
   font-size: inherit;
@@ -257,6 +264,7 @@ input, select, textarea {
   justify-content: center;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-6);
+  min-height: 44px;
   border-radius: var(--radius-full);
   font-weight: var(--weight-semibold);
   font-size: var(--text-sm);
@@ -330,8 +338,8 @@ input, select, textarea {
 }
 
 .btn-icon {
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border-radius: var(--radius-full);
   font-size: var(--text-lg);
@@ -961,3 +969,90 @@ input, select, textarea {
   height: 100%;
   border-radius: var(--radius-full);
 }
+
+/* ---- PWA Offline Badge ---- */
+
+.offline-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  background: var(--warn);
+  color: #000;
+  border-radius: var(--radius-full);
+  font-size: 10px;
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ---- PWA Install Banner ---- */
+
+.pwa-install-banner {
+  position: fixed;
+  bottom: calc(var(--space-10) + 80px); /* above FAB */
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - var(--space-8));
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  animation: slideUp 0.25s ease;
+}
+
+.pwa-install-banner__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--accent-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pwa-install-banner__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pwa-install-banner__title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.pwa-install-banner__sub {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.pwa-install-banner__cta {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  padding: var(--space-2) var(--space-3);
+}
+
+.pwa-install-banner__dismiss {
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  width: 28px;
+  height: 28px;
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+

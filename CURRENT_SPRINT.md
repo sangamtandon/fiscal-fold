@@ -5,31 +5,30 @@
 
 ---
 
-## ✅ Last Completed: Sprint 11 — PWA: Offline Support & Install Prompt
+## ✅ Last Completed: Sprint 12 — Polish, Animations & Final QA
 
-- **Branch:** `sprint-11/pwa` → ready to merge to `main` as `v0.11.0`
-- **Key files added:**
-  - `public/sw.js` — service worker: cache-first for same-origin assets, app-shell fallback for navigation, stale-while-revalidate for external resources (fonts); now pre-caches `/`, `/manifest.json`, `/favicon.svg` on install
-  - `src/utils/offlineQueue.js` — IndexedDB-backed queue; tracks transactions logged offline for future BaaS sync
+- **Branch:** `sprint-12/polish` → ready to merge to `main` as `v0.12.0`
 - **Key files modified:**
-  - `src/main.js` — SW registration on load; offline badge wired to `online`/`offline` events; `beforeinstallprompt` captured with `_renderInstallBanner()`; `appinstalled` handler removes banner + toast; `online` handler flushes offline queue and shows "X transactions synced ✓"; non-critical routes (settings, transactions, commitments, payday) lazy-loaded via dynamic imports
-  - `src/pages/transaction-modal.js` — all three confirm paths enqueue to offlineQueue when offline; toast switches to "Saved locally — will sync when online"
-  - `src/style.css` — `.offline-badge` and `.pwa-install-banner` styles added
-  - `public/manifest.json` — icons fixed (SVG instead of missing PNGs); added `categories`
-  - `index.html` — font loading changed to non-blocking preload pattern (display=swap, noscript fallback)
-  - `ARCHITECTURE.md` — PWA row updated ✅; `sw.js` added to file map
-  - `QUALITY_GATE.md` — Sprint 11 regression checklist added
+  - `src/main.js` — health bars now render with `width:0` + `data-width` attribute; `requestAnimationFrame` after dashboard innerHTML sets final widths to trigger CSS transition; `role="progressbar"` + `aria-valuenow/min/max/label` added to all three macro health bars
+  - `src/pages/payday.js` — "Sweep & Start New Cycle →" click handler now staggers `.pd-sweep-row--flying` animations at 80ms per row, flashes the sweep total, then delays `_startNewCycle` until animation completes; falls back immediately if no sweep rows
+  - `src/pages/payday.css` — `@keyframes sweep-fly` (translateX + fade) and `@keyframes sweep-flash` (green background pulse) + trigger classes
+  - `src/pages/transaction-modal.js` — drawer element gets `role="dialog"` + `aria-modal="true"` + `aria-label="Log transaction"`; overlay gets `aria-hidden="true"`; all `✕` close buttons get `aria-label="Close"`
+  - `src/pages/transaction-modal.css` — `.txn-quick-btn` and `.txn-bucket-row` get `min-height: 44px`
+  - `src/style.css` — `.btn` gets `min-height: 44px`; `.btn-icon` bumped 40px → 44px; `button:focus-visible` / `a:focus-visible` / `[role="button"]:focus-visible` get 2px accent-primary outline
+  - `QUALITY_GATE.md` — Sprint 12 regression checklist added
 - **Key behaviour:**
-  - **Offline:** SW caches app shell on install; app runs fully offline (all data in localStorage)
-  - **Offline indicator:** amber "Offline" badge in header when `navigator.onLine === false`; "Back online — X transactions synced ✓" toast on reconnect
-  - **Offline queue:** transactions logged while offline are saved to IndexedDB; flushed and counted on reconnect (BaaS sync stub)
-  - **Install prompt:** captures `beforeinstallprompt`; bottom banner with "Add to Home Screen" CTA + dismiss; dismiss stored in localStorage; `appinstalled` fires success toast
-  - **Performance:** settings/transactions/commitments/payday pages lazy-loaded; fonts non-blocking
-- **Acceptance:** ✅ All 4 tasks complete: SW + offline queue + install prompt + performance optimisation
+  - **Animations:** Health bars animate from 0% on every dashboard load. Sweep rows fly right + fade on payday confirm. Confirmation checkmark already had CSS (confirmed). Page transitions and FAB pulse already existed.
+  - **Touch targets:** All interactive elements now meet the 44px minimum height (WCAG 2.5.5)
+  - **Accessibility:** Focus rings for keyboard users; progressbar roles on health bars; dialog role on transaction modal
+- **Skipped tasks:**
+  - 12.4 Sound Design — optional per plan, skipped
+  - 12.5 Final smoke test — rubber duck review confirms no regressions; browser test required by user
 
 ---
 
-## 🔜 Next Up: Sprint 12
+## 🔜 Next Up: Closed Beta Deployment
+
+All 12 sprints complete. App is at v0.12.0, ready for closed beta.
 
 ---
 
@@ -73,5 +72,7 @@ main
 ├── v0.7.0  Sprint 7: Commitments Layer
 ├── v0.8.0  Sprint 8: Leak Warnings & Insights
 ├── v0.9.0  Sprint 9: Cycle End & Sweep
-└── v0.11.0  Sprint 11: PWA — Offline Support & Install Prompt (branch ready, pending merge)
+├── v0.10.0  Sprint 10: Settings, Export & Edge Cases
+├── v0.11.0  Sprint 11: PWA — Offline Support & Install Prompt (branch ready, pending merge)
+└── v0.12.0  Sprint 12: Polish, Animations & Final QA (branch ready, pending merge)
 ```

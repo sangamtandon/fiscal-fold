@@ -403,6 +403,13 @@ function registerRoutes() {
     // Wire "See all" → transaction history
     container.querySelector('#btn-see-all-txns')?.addEventListener('click', () => navigate('/transactions'));
 
+    // Animate health bars from 0 → target width (transition fires because style changes after paint)
+    requestAnimationFrame(() => {
+      container.querySelectorAll('[data-width]').forEach(el => {
+        el.style.width = `${el.dataset.width}%`;
+      });
+    });
+
     // Show install banner if prompt is available
     if (_deferredInstallPrompt && !localStorage.getItem('pwa-install-dismissed')) {
       _renderInstallBanner();
@@ -524,8 +531,8 @@ function renderMacroBar(label, summary, type, reserved = 0) {
           <svg class="macro-card__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
       </div>
-      <div class="health-bar health-bar--lg">
-        <div class="${fillClass} health-bar__fill" style="width: ${Math.max(0, remainingPct)}%;"></div>
+      <div class="health-bar health-bar--lg" role="progressbar" aria-valuenow="${Math.max(0, remainingPct)}" aria-valuemin="0" aria-valuemax="100" aria-label="${label} budget: ${Math.max(0, remainingPct)}% remaining">
+        <div class="${fillClass} health-bar__fill" style="width:0" data-width="${Math.max(0, remainingPct)}"></div>
       </div>
       <div class="flex justify-between mt-2">
         <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
@@ -549,7 +556,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
                 <div class="micro-bucket-row__name">${b.name}</div>
                 <div class="micro-bucket-row__amount">${formatCurrency(Math.max(0, b.allocated - b.spent))}</div>
                 <div class="micro-bucket-row__progress">
-                  <div class="micro-bucket-row__fill ${fillClass}" style="width: ${bRemainingPct}%;"></div>
+                  <div class="micro-bucket-row__fill ${fillClass}" style="width:0" data-width="${bRemainingPct}"></div>
                 </div>
               </div>
             `;
