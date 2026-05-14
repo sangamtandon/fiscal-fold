@@ -158,7 +158,7 @@ Check off each item. If any item fails, fix it before merging.
 - [ ] Edit bucket: inline fields for emoji and name appear; Save updates, Cancel restores
 - [ ] Remove bucket: bucket disappears from the group
 - [ ] Add bucket: form row appears at bottom of group, Fill name + emoji → Save adds bucket
-- [ ] Max bucket limit (3 per macro) prevents adding beyond limit with toast message
+- [ ] Max bucket limit (10 per macro) is enforced by hiding the "Add bucket" button when at capacity
 - [ ] "Add Income" row opens income modal (bottom drawer)
 - [ ] Income modal Step 1: numeric keypad entry works, Next disabled when amount is 0
 - [ ] Income modal Step 2: "Add to overall budget" and all current-cycle buckets listed

@@ -125,8 +125,6 @@ function _renderAmount() {
 // ---- Step 2: Bucket picker ----
 
 function _renderBucket() {
-  const allBuckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
-
   const macroSections = [
     { key: 'needs', label: 'Needs', color: 'var(--needs)' },
     { key: 'wants', label: 'Wants', color: 'var(--wants)' },
