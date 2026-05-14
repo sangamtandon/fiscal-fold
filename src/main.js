@@ -10,10 +10,8 @@ import './pages/commitments.css';
 import { route, navigate, initRouter, currentRoute } from './router.js';
 import { renderOnboarding } from './pages/onboarding.js';
 import { openTransactionModal } from './pages/transaction-modal.js';
-import { renderCommitmentsPage, getDueSoonCommitments, renderCommitmentDueRow } from './pages/commitments.js';
-import { renderPaydayPage } from './pages/payday.js';
-import { renderSettingsPage } from './pages/settings.js';
-import { renderTransactionsPage } from './pages/transactions.js';
+import { renderCommitmentsPage, renderCommitmentDueRow, getDueSoonCommitments } from './pages/commitments.js';
+import { flush as flushOfflineQueue } from './utils/offlineQueue.js';
 import {
   getUser,
   isOnboardingComplete,
@@ -31,6 +29,73 @@ import { seedDemoData, renderDevToolbar } from './data/seed.js';
 import { formatCurrency, timeAgo, percent, daysRemaining } from './utils/helpers.js';
 import { showToast } from './utils/toast.js';
 
+// ---- PWA: Service Worker Registration ----
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(err => {
+      console.warn('SW registration failed:', err);
+    });
+  });
+}
+
+// ---- PWA: Install Prompt ----
+
+let _deferredInstallPrompt = null;
+
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _deferredInstallPrompt = e;
+  if (!localStorage.getItem('pwa-install-dismissed')) {
+    _renderInstallBanner();
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  _deferredInstallPrompt = null;
+  const banner = document.getElementById('pwa-install-banner');
+  banner?.remove();
+  showToast('Fiscal Fold installed! 🎉');
+});
+
+function _renderInstallBanner() {
+  if (document.getElementById('pwa-install-banner')) return;
+  const banner = document.createElement('div');
+  banner.id = 'pwa-install-banner';
+  banner.className = 'pwa-install-banner';
+  banner.innerHTML = `
+    <div class="pwa-install-banner__icon">
+      <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+        <path d="M16 44 L32 16 L48 44 Z" fill="none" stroke="white" stroke-width="3" stroke-linejoin="round"/>
+        <path d="M24 38 L32 24 L40 38 Z" fill="white" opacity="0.3"/>
+      </svg>
+    </div>
+    <div class="pwa-install-banner__body">
+      <span class="pwa-install-banner__title">Install Fiscal Fold</span>
+      <span class="pwa-install-banner__sub">Works offline · Faster · Home screen icon</span>
+    </div>
+    <button class="btn btn-primary pwa-install-banner__cta" id="pwa-install-btn">Add to Home Screen</button>
+    <button class="btn-icon pwa-install-banner__dismiss" id="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
+  `;
+  document.body.appendChild(banner);
+
+  document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+    if (!_deferredInstallPrompt) return;
+    _deferredInstallPrompt.prompt();
+    const { outcome } = await _deferredInstallPrompt.userChoice;
+    _deferredInstallPrompt = null;
+    if (outcome === 'accepted') {
+      banner.remove();
+    }
+  });
+
+  document.getElementById('pwa-dismiss-btn').addEventListener('click', () => {
+    localStorage.setItem('pwa-install-dismissed', '1');
+    banner.remove();
+    _deferredInstallPrompt = null;
+  });
+}
+
 // ---- App Shell ----
 
 function renderAppShell() {
@@ -43,6 +108,7 @@ function renderAppShell() {
         <span class="app-header__subtitle" id="header-subtitle">Smart Envelope Budgeting</span>
       </div>
       <div class="app-header__actions">
+        <span class="offline-badge" id="offline-badge" hidden>Offline</span>
         <button class="btn-icon btn-ghost" id="btn-settings" aria-label="Settings" title="Settings">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="3"/>
@@ -71,6 +137,32 @@ function renderAppShell() {
   document.getElementById('btn-settings').addEventListener('click', () => {
     navigate('/settings');
   });
+
+  // Offline indicator
+  const offlineBadge = document.getElementById('offline-badge');
+  function _syncOfflineBadge() {
+    if (offlineBadge) offlineBadge.hidden = navigator.onLine;
+  }
+  _syncOfflineBadge();
+  window.addEventListener('offline', () => { _syncOfflineBadge(); });
+  window.addEventListener('online', async () => {
+    _syncOfflineBadge();
+    const synced = await flushOfflineQueue();
+    if (synced.length > 0) {
+      showToast(`Back online — ${synced.length} transaction${synced.length > 1 ? 's' : ''} synced ✓`);
+    } else {
+      showToast('Back online ✓');
+    }
+  });
+
+  // Flush any queued transactions if the app launches while already online
+  if (navigator.onLine) {
+    flushOfflineQueue().then(synced => {
+      if (synced.length > 0) {
+        showToast(`${synced.length} offline transaction${synced.length > 1 ? 's' : ''} synced ✓`);
+      }
+    });
+  }
 
   // FAB click — open transaction modal
   document.getElementById('fab-add').addEventListener('click', () => {
@@ -311,6 +403,11 @@ function registerRoutes() {
     // Wire "See all" → transaction history
     container.querySelector('#btn-see-all-txns')?.addEventListener('click', () => navigate('/transactions'));
 
+    // Show install banner if prompt is available
+    if (_deferredInstallPrompt && !localStorage.getItem('pwa-install-dismissed')) {
+      _renderInstallBanner();
+    }
+
     // Wire quick-bucket chips → open modal pre-targeted
     container.querySelectorAll('.quick-bucket[data-bucket-id]').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -371,14 +468,16 @@ function registerRoutes() {
   });
 
   // Settings
-  route('/settings', (container) => {
+  route('/settings', async (container) => {
     updateShellVisibility();
+    const { renderSettingsPage } = await import('./pages/settings.js');
     renderSettingsPage(container);
   });
 
   // Transaction History
-  route('/transactions', (container) => {
+  route('/transactions', async (container) => {
     updateShellVisibility();
+    const { renderTransactionsPage } = await import('./pages/transactions.js');
     renderTransactionsPage(container);
   });
 
@@ -389,8 +488,9 @@ function registerRoutes() {
   });
 
   // Payday ritual page
-  route('/payday', (container) => {
+  route('/payday', async (container) => {
     updateShellVisibility();
+    const { renderPaydayPage } = await import('./pages/payday.js');
     renderPaydayPage(container);
   });
 }

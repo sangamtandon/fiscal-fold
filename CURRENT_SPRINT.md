@@ -5,28 +5,31 @@
 
 ---
 
-## ✅ Last Completed: Sprint 10 — Settings, Export & Edge Cases
+## ✅ Last Completed: Sprint 11 — PWA: Offline Support & Install Prompt
 
-- **Branch:** `sprint-10/settings-export` → ready to merge to `main` as `v0.10.0`
+- **Branch:** `sprint-11/pwa` → ready to merge to `main` as `v0.11.0`
 - **Key files added:**
-  - `src/pages/settings.js` + `settings.css` — full interactive settings page
-  - `src/pages/transactions.js` + `transactions.css` — transaction history with search + macro filter
-  - `src/pages/income-modal.js` + `income-modal.css` — 3-step Add Income bottom drawer
-  - `src/utils/export.js` — CSV (transactions) and JSON (full state) download utilities
+  - `public/sw.js` — service worker: cache-first for same-origin assets, app-shell fallback for navigation, stale-while-revalidate for external resources (fonts); now pre-caches `/`, `/manifest.json`, `/favicon.svg` on install
+  - `src/utils/offlineQueue.js` — IndexedDB-backed queue; tracks transactions logged offline for future BaaS sync
 - **Key files modified:**
-  - `src/data/store.js` — `addIncome()` now records income transaction + accepts note; added `getAllTransactions()`
-  - `src/main.js` — `/settings` route delegates to `renderSettingsPage`; `/transactions` route added; "See all" wired to `/transactions`; dead inline settings code removed
-  - `QUALITY_GATE.md` — Sprint 10 regression checklist added
+  - `src/main.js` — SW registration on load; offline badge wired to `online`/`offline` events; `beforeinstallprompt` captured with `_renderInstallBanner()`; `appinstalled` handler removes banner + toast; `online` handler flushes offline queue and shows "X transactions synced ✓"; non-critical routes (settings, transactions, commitments, payday) lazy-loaded via dynamic imports
+  - `src/pages/transaction-modal.js` — all three confirm paths enqueue to offlineQueue when offline; toast switches to "Saved locally — will sync when online"
+  - `src/style.css` — `.offline-badge` and `.pwa-install-banner` styles added
+  - `public/manifest.json` — icons fixed (SVG instead of missing PNGs); added `categories`
+  - `index.html` — font loading changed to non-blocking preload pattern (display=swap, noscript fallback)
+  - `ARCHITECTURE.md` — PWA row updated ✅; `sw.js` added to file map
+  - `QUALITY_GATE.md` — Sprint 11 regression checklist added
 - **Key behaviour:**
-  - Settings: inline-edit name/salary/salary date; pin, rename, remove, add buckets (max 3 per macro); nav rows to income modal, commitments, transaction history; CSV + JSON export
-  - Income modal: keypad → bucket picker (or overall budget) → confirm + note; records income transaction on bucket, or boosts cycle salary
-  - Transaction History: all current-cycle transactions, date-grouped, search by name/note, filter by macro
-  - Export CSV triggers download of current-cycle transactions; Export JSON downloads full app state
-- **Acceptance:** ✅ Settings fully interactive; income recorded and visible in history; CSV/JSON download; transaction history searchable/filterable.
+  - **Offline:** SW caches app shell on install; app runs fully offline (all data in localStorage)
+  - **Offline indicator:** amber "Offline" badge in header when `navigator.onLine === false`; "Back online — X transactions synced ✓" toast on reconnect
+  - **Offline queue:** transactions logged while offline are saved to IndexedDB; flushed and counted on reconnect (BaaS sync stub)
+  - **Install prompt:** captures `beforeinstallprompt`; bottom banner with "Add to Home Screen" CTA + dismiss; dismiss stored in localStorage; `appinstalled` fires success toast
+  - **Performance:** settings/transactions/commitments/payday pages lazy-loaded; fonts non-blocking
+- **Acceptance:** ✅ All 4 tasks complete: SW + offline queue + install prompt + performance optimisation
 
 ---
 
-## 🔜 Next Up: Sprint 11
+## 🔜 Next Up: Sprint 12
 
 ---
 
@@ -70,5 +73,5 @@ main
 ├── v0.7.0  Sprint 7: Commitments Layer
 ├── v0.8.0  Sprint 8: Leak Warnings & Insights
 ├── v0.9.0  Sprint 9: Cycle End & Sweep
-└── v0.10.0  Sprint 10: Settings, Export & Edge Cases (branch ready, pending merge)
+└── v0.11.0  Sprint 11: PWA — Offline Support & Install Prompt (branch ready, pending merge)
 ```
