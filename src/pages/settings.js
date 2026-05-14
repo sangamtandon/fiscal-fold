@@ -15,6 +15,7 @@ import {
   updateBucket,
   removeBucket,
   resetState,
+  getMacroSummary,
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
@@ -156,6 +157,8 @@ function _renderBucketGroup(macroType, label) {
   const buckets = getBuckets(macroType);
   const colors = { needs: 'var(--needs)', wants: 'var(--wants)', future: 'var(--future)' };
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
+  const summary = getMacroSummary(macroType);
+  const unallocated = summary.unallocated ?? 0;
 
   return `
     <div class="settings-bucket-group" id="bucket-group-${macroType}">
@@ -164,6 +167,17 @@ function _renderBucketGroup(macroType, label) {
         <span class="font-semibold" style="font-size:var(--text-sm);">${label}</span>
         <span class="text-tertiary" style="font-size:var(--text-xs); margin-left:auto;">${buckets.length} bucket${buckets.length !== 1 ? 's' : ''}</span>
       </div>
+      ${unallocated !== 0 ? `
+        <div class="settings-unallocated-banner" id="unallocated-${macroType}"
+          style="display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); margin: var(--space-2) 0; background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md);">
+          <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
+          <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? `unallocated in ${label}` : `over-allocated in ${label}`}</span>
+          ${unallocated > 0 && buckets.length > 0 ? `
+            <button class="btn btn-ghost btn-sm" data-action="distribute-unallocated" data-macro="${macroType}">Distribute</button>
+          ` : ''}
+        </div>
+      ` : ''}
       ${buckets.map(b => `
         <div class="settings-bucket-row" data-bucket-id="${b.id}">
           <span class="settings-bucket-row__emoji">${b.emoji}</span>
@@ -174,7 +188,7 @@ function _renderBucketGroup(macroType, label) {
             title="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">📌</button>
           <button class="btn-icon settings-bucket-btn"
             data-action="edit-bucket" data-bucket-id="${b.id}" data-macro="${macroType}"
-            title="Rename">✏️</button>
+            title="Edit bucket">✏️</button>
           <button class="btn-icon settings-bucket-btn settings-bucket-btn--danger"
             data-action="remove-bucket" data-bucket-id="${b.id}"
             title="Remove">×</button>
@@ -252,7 +266,50 @@ function _wireEvents(container) {
     else if (action === 'edit-bucket') _openBucketEditInline(container, bucketId, macro);
     else if (action === 'remove-bucket') _handleRemoveBucket(container, bucketId);
     else if (action === 'add-bucket') _openAddBucketInline(container, macro);
+    else if (action === 'distribute-unallocated') _handleDistributeUnallocated(container, macro);
   });
+
+  // Deep-link from dashboard: /settings#unallocated-{macro} scrolls to & flashes that group
+  _focusUnallocatedFromHash(container);
+}
+
+function _focusUnallocatedFromHash(container) {
+  // Hash is "#/settings#unallocated-needs" — take the part after the last "#"
+  const hash = window.location.hash;
+  const m = hash.match(/#unallocated-(needs|wants|future)$/);
+  if (!m) return;
+  requestAnimationFrame(() => {
+    const el = container.querySelector(`#unallocated-${m[1]}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.animate(
+      [{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }],
+      { duration: 600, easing: 'ease-out' }
+    );
+  });
+}
+
+function _handleDistributeUnallocated(container, macroType) {
+  const summary = getMacroSummary(macroType);
+  const unallocated = summary.unallocated ?? 0;
+  if (unallocated <= 0) return;
+
+  const buckets = getBuckets(macroType);
+  if (!buckets.length) {
+    showToast('Add a bucket first');
+    return;
+  }
+
+  // Even split across buckets, with rounding remainder going to the last bucket
+  const share = Math.floor(unallocated / buckets.length);
+  let distributed = 0;
+  buckets.forEach((b, i) => {
+    const add = i === buckets.length - 1 ? unallocated - distributed : share;
+    distributed += add;
+    updateBucket(b.id, { allocated: b.allocated + add });
+  });
+  _refreshBucketsPanel(container);
+  showToast(`Distributed ${formatCurrency(unallocated)} across ${buckets.length} bucket${buckets.length !== 1 ? 's' : ''} ✓`);
 }
 
 // ---- Inline profile editing ----
@@ -429,6 +486,8 @@ function _openBucketEditInline(container, bucketId, macro) {
     <span class="settings-bucket-row__emoji" style="cursor:pointer;" data-action="pick-emoji" data-bucket-id="${bucketId}" id="emoji-picker-target-${bucketId}">${bucket.emoji}</span>
     <input type="text" class="input-field settings-inline-input" id="edit-bucket-name-${bucketId}"
       value="${bucket.name}" placeholder="Bucket name" maxlength="25" style="flex:1;" />
+    <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${bucketId}"
+      inputmode="numeric" value="${bucket.allocated > 0 ? formatNumber(bucket.allocated) : ''}" placeholder="₹0" style="max-width:90px;" />
     <button class="btn btn-primary btn-sm" data-save-bucket="${bucketId}">Save</button>
     <button class="btn btn-ghost btn-sm" data-cancel-bucket>✕</button>
   `;
@@ -439,10 +498,24 @@ function _openBucketEditInline(container, bucketId, macro) {
     rowEl.querySelector(`#emoji-picker-target-${bucketId}`).textContent = selectedEmoji;
   });
 
+  // Format alloc input live
+  const allocInput = rowEl.querySelector(`#edit-bucket-alloc-${bucketId}`);
+  allocInput.addEventListener('input', e => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    const num = parseInt(raw, 10) || 0;
+    e.target.value = num > 0 ? formatNumber(num) : '';
+  });
+
   rowEl.querySelector(`[data-save-bucket="${bucketId}"]`).addEventListener('click', () => {
     const newName = rowEl.querySelector(`#edit-bucket-name-${bucketId}`).value.trim();
     if (!newName) { showToast('Bucket name cannot be empty'); return; }
-    updateBucket(bucketId, { name: newName, emoji: selectedEmoji });
+    const rawAlloc = allocInput.value.replace(/[^0-9]/g, '');
+    const newAlloc = parseInt(rawAlloc, 10) || 0;
+    if (newAlloc < bucket.spent) {
+      showToast(`Allocation can't be below already-spent (${formatCurrency(bucket.spent)})`);
+      return;
+    }
+    updateBucket(bucketId, { name: newName, emoji: selectedEmoji, allocated: newAlloc });
     _refreshBucketsPanel(container);
     showToast('Bucket updated ✓');
   });
