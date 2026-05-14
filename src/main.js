@@ -276,6 +276,9 @@ function registerRoutes() {
     const needsReserved = getMacroReserved('needs');
     const wantsReserved = getMacroReserved('wants');
     const futureReserved = getMacroReserved('future');
+    const needsUnallocated = Math.max(0, (cycle.allocations.needs ?? 0) - needsSummary.allocated);
+    const wantsUnallocated = Math.max(0, (cycle.allocations.wants ?? 0) - wantsSummary.allocated);
+    const futureUnallocated = Math.max(0, (cycle.allocations.future ?? 0) - futureSummary.allocated);
     const recentTxns = getTransactions({ limit: 5 });
     const quickBuckets = getQuickBuckets();
     const dueSoon = getDueSoonCommitments();
@@ -343,9 +346,9 @@ function registerRoutes() {
 
         <!-- Macro Health Bars -->
         <div class="flex flex-col gap-4" id="macro-bars-container">
-          ${renderMacroBar('Needs', needsSummary, 'needs', needsReserved)}
-          ${renderMacroBar('Wants', wantsSummary, 'wants', wantsReserved)}
-          ${renderMacroBar('Future', futureSummary, 'future', futureReserved)}
+          ${renderMacroBar('Needs', needsSummary, 'needs', needsReserved, needsUnallocated)}
+          ${renderMacroBar('Wants', wantsSummary, 'wants', wantsReserved, wantsUnallocated)}
+          ${renderMacroBar('Future', futureSummary, 'future', futureReserved, futureUnallocated)}
         </div>
 
         <!-- Commitments Due Soon -->
@@ -477,6 +480,12 @@ function registerRoutes() {
     const macroBarsContainer = document.getElementById('macro-bars-container');
     if (macroBarsContainer) {
       macroBarsContainer.addEventListener('click', (e) => {
+        const assignBtn = e.target.closest('[data-navigate]');
+        if (assignBtn) {
+          e.stopPropagation();
+          navigate(assignBtn.dataset.navigate);
+          return;
+        }
         const card = e.target.closest('.macro-card');
         if (card) {
           card.classList.toggle('is-expanded');
@@ -523,7 +532,7 @@ function registerRoutes() {
  * @param {string} type
  * @param {number} [reserved=0]
  */
-function renderMacroBar(label, summary, type, reserved = 0) {
+function renderMacroBar(label, summary, type, reserved = 0, unallocated = 0) {
   const remainingPct = 100 - summary.percent;
   const isOverspent = summary.percent > 100;
   const isFresh = summary.spent === 0 && summary.allocated > 0;
@@ -561,6 +570,12 @@ function renderMacroBar(label, summary, type, reserved = 0) {
           <span>🔒</span>
           <span class="cm-reserved-hint__amount">${formatCurrency(reserved)}</span>
           <span>reserved (unpaid commitments)</span>
+        </div>
+      ` : ''}
+      ${unallocated > 0 ? `
+        <div class="pool-chip">
+          <span>+${formatCurrency(unallocated)} unallocated</span>
+          <button class="pool-chip__link" data-navigate="/settings">Assign →</button>
         </div>
       ` : ''}
 

@@ -131,7 +131,6 @@ function _render(container) {
           </div>
         </div>
       </div>
-      </div>
 
       <button class="btn btn-ghost w-full" id="btn-back" style="margin-top: var(--space-2);">
         ← Back to Dashboard

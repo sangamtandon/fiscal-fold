@@ -963,6 +963,26 @@ input, select, textarea {
   border-top: 1px solid var(--border);
 }
 
+.pool-chip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--accent-primary);
+}
+
+.pool-chip__link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: var(--text-xs);
+  color: var(--accent-primary);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .micro-bucket-row {
   display: flex;
   align-items: center;
