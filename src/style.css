@@ -414,6 +414,15 @@ input, select, textarea {
   background: var(--muted);
 }
 
+.health-bar__fill--fresh {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--muted) 0px, var(--muted) 5px,
+    transparent 5px, transparent 11px
+  );
+  opacity: 0.45;
+}
+
 .health-bar--lg {
   height: 12px;
   border-radius: var(--radius-md);

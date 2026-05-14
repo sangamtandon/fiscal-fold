@@ -442,11 +442,24 @@ function renderDonut() {
 // STEP 4 — Emotional Anchors (Micro-Bucket Setup)
 // ===================================================================
 function renderStep4(container) {
+  // Pre-fill allocated defaults from even split (only if not yet set)
+  ['needs', 'wants', 'future'].forEach(macroType => {
+    const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
+    const bkts = formData.buckets[macroType];
+    const perBucket = bkts.length > 0 ? Math.floor(macroAmount / bkts.length) : 0;
+    const rem = macroAmount - perBucket * bkts.length;
+    bkts.forEach((b, i) => {
+      if (b.allocated === undefined) {
+        b.allocated = perBucket + (i === 0 ? rem : 0);
+      }
+    });
+  });
+
   container.innerHTML = `
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
       <h2 class="onboarding__title">Name your buckets</h2>
-      <p class="onboarding__subtitle">Make them personal — the more specific, the harder it is to overspend.</p>
+      <p class="onboarding__subtitle">Set a budget for each — the more intentional, the harder it is to overspend.</p>
     </div>
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
@@ -465,16 +478,31 @@ function renderBucketSection(macroType, label) {
   const colors = { needs: 'var(--needs)', wants: 'var(--wants)', future: 'var(--future)' };
   const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
+  const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
+  const unallocated = macroAmount - sumAllocated;
+
+  let poolText, poolClass;
+  if (unallocated === 0) {
+    poolText = '✓ Fully allocated';
+    poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
+  } else if (unallocated > 0) {
+    poolText = `${formatCurrency(unallocated)} unallocated`;
+    poolClass = 'onboarding__pool-counter';
+  } else {
+    poolText = `${formatCurrency(-unallocated)} over budget`;
+    poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
+  }
 
   return `
     <div class="onboarding__bucket-section" data-macro="${macroType}">
-      <div class="flex items-center justify-between mb-2">
+      <div class="flex items-center justify-between mb-1">
         <div class="flex items-center gap-2">
           <div class="onboarding__alloc-dot" style="background: ${colors[macroType]};"></div>
           <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
         </div>
         <span class="text-mono text-secondary" style="font-size: var(--text-xs);">${formatCurrency(macroAmount)}</span>
       </div>
+      <div class="${poolClass}" id="pool-counter-${macroType}">${poolText}</div>
       <div class="onboarding__bucket-list" data-macro="${macroType}">
         ${buckets.map(b => renderBucketItem(b, macroType)).join('')}
       </div>
@@ -500,6 +528,16 @@ function renderBucketItem(bucket, macroType) {
         data-id="${bucket.id}"
         data-macro="${macroType}"
       />
+      <input
+        type="number"
+        class="onboarding__bucket-allocated"
+        value="${bucket.allocated ?? 0}"
+        min="0"
+        inputmode="numeric"
+        data-id="${bucket.id}"
+        data-macro="${macroType}"
+        placeholder="0"
+      />
       <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket">
         📌
       </button>
@@ -520,14 +558,41 @@ function refreshBucketSections(container) {
   }
 }
 
+function updatePoolCounter(macroType) {
+  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
+  const sumAllocated = formData.buckets[macroType].reduce((s, b) => s + (b.allocated ?? 0), 0);
+  const unallocated = macroAmount - sumAllocated;
+  const el = document.getElementById(`pool-counter-${macroType}`);
+  if (!el) return;
+  if (unallocated === 0) {
+    el.textContent = '✓ Fully allocated';
+    el.className = 'onboarding__pool-counter onboarding__pool-counter--ok';
+  } else if (unallocated > 0) {
+    el.textContent = `${formatCurrency(unallocated)} unallocated`;
+    el.className = 'onboarding__pool-counter';
+  } else {
+    el.textContent = `${formatCurrency(-unallocated)} over budget`;
+    el.className = 'onboarding__pool-counter onboarding__pool-counter--warn';
+  }
+}
+
 function wireUpBucketEvents(container) {
-  // Name editing
+  // Name and allocation editing
   container.addEventListener('input', (e) => {
     if (e.target.classList.contains('onboarding__bucket-name')) {
       const id = e.target.dataset.id;
       const macro = e.target.dataset.macro;
       const bucket = formData.buckets[macro].find(b => b.id === id);
       if (bucket) bucket.name = e.target.value.trim();
+    }
+    if (e.target.classList.contains('onboarding__bucket-allocated')) {
+      const id = e.target.dataset.id;
+      const macro = e.target.dataset.macro;
+      const bucket = formData.buckets[macro].find(b => b.id === id);
+      if (bucket) {
+        bucket.allocated = Math.max(0, parseInt(e.target.value, 10) || 0);
+        updatePoolCounter(macro);
+      }
     }
   });
 
@@ -648,23 +713,29 @@ function finishOnboarding() {
     allocations,
   });
 
-  // 4. Create micro-buckets with even allocation within each macro
+  // 4. Create micro-buckets using user-set allocations
   ['needs', 'wants', 'future'].forEach(macroType => {
     const macroBuckets = buckets[macroType].filter(b => b.name.trim());
     const macroTotal = allocations[macroType];
-    const perBucket = macroBuckets.length > 0 ? Math.floor(macroTotal / macroBuckets.length) : 0;
-    let remainder = macroTotal - (perBucket * macroBuckets.length);
+    let sumAllocated = 0;
 
-    macroBuckets.forEach((b, i) => {
-      const extra = i === 0 ? remainder : 0; // Give remainder to first bucket
+    macroBuckets.forEach((b) => {
+      const bucketAlloc = b.allocated ?? 0;
+      sumAllocated += bucketAlloc;
       addBucket({
         macroType,
         name: b.name,
         emoji: b.emoji,
-        allocated: perBucket + extra,
+        allocated: bucketAlloc,
         isPinned: b.isPinned,
       });
     });
+
+    // Auto-create Buffer bucket for any unallocated remainder
+    const remainder = macroTotal - sumAllocated;
+    if (remainder > 0) {
+      addBucket({ macroType, name: 'Buffer', emoji: '🪣', allocated: remainder, isPinned: false });
+    }
   });
 
   // 5. Complete onboarding
