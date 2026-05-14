@@ -181,10 +181,7 @@ function _renderBucketGroup(macroType, label) {
           style="display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); margin: var(--space-2) 0; background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md);">
           <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
           <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
-          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? `unallocated in ${label}` : `over-allocated in ${label}`}</span>
-          ${unallocated > 0 && buckets.length > 0 ? `
-            <button class="btn btn-ghost btn-sm" data-action="distribute-unallocated" data-macro="${macroType}">Distribute</button>
-          ` : ''}
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? `unallocated in ${label} — edit a bucket to assign it` : `over-allocated in ${label} — trim a bucket`}</span>
         </div>
       ` : ''}
       ${buckets.map(b => `
@@ -275,50 +272,7 @@ function _wireEvents(container) {
     else if (action === 'edit-bucket') _openBucketEditInline(container, bucketId, macro);
     else if (action === 'remove-bucket') _handleRemoveBucket(container, bucketId);
     else if (action === 'add-bucket') _openAddBucketInline(container, macro);
-    else if (action === 'distribute-unallocated') _handleDistributeUnallocated(container, macro);
   });
-
-  // Deep-link from dashboard: /settings#unallocated-{macro} scrolls to & flashes that group
-  _focusUnallocatedFromHash(container);
-}
-
-function _focusUnallocatedFromHash(container) {
-  // Hash is "#/settings#unallocated-needs" — take the part after the last "#"
-  const hash = window.location.hash;
-  const m = hash.match(/#unallocated-(needs|wants|future)$/);
-  if (!m) return;
-  requestAnimationFrame(() => {
-    const el = container.querySelector(`#unallocated-${m[1]}`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.animate(
-      [{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }],
-      { duration: 600, easing: 'ease-out' }
-    );
-  });
-}
-
-function _handleDistributeUnallocated(container, macroType) {
-  const summary = getMacroSummary(macroType);
-  const unallocated = summary.unallocated ?? 0;
-  if (unallocated <= 0) return;
-
-  const buckets = getBuckets(macroType);
-  if (!buckets.length) {
-    showToast('Add a bucket first');
-    return;
-  }
-
-  // Even split across buckets, with rounding remainder going to the last bucket
-  const share = Math.floor(unallocated / buckets.length);
-  let distributed = 0;
-  buckets.forEach((b, i) => {
-    const add = i === buckets.length - 1 ? unallocated - distributed : share;
-    distributed += add;
-    updateBucket(b.id, { allocated: b.allocated + add });
-  });
-  _refreshBucketsPanel(container);
-  showToast(`Distributed ${formatCurrency(unallocated)} across ${buckets.length} bucket${buckets.length !== 1 ? 's' : ''} ✓`);
 }
 
 // ---- Inline profile editing ----
