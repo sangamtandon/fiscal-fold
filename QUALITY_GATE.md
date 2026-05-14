@@ -148,6 +148,37 @@ Check off each item. If any item fails, fix it before merging.
 - [ ] Button is disabled on tap to prevent double-submission
 - [ ] Back button on payday page navigates to dashboard
 
+### Sprint 10 — Settings, Export & Edge Cases
+- [ ] Settings page renders profile info (name, salary, salary date)
+- [ ] Edit name: inline input appears, Save updates the name, Cancel restores original
+- [ ] Edit salary: inline number input appears, Save updates salary, Cancel restores
+- [ ] Edit salary date: chip grid (1–31) appears, selecting saves correctly
+- [ ] Buckets panel renders all three macro groups with their buckets
+- [ ] Pin/unpin bucket: isPinned toggles; pinned bucket appears in Quick Buckets on dashboard
+- [ ] Edit bucket: inline fields for emoji and name appear; Save updates, Cancel restores
+- [ ] Remove bucket: bucket disappears from the group
+- [ ] Add bucket: form row appears at bottom of group, Fill name + emoji → Save adds bucket
+- [ ] Max bucket limit (10 per macro) is enforced by hiding the "Add bucket" button when at capacity
+- [ ] "Add Income" row opens income modal (bottom drawer)
+- [ ] Income modal Step 1: numeric keypad entry works, Next disabled when amount is 0
+- [ ] Income modal Step 2: "Add to overall budget" and all current-cycle buckets listed
+- [ ] Income modal Step 3: confirm card shows amount + target, note field is editable
+- [ ] Confirming income to a bucket: bucket allocated increases, income transaction recorded
+- [ ] Confirming income to overall budget: cycle salary increases
+- [ ] Income transactions appear in transaction history with green "+₹" amount
+- [ ] Export CSV button triggers CSV download with transactions for current cycle
+- [ ] Export JSON button triggers full-state JSON download
+- [ ] Transaction History page renders at `/#/transactions`
+- [ ] All current-cycle transactions listed, newest first, grouped by date
+- [ ] Search by bucket name filters list in real time
+- [ ] Search by note text filters list in real time
+- [ ] Macro filter tabs (All / Needs / Wants / Future) filter correctly
+- [ ] Transaction count summary updates with filters
+- [ ] Empty state shows when no transactions match filters
+- [ ] Back button on transaction history returns to dashboard
+- [ ] "See all" button on dashboard Recent Transactions navigates to `/#/transactions`
+- [ ] Settings → Commitments row still navigates to `/commitments`
+
 ---
 
 ## ✅ Final Checks

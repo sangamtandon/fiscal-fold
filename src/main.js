@@ -12,6 +12,8 @@ import { renderOnboarding } from './pages/onboarding.js';
 import { openTransactionModal } from './pages/transaction-modal.js';
 import { renderCommitmentsPage, getDueSoonCommitments, renderCommitmentDueRow } from './pages/commitments.js';
 import { renderPaydayPage } from './pages/payday.js';
+import { renderSettingsPage } from './pages/settings.js';
+import { renderTransactionsPage } from './pages/transactions.js';
 import {
   getUser,
   isOnboardingComplete,
@@ -23,7 +25,6 @@ import {
   getSafeToSpend,
   getMacroSummary,
   getMacroReserved,
-  getCommitments,
   isCycleExpired,
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
@@ -262,7 +263,7 @@ function registerRoutes() {
         <div>
           <div class="section-header">
             <span class="section-header__title">Recent Transactions</span>
-            <button class="btn btn-ghost" style="font-size: var(--text-xs);">See all</button>
+            <button class="btn btn-ghost" style="font-size: var(--text-xs);" id="btn-see-all-txns">See all</button>
           </div>
           <div class="flex flex-col gap-2">
             ${recentTxns.length > 0 
@@ -306,6 +307,9 @@ function registerRoutes() {
         `}
       </div>
     `;
+
+    // Wire "See all" → transaction history
+    container.querySelector('#btn-see-all-txns')?.addEventListener('click', () => navigate('/transactions'));
 
     // Wire quick-bucket chips → open modal pre-targeted
     container.querySelectorAll('.quick-bucket[data-bucket-id]').forEach(chip => {
@@ -366,49 +370,16 @@ function registerRoutes() {
     }
   });
 
-  // Settings — now reads from the store
+  // Settings
   route('/settings', (container) => {
     updateShellVisibility();
+    renderSettingsPage(container);
+  });
 
-    const user = getUser();
-    const allBuckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
-    const commitments = getCommitments();
-
-    container.innerHTML = `
-      <div class="flex flex-col gap-6">
-        <h1 style="font-size: var(--text-xl); font-weight: var(--weight-bold);">Settings</h1>
-
-        <div class="card flex flex-col gap-4">
-          ${renderSettingsRow('👤', 'Profile Name', user?.name || 'Not set')}
-          ${renderSettingsRow('💰', 'Monthly Salary', user ? formatCurrency(user.salary) : '—')}
-          ${renderSettingsRow('📅', 'Salary Date', user ? `${user.salaryDate}${ordinalSuffix(user.salaryDate)} of month` : '—')}
-          ${renderSettingsRow('📦', 'Manage Buckets', `${allBuckets.length} active`)}
-          ${renderSettingsRow('🔄', 'Commitments', `${commitments.length} recurring`, '/commitments')}
-        </div>
-
-        <div class="card flex flex-col gap-4">
-          ${renderSettingsRow('📊', 'Export CSV', '')}
-          ${renderSettingsRow('📄', 'Export PDF Summary', '')}
-          ${renderSettingsRow('💾', 'Export All Data (JSON)', '')}
-        </div>
-
-        <button class="btn btn-ghost text-center w-full mt-4" id="btn-back-dashboard" style="color: var(--accent-primary);">
-          ← Back to Dashboard
-        </button>
-      </div>
-    `;
-
-    document.getElementById('btn-back-dashboard').addEventListener('click', () => {
-      navigate('/dashboard');
-    });
-
-    // Wire Commitments row
-    const settingsRows = container.querySelectorAll('.settings-row-clickable');
-    settingsRows.forEach(row => {
-      if (row.dataset.settingsTarget) {
-        row.addEventListener('click', () => navigate(row.dataset.settingsTarget));
-      }
-    });
+  // Transaction History
+  route('/transactions', (container) => {
+    updateShellVisibility();
+    renderTransactionsPage(container);
   });
 
   // Commitments management page
@@ -503,28 +474,6 @@ function renderTransaction(emoji, name, amount, time, borrowedFromName, note) {
       <span class="text-mono font-semibold" style="font-size: var(--text-sm); flex-shrink: 0;">−${formatCurrency(amount)}</span>
     </div>
   `;
-}
-
-function renderSettingsRow(emoji, label, value, target) {
-  return `
-    <div class="flex items-center gap-3 settings-row-clickable" style="padding: var(--space-2) 0; cursor: pointer;"${target ? ` data-settings-target="${target}"` : ''}>
-      <span style="font-size: 18px;">${emoji}</span>
-      <span class="font-medium" style="flex: 1; font-size: var(--text-sm);">${label}</span>
-      <span class="text-tertiary" style="font-size: var(--text-sm);">${value}</span>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round"><polyline points="9 18 15 12 9 6"/></svg>
-    </div>
-  `;
-}
-
-/**
- * Get ordinal suffix for a number (1st, 2nd, 3rd, etc.)
- * @param {number} n
- * @returns {string}
- */
-function ordinalSuffix(n) {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return (s[(v - 20) % 10] || s[v] || s[0]);
 }
 
 // ---- Boot ----

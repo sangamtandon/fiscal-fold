@@ -5,30 +5,28 @@
 
 ---
 
-## ✅ Last Completed: Sprint 9 — Cycle End & Sweep
+## ✅ Last Completed: Sprint 10 — Settings, Export & Edge Cases
 
-- **Branch:** `sprint-9/payday-ritual` → merged to `main` as `v0.9.0`
+- **Branch:** `sprint-10/settings-export` → ready to merge to `main` as `v0.10.0`
+- **Key files added:**
+  - `src/pages/settings.js` + `settings.css` — full interactive settings page
+  - `src/pages/transactions.js` + `transactions.css` — transaction history with search + macro filter
+  - `src/pages/income-modal.js` + `income-modal.css` — 3-step Add Income bottom drawer
+  - `src/utils/export.js` — CSV (transactions) and JSON (full state) download utilities
 - **Key files modified:**
-  - `src/data/store.js` — added `isCycleExpired()`, updated `runSweep()` (Wants+Future), added `copyBucketsToNewCycle()`
-  - `src/main.js` — dashboard payday banner (cycleExpired guard), `/payday` route
-  - `src/pages/payday.js` — new page: scorecard, sweep preview, new cycle allocation preview, confirm action
-  - `src/pages/payday.css` — new styles for payday page
-  - `QUALITY_GATE.md` — Sprint 9 regression checklist added
+  - `src/data/store.js` — `addIncome()` now records income transaction + accepts note; added `getAllTransactions()`
+  - `src/main.js` — `/settings` route delegates to `renderSettingsPage`; `/transactions` route added; "See all" wired to `/transactions`; dead inline settings code removed
+  - `QUALITY_GATE.md` — Sprint 10 regression checklist added
 - **Key behaviour:**
-  - `isCycleExpired()` returns true when `new Date() > new Date(cycle.endDate)`
-  - `runSweep()` now sweeps both Wants AND Future buckets (not just Wants)
-  - `copyBucketsToNewCycle()` copies bucket structure with proportional re-allocation per macro
-  - Dashboard shows green payday banner when cycle expires → navigates to `/payday`
-  - Payday page shows last cycle scorecard, sweep preview, next cycle allocation preview
-  - Confirm button creates new cycle (same duration), adds sweep amount to Future, copies buckets, resets commitments
-- **Acceptance:** ✅ Expired cycle → payday banner → sweep & start → new cycle with correct allocations, bucket structure copied.
+  - Settings: inline-edit name/salary/salary date; pin, rename, remove, add buckets (max 3 per macro); nav rows to income modal, commitments, transaction history; CSV + JSON export
+  - Income modal: keypad → bucket picker (or overall budget) → confirm + note; records income transaction on bucket, or boosts cycle salary
+  - Transaction History: all current-cycle transactions, date-grouped, search by name/note, filter by macro
+  - Export CSV triggers download of current-cycle transactions; Export JSON downloads full app state
+- **Acceptance:** ✅ Settings fully interactive; income recorded and visible in history; CSV/JSON download; transaction history searchable/filterable.
 
 ---
 
-## 🔜 Next Up: Sprint 10
-
-- **PRD section:** §10 in `docs/IMPLEMENTATION_PLAN.md`
-- Check PRD for Sprint 10 tasks.
+## 🔜 Next Up: Sprint 11
 
 ---
 
@@ -71,5 +69,6 @@ main
 ├── v0.6.0  Sprint 6: Trade-Off Mechanic
 ├── v0.7.0  Sprint 7: Commitments Layer
 ├── v0.8.0  Sprint 8: Leak Warnings & Insights
-└── v0.9.0  Sprint 9: Cycle End & Sweep (HEAD)
+├── v0.9.0  Sprint 9: Cycle End & Sweep
+└── v0.10.0  Sprint 10: Settings, Export & Edge Cases (branch ready, pending merge)
 ```
