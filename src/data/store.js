@@ -193,8 +193,14 @@ export function getSafeToSpend() {
 
 /**
  * Get macro-level summary for the current cycle.
+ *
+ * `allocated` is the sum of micro-bucket allocations. `cycleAllocation` is the
+ * macro's share of the cycle salary (the pool the user split into buckets).
+ * `unallocated` is the leftover that wasn't assigned to any bucket — can be
+ * negative if the user over-allocated.
+ *
  * @param {import('./models.js').MacroType} macroType
- * @returns {{ allocated: number, spent: number, remaining: number, percent: number }}
+ * @returns {{ allocated: number, spent: number, remaining: number, percent: number, cycleAllocation: number, unallocated: number }}
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
@@ -202,7 +208,10 @@ export function getMacroSummary(macroType) {
   const spent = buckets.reduce((s, b) => s + b.spent, 0);
   const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
-  return { allocated, spent, remaining, percent };
+  const cycle = getCurrentCycle();
+  const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
+  const unallocated = cycleAllocation - allocated;
+  return { allocated, spent, remaining, percent, cycleAllocation, unallocated };
 }
 
 /**

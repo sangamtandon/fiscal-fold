@@ -713,29 +713,21 @@ function finishOnboarding() {
     allocations,
   });
 
-  // 4. Create micro-buckets using user-set allocations
+  // 4. Create micro-buckets using user-set allocations.
+  // Any unallocated remainder per macro is left as a derived value
+  // (macro allocation minus sum of bucket allocations), surfaced on the
+  // dashboard and in Settings — not absorbed into an auto-created bucket.
   ['needs', 'wants', 'future'].forEach(macroType => {
     const macroBuckets = buckets[macroType].filter(b => b.name.trim());
-    const macroTotal = allocations[macroType];
-    let sumAllocated = 0;
-
     macroBuckets.forEach((b) => {
-      const bucketAlloc = b.allocated ?? 0;
-      sumAllocated += bucketAlloc;
       addBucket({
         macroType,
         name: b.name,
         emoji: b.emoji,
-        allocated: bucketAlloc,
+        allocated: b.allocated ?? 0,
         isPinned: b.isPinned,
       });
     });
-
-    // Auto-create Buffer bucket for any unallocated remainder
-    const remainder = macroTotal - sumAllocated;
-    if (remainder > 0) {
-      addBucket({ macroType, name: 'Buffer', emoji: '🪣', allocated: remainder, isPinned: false });
-    }
   });
 
   // 5. Complete onboarding
