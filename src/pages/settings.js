@@ -16,13 +16,15 @@ import {
   removeBucket,
   resetState,
   getMacroSummary,
+  getCurrentCycle,
+  updateCycleAllocations,
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { getTheme, setTheme } from '../utils/theme.js';
 import { navigate } from '../router.js';
 import { exportTransactionsCSV, exportAllDataJSON } from '../utils/export.js';
-import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
+import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO, PRESETS } from '../data/models.js';
 
 /**
  * @param {HTMLElement} container
@@ -62,6 +64,13 @@ function _render(container) {
           <div class="settings-field__right">
             <span class="settings-field__value" id="val-salaryDate">${user ? `${user.salaryDate}${_ordinal(user.salaryDate)} of month` : '—'}</span>
             <button class="btn-text settings-edit-btn" data-edit="salaryDate">Edit</button>
+          </div>
+        </div>
+        <div class="settings-field" id="field-ratios">
+          <span class="settings-field__label">Budget Split</span>
+          <div class="settings-field__right">
+            <span class="settings-field__value" id="val-ratios">${user ? `${user.ratios.needs}% / ${user.ratios.wants}% / ${user.ratios.future}%` : '—'}</span>
+            <button class="btn-text settings-edit-btn" data-edit="ratios">Edit</button>
           </div>
         </div>
       </div>
@@ -369,6 +378,59 @@ function _openProfileEdit(container, field) {
     });
     requestAnimationFrame(() => salInput?.focus());
 
+  } else if (field === 'ratios') {
+    const current = user?.ratios || { ...PRESETS.balanced };
+    rightEl.innerHTML = `
+      <div class="settings-ratios-edit" style="display:flex; flex-direction:column; gap: var(--space-2); align-items:flex-end;">
+        <div style="display:flex; gap: var(--space-2); align-items:center;">
+          <label style="font-size: var(--text-xs); color: var(--text-tertiary);">Needs</label>
+          <input type="number" class="input-field settings-inline-input" id="edit-ratio-needs"
+            min="0" max="100" inputmode="numeric" value="${current.needs}" style="max-width:64px;" />%
+          <label style="font-size: var(--text-xs); color: var(--text-tertiary);">Wants</label>
+          <input type="number" class="input-field settings-inline-input" id="edit-ratio-wants"
+            min="0" max="100" inputmode="numeric" value="${current.wants}" style="max-width:64px;" />%
+          <label style="font-size: var(--text-xs); color: var(--text-tertiary);">Future</label>
+          <input type="number" class="input-field settings-inline-input" id="edit-ratio-future"
+            min="0" max="100" inputmode="numeric" value="${current.future}" style="max-width:64px;" />%
+        </div>
+        <div style="display:flex; gap: var(--space-2); align-items:center;">
+          <span class="text-tertiary" style="font-size: var(--text-xs);" id="edit-ratio-sum">Total: ${current.needs + current.wants + current.future}%</span>
+          <button class="btn btn-primary btn-sm" data-save="ratios">Save</button>
+          <button class="btn btn-ghost btn-sm" data-cancel="ratios">✕</button>
+        </div>
+      </div>
+    `;
+    const inputs = {
+      needs: container.querySelector('#edit-ratio-needs'),
+      wants: container.querySelector('#edit-ratio-wants'),
+      future: container.querySelector('#edit-ratio-future'),
+    };
+    const sumEl = container.querySelector('#edit-ratio-sum');
+    const updateSum = () => {
+      const sum = Object.values(inputs).reduce((s, el) => s + (parseInt(el.value, 10) || 0), 0);
+      sumEl.textContent = `Total: ${sum}%`;
+      sumEl.style.color = sum === 100 ? 'var(--accent-primary)' : 'var(--warn)';
+    };
+    Object.values(inputs).forEach(el => el.addEventListener('input', updateSum));
+    updateSum();
+    container.querySelector('[data-save="ratios"]').addEventListener('click', () => {
+      const ratios = {
+        needs: parseInt(inputs.needs.value, 10) || 0,
+        wants: parseInt(inputs.wants.value, 10) || 0,
+        future: parseInt(inputs.future.value, 10) || 0,
+      };
+      const sum = ratios.needs + ratios.wants + ratios.future;
+      if (sum !== 100) { showToast(`Splits must total 100% (currently ${sum}%)`); return; }
+      setUser({ ratios, preset: 'custom' });
+      _restoreProfileField(container, field, `${ratios.needs}% / ${ratios.wants}% / ${ratios.future}%`);
+      showToast('Budget split updated ✓');
+      _showRatiosRecalcPrompt(container);
+    });
+    container.querySelector('[data-cancel="ratios"]').addEventListener('click', () => {
+      _restoreProfileField(container, field, `${current.needs}% / ${current.wants}% / ${current.future}%`);
+    });
+    requestAnimationFrame(() => inputs.needs?.focus());
+
   } else if (field === 'salaryDate') {
     const current = user?.salaryDate || 1;
     rightEl.innerHTML = `
@@ -403,7 +465,7 @@ function _restoreProfileField(container, field, displayValue) {
   const fieldEl = container.querySelector(`#field-${field}`);
   if (!fieldEl) return;
   const rightEl = fieldEl.querySelector('.settings-field__right');
-  const fieldName = { name: 'name', salary: 'salary', salaryDate: 'salaryDate' }[field];
+  const fieldName = { name: 'name', salary: 'salary', salaryDate: 'salaryDate', ratios: 'ratios' }[field] || field;
   rightEl.innerHTML = `
     <span class="settings-field__value" id="val-${fieldName}">${displayValue}</span>
     <button class="btn-text settings-edit-btn" data-edit="${fieldName}">Edit</button>
@@ -411,6 +473,42 @@ function _restoreProfileField(container, field, displayValue) {
   rightEl.querySelector('.settings-edit-btn').addEventListener('click', () => {
     _openProfileEdit(container, field);
   });
+}
+
+function _showRatiosRecalcPrompt(container) {
+  container.querySelector('#ratios-recalc-prompt')?.remove();
+  const fieldEl = container.querySelector('#field-ratios');
+  if (!fieldEl) return;
+
+  const el = document.createElement('div');
+  el.id = 'ratios-recalc-prompt';
+  el.className = 'settings-recalc-prompt';
+  el.innerHTML = `
+    <span class="settings-recalc-prompt__note">New split applies from your next payday cycle.</span>
+    <button class="btn btn-ghost btn-sm" id="btn-recalc-ratios-now">Recalculate current cycle →</button>
+  `;
+  fieldEl.after(el);
+
+  el.querySelector('#btn-recalc-ratios-now').addEventListener('click', () => {
+    _recalculateAllocationsFromRatios();
+    el.remove();
+    _refreshBucketsPanel(container);
+    showToast('Current cycle recalculated ✓');
+  });
+}
+
+function _recalculateAllocationsFromRatios() {
+  const user = getUser();
+  if (!user) return;
+  // Push new macro totals into the current cycle so getMacroSummary.unallocated
+  // is computed against the new ratio, then proportionally rescale buckets.
+  const cycle = getCurrentCycle();
+  if (cycle) {
+    const needs = Math.round(cycle.salary * user.ratios.needs / 100);
+    const wants = Math.round(cycle.salary * user.ratios.wants / 100);
+    updateCycleAllocations({ needs, wants, future: cycle.salary - needs - wants });
+  }
+  _recalculateBucketAllocations(user.salary);
 }
 
 function _showSalaryRecalcPrompt(container, newSalary) {

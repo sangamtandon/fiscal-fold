@@ -622,6 +622,25 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
 }
 
 /**
+ * Replace the current cycle's macro allocations. Used when the user changes
+ * their ratio split mid-cycle — the macro totals must move so unallocated
+ * remainders are computed against the new split.
+ * @param {{ needs: number, wants: number, future: number }} allocations
+ */
+export function updateCycleAllocations(allocations) {
+  const cycle = getCurrentCycle();
+  if (!cycle) return;
+  ['needs', 'wants', 'future'].forEach(k => {
+    if (!Number.isFinite(allocations[k]) || allocations[k] < 0) {
+      throw new Error(`updateCycleAllocations: invalid allocation.${k}`);
+    }
+  });
+  cycle.allocations = { ...allocations };
+  save();
+  notify('cycles');
+}
+
+/**
  * Add bonus or variable income.
  * @param {number} amount
  * @param {string} [targetBucketId] - If provided, allocates to this bucket. Otherwise adds to cycle salary.
