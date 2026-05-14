@@ -320,6 +320,7 @@ function registerRoutes() {
           <div class="hero-amount-wrap" id="hero-amount-wrap">
             <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount">₹0</p>
           </div>
+          <p class="text-tertiary mt-2" style="font-size: var(--text-xs); letter-spacing: 0.04em;">from your Wants budget</p>
           <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">${daysLeft} days left in cycle</p>
         </div>
 
@@ -525,9 +526,12 @@ function registerRoutes() {
 function renderMacroBar(label, summary, type, reserved = 0) {
   const remainingPct = 100 - summary.percent;
   const isOverspent = summary.percent > 100;
+  const isFresh = summary.spent === 0 && summary.allocated > 0;
   let fillClass = `health-bar__fill--${type}`;
 
-  if (remainingPct <= 0) {
+  if (isFresh) {
+    fillClass = 'health-bar__fill--fresh';
+  } else if (remainingPct <= 0) {
     fillClass = 'health-bar__fill--depleted';
   } else if (remainingPct <= 20 && type === 'wants') {
     fillClass = 'health-bar__fill--warn';
@@ -550,7 +554,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
       </div>
       <div class="flex justify-between mt-2">
         <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
-        <span class="text-tertiary" style="font-size: var(--text-xs);">${Math.max(0, remainingPct)}% remaining</span>
+        <span class="text-tertiary" style="font-size: var(--text-xs);">${isFresh ? 'Nothing tracked yet' : `${Math.max(0, remainingPct)}% remaining`}</span>
       </div>
       ${reserved > 0 ? `
         <div class="cm-reserved-hint">
