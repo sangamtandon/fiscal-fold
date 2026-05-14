@@ -131,6 +131,21 @@ export const BUCKET_TEMPLATES = {
 };
 
 /**
+ * Suggested starter commitment templates (recurring bills).
+ * Used in onboarding Step 5 to seed common bills with a sensible macro/due-date.
+ */
+export const COMMITMENT_TEMPLATES = [
+  { name: 'Rent', emoji: '🏠', macroType: 'needs', dueDate: 1 },
+  { name: 'EMI', emoji: '🏦', macroType: 'needs', dueDate: 5 },
+  { name: 'Electricity', emoji: '💡', macroType: 'needs', dueDate: 10 },
+  { name: 'Internet', emoji: '🌐', macroType: 'needs', dueDate: 7 },
+  { name: 'Mobile', emoji: '📱', macroType: 'needs', dueDate: 15 },
+  { name: 'Insurance', emoji: '🛡️', macroType: 'needs', dueDate: 20 },
+  { name: 'Streaming', emoji: '🎬', macroType: 'wants', dueDate: 10 },
+  { name: 'Gym', emoji: '🏋️', macroType: 'wants', dueDate: 5 },
+];
+
+/**
  * Maximum micro-buckets per macro category.
  */
 export const MAX_BUCKETS_PER_MACRO = 10;

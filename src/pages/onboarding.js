@@ -14,16 +14,17 @@ import {
   setUser,
   createCycle,
   addBucket,
+  addCommitment,
   completeOnboarding,
 } from '../data/store.js';
-import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
+import { PRESETS, BUCKET_TEMPLATES, COMMITMENT_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
 import { formatCurrency, formatNumber, uid } from '../utils/helpers.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
 
 // ---- Onboarding State (local, not persisted until completion) ----
 let currentStep = 1;
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 5;
 
 let formData = {
   name: '',
@@ -32,6 +33,7 @@ let formData = {
   preset: 'balanced',
   ratios: { ...PRESETS.balanced },
   buckets: { needs: [], wants: [], future: [] },
+  commitments: [],
 };
 
 /**
@@ -48,6 +50,7 @@ export function renderOnboarding(container) {
     preset: 'balanced',
     ratios: { ...PRESETS.balanced },
     buckets: { needs: [], wants: [], future: [] },
+    commitments: [],
   };
 
   // Pre-populate bucket templates
@@ -73,11 +76,11 @@ function renderCurrentStep(container) {
     <div class="onboarding__inner">
       <!-- Progress -->
       <div class="onboarding__progress">
-        ${[1, 2, 3, 4].map(s => `
+        ${Array.from({ length: TOTAL_STEPS }, (_, i) => i + 1).map(s => `
           <div class="onboarding__step-dot ${s === currentStep ? 'is-active' : ''} ${s < currentStep ? 'is-done' : ''}">
             ${s < currentStep ? '✓' : s}
           </div>
-          ${s < 4 ? `<div class="onboarding__step-line ${s < currentStep ? 'is-done' : ''}"></div>` : ''}
+          ${s < TOTAL_STEPS ? `<div class="onboarding__step-line ${s < currentStep ? 'is-done' : ''}"></div>` : ''}
         `).join('')}
       </div>
 
@@ -105,6 +108,7 @@ function renderCurrentStep(container) {
     case 2: renderStep2(stepContent); break;
     case 3: renderStep3(stepContent); break;
     case 4: renderStep4(stepContent); break;
+    case 5: renderStep5(stepContent); break;
   }
 
   // Wire navigation
@@ -643,6 +647,181 @@ function wireUpBucketEvents(container) {
 }
 
 // ===================================================================
+// STEP 5 — Recurring bills (commitments)
+// ===================================================================
+function renderStep5(container) {
+  container.innerHTML = `
+    <div class="onboarding__step-header">
+      <div class="onboarding__icon">🔁</div>
+      <h2 class="onboarding__title">Recurring bills</h2>
+      <p class="onboarding__subtitle">Rent, EMIs, subscriptions. We'll reserve them from your Safe-to-Spend so you don't accidentally dip in.</p>
+    </div>
+
+    <div class="onboarding__commitments" id="commitments-section">
+      <div class="onboarding__commitment-list" id="commitment-list">
+        ${formData.commitments.map(renderCommitmentItem).join('')}
+      </div>
+
+      <div class="onboarding__commitment-templates">
+        <div class="text-tertiary" style="font-size: var(--text-xs); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.08em;">Common bills</div>
+        <div class="onboarding__commitment-template-chips" id="template-chips">
+          ${COMMITMENT_TEMPLATES.map(t => `
+            <button class="onboarding__commitment-chip" data-template="${t.name}">
+              <span>${t.emoji}</span>
+              <span>${t.name}</span>
+            </button>
+          `).join('')}
+        </div>
+      </div>
+
+      <button class="onboarding__add-bucket-btn" id="btn-add-blank-commitment" style="margin-top: var(--space-3);">
+        + Add a custom bill
+      </button>
+
+      <p class="text-tertiary text-center" style="font-size: var(--text-xs); margin-top: var(--space-3);">
+        You can always add more later from Settings → Manage Commitments.
+      </p>
+    </div>
+  `;
+
+  // Next button is always enabled — this step is optional
+  setNextEnabled(true);
+  wireUpCommitmentEvents(container);
+}
+
+function renderCommitmentItem(c) {
+  const macroOptions = [
+    { key: 'needs', label: 'Needs' },
+    { key: 'wants', label: 'Wants' },
+    { key: 'future', label: 'Future' },
+  ];
+  return `
+    <div class="onboarding__commitment-item" data-id="${c.id}">
+      <span class="onboarding__bucket-emoji">${c.emoji}</span>
+      <input
+        type="text"
+        class="onboarding__bucket-name onboarding__commitment-name"
+        value="${c.name}"
+        placeholder="Bill name"
+        maxlength="25"
+        data-id="${c.id}"
+        data-field="name"
+      />
+      <input
+        type="number"
+        class="onboarding__bucket-allocated onboarding__commitment-amount"
+        value="${c.amount || ''}"
+        min="0"
+        inputmode="numeric"
+        placeholder="₹0"
+        data-id="${c.id}"
+        data-field="amount"
+      />
+      <select class="onboarding__commitment-macro" data-id="${c.id}" data-field="macroType">
+        ${macroOptions.map(o => `<option value="${o.key}"${c.macroType === o.key ? ' selected' : ''}>${o.label}</option>`).join('')}
+      </select>
+      <input
+        type="number"
+        class="onboarding__commitment-due"
+        value="${c.dueDate || ''}"
+        min="1"
+        max="31"
+        inputmode="numeric"
+        placeholder="Day"
+        title="Day of month"
+        data-id="${c.id}"
+        data-field="dueDate"
+      />
+      <button class="onboarding__bucket-remove" data-id="${c.id}" data-action="remove" title="Remove">×</button>
+    </div>
+  `;
+}
+
+function refreshCommitmentList(container) {
+  const listEl = container.querySelector('#commitment-list');
+  if (listEl) {
+    listEl.innerHTML = formData.commitments.map(renderCommitmentItem).join('');
+  }
+  // Disable chips for already-added templates so users don't add Rent twice
+  const used = new Set(formData.commitments.map(c => c.name.toLowerCase()));
+  container.querySelectorAll('#template-chips [data-template]').forEach(chip => {
+    chip.classList.toggle('is-disabled', used.has(chip.dataset.template.toLowerCase()));
+  });
+}
+
+function wireUpCommitmentEvents(container) {
+  // Inline edits
+  container.addEventListener('input', (e) => {
+    const id = e.target.dataset?.id;
+    const field = e.target.dataset?.field;
+    if (!id || !field) return;
+    const c = formData.commitments.find(x => x.id === id);
+    if (!c) return;
+    if (field === 'name') c.name = e.target.value;
+    else if (field === 'amount') c.amount = Math.max(0, parseInt(e.target.value, 10) || 0);
+    else if (field === 'dueDate') c.dueDate = Math.min(31, Math.max(1, parseInt(e.target.value, 10) || 1));
+  });
+
+  container.addEventListener('change', (e) => {
+    const id = e.target.dataset?.id;
+    const field = e.target.dataset?.field;
+    if (!id || field !== 'macroType') return;
+    const c = formData.commitments.find(x => x.id === id);
+    if (c) c.macroType = e.target.value;
+  });
+
+  // Remove + template + add-blank
+  container.addEventListener('click', (e) => {
+    const removeBtn = e.target.closest('[data-action="remove"]');
+    if (removeBtn) {
+      formData.commitments = formData.commitments.filter(c => c.id !== removeBtn.dataset.id);
+      refreshCommitmentList(container);
+      return;
+    }
+
+    const chip = e.target.closest('[data-template]');
+    if (chip) {
+      if (chip.classList.contains('is-disabled')) return;
+      const tmpl = COMMITMENT_TEMPLATES.find(t => t.name === chip.dataset.template);
+      if (!tmpl) return;
+      formData.commitments.push({
+        id: uid(),
+        name: tmpl.name,
+        emoji: tmpl.emoji,
+        macroType: tmpl.macroType,
+        dueDate: tmpl.dueDate,
+        amount: 0,
+      });
+      refreshCommitmentList(container);
+      // Focus the new amount input so the user can type immediately
+      requestAnimationFrame(() => {
+        const items = container.querySelectorAll('.onboarding__commitment-amount');
+        items[items.length - 1]?.focus();
+      });
+      return;
+    }
+
+    if (e.target.closest('#btn-add-blank-commitment')) {
+      formData.commitments.push({
+        id: uid(),
+        name: '',
+        emoji: '🔄',
+        macroType: 'needs',
+        dueDate: 1,
+        amount: 0,
+      });
+      refreshCommitmentList(container);
+      requestAnimationFrame(() => {
+        const items = container.querySelectorAll('.onboarding__commitment-name');
+        items[items.length - 1]?.focus();
+      });
+    }
+  });
+
+  refreshCommitmentList(container);
+}
+
+// ===================================================================
 // FINISH — Create cycle, buckets, navigate to dashboard
 // ===================================================================
 function finishOnboarding() {
@@ -726,10 +905,23 @@ function finishOnboarding() {
     });
   });
 
-  // 5. Complete onboarding
+  // 5. Create commitments (Step 5). Skip rows with no name or zero amount.
+  formData.commitments
+    .filter(c => c.name.trim() && c.amount > 0)
+    .forEach(c => {
+      addCommitment({
+        name: c.name.trim(),
+        emoji: c.emoji,
+        amount: c.amount,
+        dueDate: c.dueDate,
+        macroType: c.macroType,
+      });
+    });
+
+  // 6. Complete onboarding
   completeOnboarding();
 
-  // 6. Navigate to dashboard
+  // 7. Navigate to dashboard
   navigate('/dashboard');
 }
 
