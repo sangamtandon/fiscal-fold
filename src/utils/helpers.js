@@ -37,6 +37,8 @@ export function timeAgo(date) {
   const then = new Date(date).getTime();
   const diff = now - then;
 
+  if (diff < 0) return 'in the future';
+
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
@@ -56,8 +58,8 @@ export function timeAgo(date) {
  * @returns {number} 0–100
  */
 export function percent(value, total) {
-  if (total === 0) return 0;
-  return Math.min(100, Math.max(0, Math.round((value / total) * 100)));
+  if (total <= 0) return 0;
+  return Math.round((value / total) * 100);
 }
 
 /**
@@ -65,7 +67,7 @@ export function percent(value, total) {
  * @returns {string}
  */
 export function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  return crypto.randomUUID?.() ?? Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
 }
 
 /**
@@ -85,10 +87,24 @@ export function clamp(val, min, max) {
  * @returns {number}
  */
 export function daysRemaining(endDate) {
-  const now = new Date();
-  const end = new Date(endDate);
-  const diff = end.getTime() - now.getTime();
+  const [y, m, d] = String(endDate).split('-').map(Number);
+  const end = new Date(y, m - 1, d, 23, 59, 59);
+  const diff = end.getTime() - Date.now();
   return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Count calendar days in a cycle, inclusive of both endpoints.
+ * @param {string} startStr YYYY-MM-DD
+ * @param {string} endStr   YYYY-MM-DD
+ * @returns {number}
+ */
+export function cycleDayCount(startStr, endStr) {
+  const [sy, sm, sd] = String(startStr).split('-').map(Number);
+  const [ey, em, ed] = String(endStr).split('-').map(Number);
+  const start = Date.UTC(sy, sm - 1, sd);
+  const end   = Date.UTC(ey, em - 1, ed);
+  return Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
 }
 
 /**

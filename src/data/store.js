@@ -110,7 +110,9 @@ export function getCurrentCycle() {
 export function isCycleExpired() {
   const cycle = getCurrentCycle();
   if (!cycle) return false;
-  return new Date() > new Date(cycle.endDate);
+  // Parse YYYY-MM-DD as local end-of-day to avoid UTC-midnight early expiry in positive-offset timezones
+  const [y, m, d] = cycle.endDate.split('-').map(Number);
+  return new Date() > new Date(y, m - 1, d, 23, 59, 59);
 }
 
 /**
@@ -184,7 +186,7 @@ export function getMacroReserved(macroType) {
  */
 export function getSafeToSpend() {
   const wantsBuckets = getBuckets('wants');
-  const remaining = wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent), 0);
+  const remaining = wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent - (b.swept ?? 0)), 0);
   const reserved = getMacroReserved('wants');
   return Math.max(0, remaining - reserved);
 }
@@ -198,7 +200,7 @@ export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
   const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
   const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent);
+  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   return { allocated, spent, remaining, percent };
 }
@@ -231,6 +233,9 @@ export function getSweeps(cycleId) {
  * @param {Partial<import('./models.js').User>} userData
  */
 export function setUser(userData) {
+  if (userData.salary !== undefined && (!Number.isFinite(userData.salary) || userData.salary < 0)) {
+    throw new Error('setUser: invalid salary');
+  }
   const now = new Date().toISOString();
   if (_state.user) {
     _state.user = { ..._state.user, ...userData, updatedAt: now };
@@ -270,7 +275,10 @@ export function completeOnboarding() {
  * @returns {import('./models.js').BudgetCycle}
  */
 export function createCycle({ startDate, endDate, salary, allocations }) {
-  // Deactivate previous active cycle
+  if (!Number.isFinite(salary) || salary < 0) throw new Error('createCycle: invalid salary');
+  ['needs', 'wants', 'future'].forEach(k => {
+    if (!Number.isFinite(allocations[k]) || allocations[k] < 0) throw new Error(`createCycle: invalid allocation.${k}`);
+  });
   _state.cycles.forEach(c => { c.isActive = false; });
 
   const cycle = {
@@ -306,6 +314,7 @@ export function createCycle({ startDate, endDate, salary, allocations }) {
  * @returns {import('./models.js').MicroBucket}
  */
 export function addBucket({ macroType, name, emoji, allocated, isPinned = false }) {
+  if (!Number.isFinite(allocated) || allocated < 0) throw new Error('addBucket: invalid allocated');
   const cycleId = _state.currentCycleId;
   const existing = getBuckets(macroType);
   
@@ -361,6 +370,7 @@ export function removeBucket(id) {
  * @returns {import('./models.js').Transaction}
  */
 export function addTransaction({ bucketId, amount, note, type = 'expense' }) {
+  if (!Number.isFinite(amount) || amount < 0) throw new Error('addTransaction: invalid amount');
   const cycleId = _state.currentCycleId;
   const txn = {
     id: uid(),
@@ -381,7 +391,7 @@ export function addTransaction({ bucketId, amount, note, type = 'expense' }) {
   if (bucket) {
     if (type === 'expense') {
       bucket.spent += amount;
-    } else if (type === 'refund' || type === 'income') {
+    } else if (type === 'refund') {
       bucket.spent = Math.max(0, bucket.spent - amount);
     }
   }
@@ -403,6 +413,8 @@ export function addTransaction({ bucketId, amount, note, type = 'expense' }) {
  * @returns {import('./models.js').Transaction}
  */
 export function addTradeOffTransaction({ bucketId, amount, borrowFromId, borrowAmount, note }) {
+  if (!Number.isFinite(amount) || amount < 0) throw new Error('addTradeOffTransaction: invalid amount');
+  if (!Number.isFinite(borrowAmount) || borrowAmount < 0 || borrowAmount > amount) throw new Error('addTradeOffTransaction: borrowAmount must be 0..amount');
   const cycleId = _state.currentCycleId;
   const txn = {
     id: uid(),
@@ -500,11 +512,12 @@ export function runSweep() {
 
   const wantsBuckets = getBuckets('wants');
   const futureBuckets = getBuckets('future');
+  // Needs surplus is intentionally forfeited at cycle end (D3). To include Needs in the sweep, add getBuckets('needs') here.
   const breakdown = [];
   let totalSwept = 0;
 
   [...wantsBuckets, ...futureBuckets].forEach(b => {
-    const remaining = Math.max(0, b.allocated - b.spent);
+    const remaining = Math.max(0, b.allocated - b.spent - (b.swept ?? 0));
     if (remaining > 0) {
       breakdown.push({
         bucketId: b.id,
@@ -512,7 +525,7 @@ export function runSweep() {
         amount: remaining,
       });
       totalSwept += remaining;
-      b.spent = b.allocated; // Zero out the bucket
+      b.swept = (b.swept ?? 0) + remaining;
     }
   });
 
@@ -551,14 +564,30 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
 
   ['needs', 'wants', 'future'].forEach(macroType => {
     const macroBuckets = oldBuckets.filter(b => b.macroType === macroType);
-    if (macroBuckets.length === 0) return;
-
-    const oldTotal = macroBuckets.reduce((s, b) => s + b.allocated, 0);
     const newTotal = newAllocations[macroType];
 
-    macroBuckets.forEach(b => {
+    if (macroBuckets.length === 0) {
+      if (newTotal > 0) {
+        _state.buckets.push({
+          id: uid(),
+          cycleId: newCycleId,
+          macroType,
+          name: 'General',
+          emoji: '📦',
+          allocated: newTotal,
+          spent: 0,
+          isPinned: false,
+          sortOrder: 0,
+          createdAt: new Date().toISOString(),
+        });
+      }
+      return;
+    }
+
+    const oldTotal = macroBuckets.reduce((s, b) => s + b.allocated, 0);
+    const newBuckets = macroBuckets.map((b, i) => {
       const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / macroBuckets.length;
-      _state.buckets.push({
+      return {
         id: uid(),
         cycleId: newCycleId,
         macroType,
@@ -569,8 +598,14 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
         isPinned: b.isPinned,
         sortOrder: b.sortOrder,
         createdAt: new Date().toISOString(),
-      });
+      };
     });
+
+    // Largest-remainder correction: distribute any rounding shortfall to the last bucket
+    const roundedSum = newBuckets.reduce((s, b) => s + b.allocated, 0);
+    if (newBuckets.length > 0) newBuckets[newBuckets.length - 1].allocated += newTotal - roundedSum;
+
+    newBuckets.forEach(b => _state.buckets.push(b));
   });
 
   save();
@@ -584,6 +619,7 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
  * @param {string} [note]
  */
 export function addIncome(amount, targetBucketId, note = '') {
+  if (!Number.isFinite(amount) || amount < 0) throw new Error('addIncome: invalid amount');
   const cycle = getCurrentCycle();
   if (!cycle) return;
 
@@ -591,6 +627,7 @@ export function addIncome(amount, targetBucketId, note = '') {
     const bucket = _state.buckets.find(b => b.id === targetBucketId);
     if (bucket) {
       bucket.allocated += amount;
+      cycle.allocations[bucket.macroType] = (cycle.allocations[bucket.macroType] ?? 0) + amount;
       // Record income transaction for history — does NOT modify spent
       _state.transactions.push({
         id: uid(),

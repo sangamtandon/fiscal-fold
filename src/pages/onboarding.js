@@ -17,7 +17,7 @@ import {
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
-import { formatCurrency, formatNumber, uid } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, uid, cycleDayCount } from '../utils/helpers.js';
 import { navigate } from '../router.js';
 
 // ---- Onboarding State (local, not persisted until completion) ----
@@ -596,32 +596,47 @@ function finishOnboarding() {
   const currentDay = now.getDate();
   let startDate, endDate;
 
+  // Clamp salaryDate to a valid day in the target months (handles 31→30, 31→28, etc.)
+  const clampDay = (year, month, day) => Math.min(day, new Date(year, month + 1, 0).getDate());
+
   if (currentDay <= salaryDate) {
     // We haven't passed this month's salary date yet — use last month's cycle
-    startDate = new Date(now.getFullYear(), now.getMonth() - 1, salaryDate);
-    endDate = new Date(now.getFullYear(), now.getMonth(), salaryDate - 1);
+    const sy = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const sm = (now.getMonth() + 11) % 12;
+    startDate = new Date(sy, sm, clampDay(sy, sm, salaryDate));
+    const ey = now.getFullYear();
+    const em = now.getMonth();
+    endDate = new Date(ey, em, clampDay(ey, em, salaryDate - 1));
   } else {
     // We're past this month's salary date — current cycle started this month
-    startDate = new Date(now.getFullYear(), now.getMonth(), salaryDate);
-    endDate = new Date(now.getFullYear(), now.getMonth() + 1, salaryDate - 1);
+    const sy = now.getFullYear();
+    const sm = now.getMonth();
+    startDate = new Date(sy, sm, clampDay(sy, sm, salaryDate));
+    const ey = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+    const em = (now.getMonth() + 1) % 12;
+    endDate = new Date(ey, em, clampDay(ey, em, salaryDate - 1));
   }
 
+  const fmt = d => d.toISOString().split('T')[0];
+  const startStr = fmt(startDate);
+  const endStr = fmt(endDate);
+
   // Pro-rate salary for remaining days
-  const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+  const totalDays = cycleDayCount(startStr, endStr);
   const remainingDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)) + 1;
-  const proRateFactor = Math.min(1, remainingDays / totalDays);
+  const proRateFactor = Math.max(0, Math.min(1, remainingDays / totalDays));
   const proratedSalary = Math.round(salary * proRateFactor);
 
   const allocations = {
     needs: Math.round(proratedSalary * ratios.needs / 100),
     wants: Math.round(proratedSalary * ratios.wants / 100),
-    future: Math.round(proratedSalary * ratios.future / 100),
+    future: proratedSalary - Math.round(proratedSalary * ratios.needs / 100) - Math.round(proratedSalary * ratios.wants / 100),
   };
 
   // 3. Create cycle
   const cycle = createCycle({
-    startDate: startDate.toISOString(),
-    endDate: endDate.toISOString(),
+    startDate: startStr,
+    endDate: endStr,
     salary: proratedSalary,
     allocations,
   });

@@ -26,7 +26,7 @@ import {
   isCycleExpired,
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
-import { formatCurrency, timeAgo, percent, daysRemaining } from './utils/helpers.js';
+import { formatCurrency, timeAgo, percent, daysRemaining, cycleDayCount } from './utils/helpers.js';
 import { showToast } from './utils/toast.js';
 
 // ---- PWA: Service Worker Registration ----
@@ -278,7 +278,7 @@ function registerRoutes() {
     // Build leak warnings
     const leaks = [];
     const buckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
-    const totalCycleDays = Math.ceil((new Date(cycle.endDate) - new Date(cycle.startDate)) / (1000 * 60 * 60 * 24));
+    const totalCycleDays = cycleDayCount(cycle.startDate, cycle.endDate);
     const elapsed = totalCycleDays - daysLeft;
     const timePercent = totalCycleDays > 0 ? (elapsed / totalCycleDays) * 100 : 0;
 
@@ -288,6 +288,8 @@ function registerRoutes() {
         if (spentPct >= 80 && timePercent < 50) {
           leaks.push(b);
         }
+      } else if (b.spent > 0) {
+        leaks.push(b);
       }
     });
 
@@ -512,6 +514,7 @@ function registerRoutes() {
  */
 function renderMacroBar(label, summary, type, reserved = 0) {
   const remainingPct = 100 - summary.percent;
+  const isOverspent = summary.percent > 100;
   let fillClass = `health-bar__fill--${type}`;
 
   if (remainingPct <= 0) {
@@ -527,6 +530,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
       <div class="macro-card__header">
         <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
         <div class="flex items-center gap-2">
+          ${isOverspent ? `<span class="badge badge--amber" style="font-size: var(--text-xs);">Overspent by ${summary.percent - 100}%</span>` : ''}
           <span class="text-mono text-secondary" style="font-size: var(--text-sm);">${formatCurrency(summary.remaining)}</span>
           <svg class="macro-card__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
