@@ -441,28 +441,31 @@ function registerRoutes() {
     // Safe To Spend count-up animation
     const heroAmount = document.getElementById('hero-amount');
     const heroWrap = document.getElementById('hero-amount-wrap');
-    
-    // Quick count up effect
-    const duration = 600; // ms
-    const frames = 30;
-    const interval = duration / frames;
-    let currentFrame = 0;
-    
-    heroWrap.classList.add('is-animating');
-    const timer = setInterval(() => {
-      currentFrame++;
-      const progress = currentFrame / frames;
-      // easeOutQuart
-      const ease = 1 - Math.pow(1 - progress, 4);
-      const currentAmount = Math.round(safeToSpend * ease);
-      heroAmount.textContent = formatCurrency(currentAmount);
-      
-      if (currentFrame >= frames) {
-        clearInterval(timer);
-        heroAmount.textContent = formatCurrency(safeToSpend);
-        setTimeout(() => heroWrap.classList.remove('is-animating'), 200);
-      }
-    }, interval);
+    let timer;
+
+    if (heroAmount && heroWrap) {
+      // Quick count up effect
+      const duration = 600; // ms
+      const frames = 30;
+      const interval = duration / frames;
+      let currentFrame = 0;
+
+      heroWrap.classList.add('is-animating');
+      timer = setInterval(() => {
+        currentFrame++;
+        const progress = currentFrame / frames;
+        // easeOutQuart
+        const ease = 1 - Math.pow(1 - progress, 4);
+        const currentAmount = Math.round(safeToSpend * ease);
+        heroAmount.textContent = formatCurrency(currentAmount);
+
+        if (currentFrame >= frames) {
+          clearInterval(timer);
+          heroAmount.textContent = formatCurrency(safeToSpend);
+          setTimeout(() => heroWrap.classList.remove('is-animating'), 200);
+        }
+      }, interval);
+    }
 
     // Attach expand/collapse listeners for Macro Bars
     const macroBarsContainer = document.getElementById('macro-bars-container');
@@ -474,6 +477,8 @@ function registerRoutes() {
         }
       });
     }
+
+    return () => { if (timer) clearInterval(timer); };
   });
 
   // Settings
