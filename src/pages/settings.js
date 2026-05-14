@@ -273,24 +273,6 @@ function _wireEvents(container) {
     else if (action === 'remove-bucket') _handleRemoveBucket(container, bucketId);
     else if (action === 'add-bucket') _openAddBucketInline(container, macro);
   });
-
-  // Deep-link from dashboard: /settings#unallocated-{macro} scrolls to & flashes that group
-  _focusUnallocatedFromHash(container);
-}
-
-function _focusUnallocatedFromHash(container) {
-  // Router hash is "#/settings#unallocated-needs" — match the trailing fragment
-  const m = window.location.hash.match(/#unallocated-(needs|wants|future)$/);
-  if (!m) return;
-  requestAnimationFrame(() => {
-    const el = container.querySelector(`#unallocated-${m[1]}`);
-    if (!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.animate(
-      [{ transform: 'scale(1)' }, { transform: 'scale(1.03)' }, { transform: 'scale(1)' }],
-      { duration: 600, easing: 'ease-out' }
-    );
-  });
 }
 
 // ---- Inline profile editing ----
