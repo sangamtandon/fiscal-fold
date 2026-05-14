@@ -193,8 +193,14 @@ export function getSafeToSpend() {
 
 /**
  * Get macro-level summary for the current cycle.
+ *
+ * `allocated` is the sum of micro-bucket allocations. `cycleAllocation` is the
+ * macro's share of the cycle salary (the pool the user split into buckets).
+ * `unallocated` is the leftover that wasn't assigned to any bucket — can be
+ * negative if the user over-allocated.
+ *
  * @param {import('./models.js').MacroType} macroType
- * @returns {{ allocated: number, spent: number, remaining: number, percent: number }}
+ * @returns {{ allocated: number, spent: number, remaining: number, percent: number, cycleAllocation: number, unallocated: number }}
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
@@ -202,7 +208,10 @@ export function getMacroSummary(macroType) {
   const spent = buckets.reduce((s, b) => s + b.spent, 0);
   const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
-  return { allocated, spent, remaining, percent };
+  const cycle = getCurrentCycle();
+  const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
+  const unallocated = cycleAllocation - allocated;
+  return { allocated, spent, remaining, percent, cycleAllocation, unallocated };
 }
 
 /**
@@ -613,6 +622,25 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
 }
 
 /**
+ * Replace the current cycle's macro allocations. Used when the user changes
+ * their ratio split mid-cycle — the macro totals must move so unallocated
+ * remainders are computed against the new split.
+ * @param {{ needs: number, wants: number, future: number }} allocations
+ */
+export function updateCycleAllocations(allocations) {
+  const cycle = getCurrentCycle();
+  if (!cycle) return;
+  ['needs', 'wants', 'future'].forEach(k => {
+    if (!Number.isFinite(allocations[k]) || allocations[k] < 0) {
+      throw new Error(`updateCycleAllocations: invalid allocation.${k}`);
+    }
+  });
+  cycle.allocations = { ...allocations };
+  save();
+  notify('cycles');
+}
+
+/**
  * Add bonus or variable income.
  * @param {number} amount
  * @param {string} [targetBucketId] - If provided, allocates to this bucket. Otherwise adds to cycle salary.
@@ -643,7 +671,19 @@ export function addIncome(amount, targetBucketId, note = '') {
       notify('transactions');
     }
   } else {
+    // Untargeted income: split across macros using the user's ratio so the
+    // new money flows into each macro's unallocated pool — not silently lost
+    // against an unchanged cycle.allocations.
     cycle.salary += amount;
+    const ratios = _state.user?.ratios;
+    if (ratios) {
+      const addNeeds = Math.round(amount * ratios.needs / 100);
+      const addWants = Math.round(amount * ratios.wants / 100);
+      const addFuture = amount - addNeeds - addWants;
+      cycle.allocations.needs = (cycle.allocations.needs ?? 0) + addNeeds;
+      cycle.allocations.wants = (cycle.allocations.wants ?? 0) + addWants;
+      cycle.allocations.future = (cycle.allocations.future ?? 0) + addFuture;
+    }
   }
 
   save();

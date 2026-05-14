@@ -17,7 +17,7 @@ import {
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
-import { formatCurrency, formatNumber, uid, cycleDayCount } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, uid } from '../utils/helpers.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
 
@@ -654,6 +654,18 @@ function finishOnboarding() {
     return;
   }
 
+  // Block over-allocation: bucket sum per macro must not exceed the macro's share of salary
+  const overAllocated = ['needs', 'wants', 'future'].filter(macroType => {
+    const macroAmount = Math.round(salary * ratios[macroType] / 100);
+    const sumAllocated = buckets[macroType].reduce((s, b) => s + (b.allocated ?? 0), 0);
+    return sumAllocated > macroAmount;
+  });
+  if (overAllocated.length > 0) {
+    const labels = { needs: 'Needs', wants: 'Wants', future: 'Future' };
+    showToast(`Trim ${overAllocated.map(m => labels[m]).join(', ')} — buckets exceed the macro budget`);
+    return;
+  }
+
   // 1. Set user
   setUser({
     name,
@@ -663,79 +675,55 @@ function finishOnboarding() {
     ratios,
   });
 
-  // 2. Calculate cycle dates (pro-rated if mid-cycle)
+  // 2. Calculate cycle dates: start = today, end = the day before the next payday
+  // (clamped if salaryDate doesn't exist in that month). Salary is used as-is —
+  // no pro-rating, no surprises. The user gets what they typed.
   const now = new Date();
-  const currentDay = now.getDate();
-  let startDate, endDate;
-
-  // Clamp salaryDate to a valid day in the target months (handles 31→30, 31→28, etc.)
   const clampDay = (year, month, day) => Math.min(day, new Date(year, month + 1, 0).getDate());
-
-  if (currentDay <= salaryDate) {
-    // We haven't passed this month's salary date yet — use last month's cycle
-    const sy = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-    const sm = (now.getMonth() + 11) % 12;
-    startDate = new Date(sy, sm, clampDay(sy, sm, salaryDate));
-    const ey = now.getFullYear();
-    const em = now.getMonth();
-    endDate = new Date(ey, em, clampDay(ey, em, salaryDate - 1));
-  } else {
-    // We're past this month's salary date — current cycle started this month
-    const sy = now.getFullYear();
-    const sm = now.getMonth();
-    startDate = new Date(sy, sm, clampDay(sy, sm, salaryDate));
-    const ey = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
-    const em = (now.getMonth() + 1) % 12;
-    endDate = new Date(ey, em, clampDay(ey, em, salaryDate - 1));
+  const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  // Find the next salaryDate from today
+  let ey = now.getFullYear();
+  let em = now.getMonth();
+  if (now.getDate() >= salaryDate) {
+    em = now.getMonth() + 1;
+    if (em > 11) { em = 0; ey += 1; }
   }
+  const endDate = new Date(ey, em, clampDay(ey, em, salaryDate));
+  endDate.setDate(endDate.getDate() - 1);
 
   const fmt = d => d.toISOString().split('T')[0];
   const startStr = fmt(startDate);
   const endStr = fmt(endDate);
 
-  // Pro-rate salary for remaining days
-  const totalDays = cycleDayCount(startStr, endStr);
-  const remainingDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)) + 1;
-  const proRateFactor = Math.max(0, Math.min(1, remainingDays / totalDays));
-  const proratedSalary = Math.round(salary * proRateFactor);
-
   const allocations = {
-    needs: Math.round(proratedSalary * ratios.needs / 100),
-    wants: Math.round(proratedSalary * ratios.wants / 100),
-    future: proratedSalary - Math.round(proratedSalary * ratios.needs / 100) - Math.round(proratedSalary * ratios.wants / 100),
+    needs: Math.round(salary * ratios.needs / 100),
+    wants: Math.round(salary * ratios.wants / 100),
+    future: salary - Math.round(salary * ratios.needs / 100) - Math.round(salary * ratios.wants / 100),
   };
 
   // 3. Create cycle
   const cycle = createCycle({
     startDate: startStr,
     endDate: endStr,
-    salary: proratedSalary,
+    salary,
     allocations,
   });
 
-  // 4. Create micro-buckets using user-set allocations
+  // 4. Create micro-buckets using user-set allocations.
+  // Any unallocated remainder per macro is left as a derived value
+  // (macro allocation minus sum of bucket allocations), surfaced on the
+  // dashboard and in Settings — not absorbed into an auto-created bucket.
   ['needs', 'wants', 'future'].forEach(macroType => {
     const macroBuckets = buckets[macroType].filter(b => b.name.trim());
-    const macroTotal = allocations[macroType];
-    let sumAllocated = 0;
-
     macroBuckets.forEach((b) => {
-      const bucketAlloc = b.allocated ?? 0;
-      sumAllocated += bucketAlloc;
       addBucket({
         macroType,
         name: b.name,
         emoji: b.emoji,
-        allocated: bucketAlloc,
+        allocated: b.allocated ?? 0,
         isPinned: b.isPinned,
       });
     });
-
-    // Auto-create Buffer bucket for any unallocated remainder
-    const remainder = macroTotal - sumAllocated;
-    if (remainder > 0) {
-      addBucket({ macroType, name: 'Buffer', emoji: '🪣', allocated: remainder, isPinned: false });
-    }
   });
 
   // 5. Complete onboarding

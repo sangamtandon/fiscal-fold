@@ -15,13 +15,16 @@ import {
   updateBucket,
   removeBucket,
   resetState,
+  getMacroSummary,
+  getCurrentCycle,
+  updateCycleAllocations,
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { getTheme, setTheme } from '../utils/theme.js';
 import { navigate } from '../router.js';
 import { exportTransactionsCSV, exportAllDataJSON } from '../utils/export.js';
-import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
+import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO, PRESETS } from '../data/models.js';
 
 /**
  * @param {HTMLElement} container
@@ -61,6 +64,13 @@ function _render(container) {
           <div class="settings-field__right">
             <span class="settings-field__value" id="val-salaryDate">${user ? `${user.salaryDate}${_ordinal(user.salaryDate)} of month` : '—'}</span>
             <button class="btn-text settings-edit-btn" data-edit="salaryDate">Edit</button>
+          </div>
+        </div>
+        <div class="settings-field" id="field-ratios">
+          <span class="settings-field__label">Budget Split</span>
+          <div class="settings-field__right">
+            <span class="settings-field__value" id="val-ratios">${user ? `${user.ratios.needs}% / ${user.ratios.wants}% / ${user.ratios.future}%` : '—'}</span>
+            <button class="btn-text settings-edit-btn" data-edit="ratios">Edit</button>
           </div>
         </div>
       </div>
@@ -156,6 +166,8 @@ function _renderBucketGroup(macroType, label) {
   const buckets = getBuckets(macroType);
   const colors = { needs: 'var(--needs)', wants: 'var(--wants)', future: 'var(--future)' };
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
+  const summary = getMacroSummary(macroType);
+  const unallocated = summary.unallocated ?? 0;
 
   return `
     <div class="settings-bucket-group" id="bucket-group-${macroType}">
@@ -164,6 +176,14 @@ function _renderBucketGroup(macroType, label) {
         <span class="font-semibold" style="font-size:var(--text-sm);">${label}</span>
         <span class="text-tertiary" style="font-size:var(--text-xs); margin-left:auto;">${buckets.length} bucket${buckets.length !== 1 ? 's' : ''}</span>
       </div>
+      ${unallocated !== 0 ? `
+        <div class="settings-unallocated-banner" id="unallocated-${macroType}"
+          style="display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); margin: var(--space-2) 0; background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md);">
+          <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
+          <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? `unallocated in ${label} — edit a bucket to assign it` : `over-allocated in ${label} — trim a bucket`}</span>
+        </div>
+      ` : ''}
       ${buckets.map(b => `
         <div class="settings-bucket-row" data-bucket-id="${b.id}">
           <span class="settings-bucket-row__emoji">${b.emoji}</span>
@@ -174,7 +194,7 @@ function _renderBucketGroup(macroType, label) {
             title="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">📌</button>
           <button class="btn-icon settings-bucket-btn"
             data-action="edit-bucket" data-bucket-id="${b.id}" data-macro="${macroType}"
-            title="Rename">✏️</button>
+            title="Edit bucket">✏️</button>
           <button class="btn-icon settings-bucket-btn settings-bucket-btn--danger"
             data-action="remove-bucket" data-bucket-id="${b.id}"
             title="Remove">×</button>
@@ -312,6 +332,59 @@ function _openProfileEdit(container, field) {
     });
     requestAnimationFrame(() => salInput?.focus());
 
+  } else if (field === 'ratios') {
+    const current = user?.ratios || { ...PRESETS.balanced };
+    rightEl.innerHTML = `
+      <div class="settings-ratios-edit" style="display:flex; flex-direction:column; gap: var(--space-2); align-items:flex-end;">
+        <div style="display:flex; gap: var(--space-2); align-items:center;">
+          <label style="font-size: var(--text-xs); color: var(--text-tertiary);">Needs</label>
+          <input type="number" class="input-field settings-inline-input" id="edit-ratio-needs"
+            min="0" max="100" inputmode="numeric" value="${current.needs}" style="max-width:64px;" />%
+          <label style="font-size: var(--text-xs); color: var(--text-tertiary);">Wants</label>
+          <input type="number" class="input-field settings-inline-input" id="edit-ratio-wants"
+            min="0" max="100" inputmode="numeric" value="${current.wants}" style="max-width:64px;" />%
+          <label style="font-size: var(--text-xs); color: var(--text-tertiary);">Future</label>
+          <input type="number" class="input-field settings-inline-input" id="edit-ratio-future"
+            min="0" max="100" inputmode="numeric" value="${current.future}" style="max-width:64px;" />%
+        </div>
+        <div style="display:flex; gap: var(--space-2); align-items:center;">
+          <span class="text-tertiary" style="font-size: var(--text-xs);" id="edit-ratio-sum">Total: ${current.needs + current.wants + current.future}%</span>
+          <button class="btn btn-primary btn-sm" data-save="ratios">Save</button>
+          <button class="btn btn-ghost btn-sm" data-cancel="ratios">✕</button>
+        </div>
+      </div>
+    `;
+    const inputs = {
+      needs: container.querySelector('#edit-ratio-needs'),
+      wants: container.querySelector('#edit-ratio-wants'),
+      future: container.querySelector('#edit-ratio-future'),
+    };
+    const sumEl = container.querySelector('#edit-ratio-sum');
+    const updateSum = () => {
+      const sum = Object.values(inputs).reduce((s, el) => s + (parseInt(el.value, 10) || 0), 0);
+      sumEl.textContent = `Total: ${sum}%`;
+      sumEl.style.color = sum === 100 ? 'var(--accent-primary)' : 'var(--warn)';
+    };
+    Object.values(inputs).forEach(el => el.addEventListener('input', updateSum));
+    updateSum();
+    container.querySelector('[data-save="ratios"]').addEventListener('click', () => {
+      const ratios = {
+        needs: parseInt(inputs.needs.value, 10) || 0,
+        wants: parseInt(inputs.wants.value, 10) || 0,
+        future: parseInt(inputs.future.value, 10) || 0,
+      };
+      const sum = ratios.needs + ratios.wants + ratios.future;
+      if (sum !== 100) { showToast(`Splits must total 100% (currently ${sum}%)`); return; }
+      setUser({ ratios, preset: 'custom' });
+      _restoreProfileField(container, field, `${ratios.needs}% / ${ratios.wants}% / ${ratios.future}%`);
+      showToast('Budget split updated ✓');
+      _showRatiosRecalcPrompt(container);
+    });
+    container.querySelector('[data-cancel="ratios"]').addEventListener('click', () => {
+      _restoreProfileField(container, field, `${current.needs}% / ${current.wants}% / ${current.future}%`);
+    });
+    requestAnimationFrame(() => inputs.needs?.focus());
+
   } else if (field === 'salaryDate') {
     const current = user?.salaryDate || 1;
     rightEl.innerHTML = `
@@ -346,7 +419,7 @@ function _restoreProfileField(container, field, displayValue) {
   const fieldEl = container.querySelector(`#field-${field}`);
   if (!fieldEl) return;
   const rightEl = fieldEl.querySelector('.settings-field__right');
-  const fieldName = { name: 'name', salary: 'salary', salaryDate: 'salaryDate' }[field];
+  const fieldName = { name: 'name', salary: 'salary', salaryDate: 'salaryDate', ratios: 'ratios' }[field] || field;
   rightEl.innerHTML = `
     <span class="settings-field__value" id="val-${fieldName}">${displayValue}</span>
     <button class="btn-text settings-edit-btn" data-edit="${fieldName}">Edit</button>
@@ -354,6 +427,42 @@ function _restoreProfileField(container, field, displayValue) {
   rightEl.querySelector('.settings-edit-btn').addEventListener('click', () => {
     _openProfileEdit(container, field);
   });
+}
+
+function _showRatiosRecalcPrompt(container) {
+  container.querySelector('#ratios-recalc-prompt')?.remove();
+  const fieldEl = container.querySelector('#field-ratios');
+  if (!fieldEl) return;
+
+  const el = document.createElement('div');
+  el.id = 'ratios-recalc-prompt';
+  el.className = 'settings-recalc-prompt';
+  el.innerHTML = `
+    <span class="settings-recalc-prompt__note">New split applies from your next payday cycle.</span>
+    <button class="btn btn-ghost btn-sm" id="btn-recalc-ratios-now">Recalculate current cycle →</button>
+  `;
+  fieldEl.after(el);
+
+  el.querySelector('#btn-recalc-ratios-now').addEventListener('click', () => {
+    _recalculateAllocationsFromRatios();
+    el.remove();
+    _refreshBucketsPanel(container);
+    showToast('Current cycle recalculated ✓');
+  });
+}
+
+function _recalculateAllocationsFromRatios() {
+  const user = getUser();
+  if (!user) return;
+  // Push new macro totals into the current cycle so getMacroSummary.unallocated
+  // is computed against the new ratio, then proportionally rescale buckets.
+  const cycle = getCurrentCycle();
+  if (cycle) {
+    const needs = Math.round(cycle.salary * user.ratios.needs / 100);
+    const wants = Math.round(cycle.salary * user.ratios.wants / 100);
+    updateCycleAllocations({ needs, wants, future: cycle.salary - needs - wants });
+  }
+  _recalculateBucketAllocations(user.salary);
 }
 
 function _showSalaryRecalcPrompt(container, newSalary) {
@@ -429,6 +538,8 @@ function _openBucketEditInline(container, bucketId, macro) {
     <span class="settings-bucket-row__emoji" style="cursor:pointer;" data-action="pick-emoji" data-bucket-id="${bucketId}" id="emoji-picker-target-${bucketId}">${bucket.emoji}</span>
     <input type="text" class="input-field settings-inline-input" id="edit-bucket-name-${bucketId}"
       value="${bucket.name}" placeholder="Bucket name" maxlength="25" style="flex:1;" />
+    <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${bucketId}"
+      inputmode="numeric" value="${bucket.allocated > 0 ? formatNumber(bucket.allocated) : ''}" placeholder="₹0" style="max-width:90px;" />
     <button class="btn btn-primary btn-sm" data-save-bucket="${bucketId}">Save</button>
     <button class="btn btn-ghost btn-sm" data-cancel-bucket>✕</button>
   `;
@@ -439,10 +550,24 @@ function _openBucketEditInline(container, bucketId, macro) {
     rowEl.querySelector(`#emoji-picker-target-${bucketId}`).textContent = selectedEmoji;
   });
 
+  // Format alloc input live
+  const allocInput = rowEl.querySelector(`#edit-bucket-alloc-${bucketId}`);
+  allocInput.addEventListener('input', e => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    const num = parseInt(raw, 10) || 0;
+    e.target.value = num > 0 ? formatNumber(num) : '';
+  });
+
   rowEl.querySelector(`[data-save-bucket="${bucketId}"]`).addEventListener('click', () => {
     const newName = rowEl.querySelector(`#edit-bucket-name-${bucketId}`).value.trim();
     if (!newName) { showToast('Bucket name cannot be empty'); return; }
-    updateBucket(bucketId, { name: newName, emoji: selectedEmoji });
+    const rawAlloc = allocInput.value.replace(/[^0-9]/g, '');
+    const newAlloc = parseInt(rawAlloc, 10) || 0;
+    if (newAlloc < bucket.spent) {
+      showToast(`Allocation can't be below already-spent (${formatCurrency(bucket.spent)})`);
+      return;
+    }
+    updateBucket(bucketId, { name: newName, emoji: selectedEmoji, allocated: newAlloc });
     _refreshBucketsPanel(container);
     showToast('Bucket updated ✓');
   });
