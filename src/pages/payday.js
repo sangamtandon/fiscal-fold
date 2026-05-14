@@ -138,7 +138,20 @@ export function renderPaydayPage(container) {
   });
 
   container.querySelector('#pd-confirm').addEventListener('click', () => {
-    _startNewCycle(container, cycle, user);
+    const sweepRows = container.querySelectorAll('.pd-sweep-row');
+    const sweepTotalEl = container.querySelector('.pd-sweep-total');
+
+    if (sweepRows.length > 0) {
+      sweepRows.forEach((row, i) => {
+        setTimeout(() => row.classList.add('pd-sweep-row--flying'), i * 80);
+      });
+      if (sweepTotalEl) {
+        setTimeout(() => sweepTotalEl.classList.add('pd-sweep-total--flash'), sweepRows.length * 80);
+      }
+      setTimeout(() => _startNewCycle(container, cycle, user), sweepRows.length * 80 + 500);
+    } else {
+      _startNewCycle(container, cycle, user);
+    }
   });
 }
 

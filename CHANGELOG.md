@@ -6,6 +6,19 @@ Versioning follows sprint tags: `v0.{sprint}.0`.
 
 ---
 
+## [0.11.0] — 2026-05-14 — Sprint 11: PWA — Offline Support & Install Prompt
+
+### Added
+- **Service Worker** (`public/sw.js`) — cache-first for same-origin assets, network-first navigation with app-shell fallback, stale-while-revalidate for external resources (Google Fonts). Caches the app shell on install; cleans old caches on activate.
+- **Offline Indicator** (`src/main.js`, `src/style.css`) — amber "Offline" badge in the app header while `navigator.onLine` is false. Disappears + shows "Back online ✓" toast when connectivity is restored.
+- **Install Prompt Banner** (`src/main.js`, `src/style.css`) — captures `beforeinstallprompt`, shows a dismissible bottom banner on the dashboard with logo, description, and "Add to Home Screen" CTA. Dismiss stores `pwa-install-dismissed` flag. `appinstalled` fires "Fiscal Fold installed! 🎉" toast.
+
+### Changed
+- `public/manifest.json` — replaced broken PNG icon references with the existing `favicon.svg`; added `categories: ["finance", "productivity"]`.
+- `ARCHITECTURE.md` — PWA row updated to ✅; `sw.js` added to file map.
+
+---
+
 ## [0.4.0] — 2026-05-13 — Sprint 4: Dashboard Core Layout
 
 ### Added

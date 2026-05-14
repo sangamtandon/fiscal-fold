@@ -179,6 +179,36 @@ Check off each item. If any item fails, fix it before merging.
 - [ ] "See all" button on dashboard Recent Transactions navigates to `/#/transactions`
 - [ ] Settings → Commitments row still navigates to `/commitments`
 
+### Sprint 11 — PWA: Offline Support & Install Prompt
+- [ ] Service worker registers without error (DevTools → Application → Service Workers)
+- [ ] After first load, app works fully offline (disable network in DevTools → reload page)
+- [ ] Offline badge appears in header when network is disabled
+- [ ] Offline badge disappears and "Back online ✓" toast shows when network is re-enabled
+- [ ] Install banner appears on dashboard when browser fires `beforeinstallprompt` (Chrome on Android / desktop)
+- [ ] "Add to Home Screen" button triggers the native install prompt
+- [ ] Dismissing the banner stores `pwa-install-dismissed` and does not show again on re-visit
+- [ ] `appinstalled` event hides banner and shows "Fiscal Fold installed! 🎉" toast
+- [ ] manifest.json passes DevTools → Application → Manifest validation (no broken icon errors)
+- [ ] App can be installed and opens in standalone mode (no browser chrome)
+
+### Sprint 12 — Polish, Animations & Final QA
+- [ ] Health bars animate from 0 → target width on dashboard load (not instant)
+- [ ] Macro-bar expand/collapse still works correctly after animation change
+- [ ] Sweep rows animate (fly right + fade) when "Sweep & Start New Cycle →" is tapped
+- [ ] Sweep total flashes green briefly before navigation
+- [ ] If no sweep rows, button works immediately with no animation delay
+- [ ] Confirmation checkmark animates in (scale up) after tapping confirm in transaction modal
+- [ ] Page transitions play on route change (fade-slide in)
+- [ ] All buttons have `min-height: 44px` (no tiny tap targets)
+- [ ] Settings gear icon button is 44×44px
+- [ ] Transaction modal quick-amount buttons meet 44px height
+- [ ] Transaction modal bucket rows meet 44px height
+- [ ] Keyboard focus ring appears on all interactive elements (Tab through the UI)
+- [ ] Health bars have `role="progressbar"` and `aria-valuenow` (inspect in DevTools)
+- [ ] Transaction modal drawer has `role="dialog"` and `aria-modal="true"`
+- [ ] Modal overlay is `aria-hidden="true"`
+- [ ] Close buttons in modal have `aria-label="Close"`
+
 ---
 
 ## ✅ Final Checks
