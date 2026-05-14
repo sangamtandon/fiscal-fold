@@ -455,12 +455,25 @@ function renderStep4(container) {
     });
   });
 
+  const preview = previewFirstCycle();
+  const prorated = preview && preview.proRateFactor < 1;
+
   container.innerHTML = `
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
       <h2 class="onboarding__title">Name your buckets</h2>
       <p class="onboarding__subtitle">Set a budget for each — the more intentional, the harder it is to overspend.</p>
     </div>
+
+    ${prorated ? `
+      <div class="onboarding__prorate-note" style="display:flex; gap: var(--space-2); align-items:center; padding: var(--space-3); margin-bottom: var(--space-3); background: rgba(52, 211, 153, 0.08); border: 1px solid var(--accent-primary); border-radius: var(--radius-md);">
+        <span style="font-size: 16px;">📅</span>
+        <div style="flex:1;">
+          <p class="font-semibold" style="font-size: var(--text-xs); color: var(--accent-primary);">First cycle is partial</p>
+          <p class="text-tertiary" style="font-size: var(--text-xs);">${preview.remainingDays} of ${preview.totalDays} days left — you'll start with ${formatCurrency(preview.proratedSalary)} (~${Math.round(preview.proRateFactor * 100)}% of ${formatCurrency(formData.salary)}). Your bucket allocations will be scaled to match. Next payday: ${preview.endLabel}.</p>
+        </div>
+      </div>
+    ` : ''}
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
       ${renderBucketSection('needs', 'Needs')}
@@ -471,6 +484,44 @@ function renderStep4(container) {
 
   setNextEnabled(true);
   wireUpBucketEvents(container);
+}
+
+/**
+ * Compute first-cycle pro-rate info using the same logic as finishOnboarding.
+ * Returns null if salary or salaryDate isn't set yet.
+ */
+function previewFirstCycle() {
+  const { salary, salaryDate } = formData;
+  if (!salary || !salaryDate) return null;
+
+  const now = new Date();
+  const clampDay = (year, month, day) => Math.min(day, new Date(year, month + 1, 0).getDate());
+  let startDate, endDate;
+  if (now.getDate() <= salaryDate) {
+    const sy = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    const sm = (now.getMonth() + 11) % 12;
+    startDate = new Date(sy, sm, clampDay(sy, sm, salaryDate));
+    const ey = now.getFullYear();
+    const em = now.getMonth();
+    endDate = new Date(ey, em, clampDay(ey, em, salaryDate - 1));
+  } else {
+    const sy = now.getFullYear();
+    const sm = now.getMonth();
+    startDate = new Date(sy, sm, clampDay(sy, sm, salaryDate));
+    const ey = now.getMonth() === 11 ? now.getFullYear() + 1 : now.getFullYear();
+    const em = (now.getMonth() + 1) % 12;
+    endDate = new Date(ey, em, clampDay(ey, em, salaryDate - 1));
+  }
+  const fmt = d => d.toISOString().split('T')[0];
+  const totalDays = cycleDayCount(fmt(startDate), fmt(endDate));
+  const remainingDays = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24)) + 1;
+  const proRateFactor = Math.max(0, Math.min(1, remainingDays / totalDays));
+  const proratedSalary = Math.round(salary * proRateFactor);
+  const nextPayday = new Date(endDate);
+  nextPayday.setDate(nextPayday.getDate() + 1);
+  const endLabel = nextPayday.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+  return { totalDays, remainingDays, proRateFactor, proratedSalary, endLabel };
 }
 
 function renderBucketSection(macroType, label) {
@@ -725,10 +776,11 @@ function finishOnboarding() {
     allocations,
   });
 
-  // 4. Create micro-buckets using user-set allocations.
-  // Any unallocated remainder per macro is left as a derived value
-  // (macro allocation minus sum of bucket allocations), surfaced on the
-  // dashboard and in Settings — not absorbed into an auto-created bucket.
+  // 4. Create micro-buckets using user-set allocations, pro-rated to match
+  // the first cycle. The user allocated against the full-month macro budget
+  // in Step 4, so each bucket gets multiplied by the same factor used to
+  // pro-rate the cycle salary. This keeps Σ bucket.allocated == macro
+  // allocation when the user filled the macro completely.
   ['needs', 'wants', 'future'].forEach(macroType => {
     const macroBuckets = buckets[macroType].filter(b => b.name.trim());
     macroBuckets.forEach((b) => {
@@ -736,7 +788,7 @@ function finishOnboarding() {
         macroType,
         name: b.name,
         emoji: b.emoji,
-        allocated: b.allocated ?? 0,
+        allocated: Math.round((b.allocated ?? 0) * proRateFactor),
         isPinned: b.isPinned,
       });
     });
