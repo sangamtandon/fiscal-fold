@@ -258,3 +258,57 @@
   font-size: var(--text-xs);
   height: 32px;
 }
+
+/* ---- Theme Toggle ---- */
+.settings-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 26px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.settings-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.settings-toggle__track {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-hover);
+  border-radius: var(--radius-full);
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+
+.settings-toggle__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  transition: transform var(--duration-normal) var(--ease-spring), background var(--duration-fast);
+}
+
+.settings-toggle input:checked + .settings-toggle__track {
+  background: var(--accent-primary-dim);
+  border-color: var(--accent-primary);
+}
+
+.settings-toggle input:checked + .settings-toggle__track::after {
+  transform: translateX(18px);
+  background: var(--accent-primary);
+}
+
+.settings-toggle input:focus-visible + .settings-toggle__track {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+

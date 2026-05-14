@@ -115,6 +115,10 @@
   --duration-slow: 400ms;
   --duration-emphasis: 600ms;
 
+  /* === Header Blur Background === */
+  --bg-header-blur: rgba(15, 17, 23, 0.85);
+  --bg-card-glass:  rgba(28, 31, 46, 0.6);
+
   /* === Z-Index Scale === */
   --z-base: 1;
   --z-dropdown: 100;
@@ -129,6 +133,34 @@
   --header-height: 60px;
   --fab-size: 60px;
   --bottom-safe: env(safe-area-inset-bottom, 0px);
+}
+
+/* ---- Light Theme Overrides ---- */
+[data-theme="light"] {
+  --bg-primary:        #f8fafc;
+  --bg-secondary:      #f1f5f9;
+  --bg-card:           #ffffff;
+  --bg-card-hover:     #f8fafc;
+  --bg-elevated:       #f1f5f9;
+  --bg-surface:        rgba(0, 0, 0, 0.03);
+  --bg-overlay:        rgba(0, 0, 0, 0.4);
+  --bg-header-blur:    rgba(248, 250, 252, 0.88);
+
+  --text-primary:      #0f172a;
+  --text-secondary:    #475569;
+  --text-tertiary:     #94a3b8;
+  --text-inverse:      #ffffff;
+
+  --border:            rgba(0, 0, 0, 0.07);
+  --border-hover:      rgba(0, 0, 0, 0.14);
+  --border-accent:     rgba(52, 211, 153, 0.4);
+  --bg-card-glass:     rgba(255, 255, 255, 0.7);
+
+  --shadow-sm:         0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-md:         0 4px 12px rgba(0, 0, 0, 0.10);
+  --shadow-lg:         0 8px 30px rgba(0, 0, 0, 0.14);
+  --shadow-glow-green: 0 0 20px rgba(52, 211, 153, 0.20);
+  --shadow-glow-amber: 0 0 20px rgba(245, 158, 11, 0.20);
 }
 
 /* ---- Reset & Base ---- */
@@ -246,7 +278,7 @@ input, select, textarea {
 }
 
 .card--glass {
-  background: rgba(28, 31, 46, 0.6);
+  background: var(--bg-card-glass);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
@@ -635,7 +667,7 @@ input, select, textarea {
   justify-content: space-between;
   padding: var(--space-4) var(--space-5);
   height: var(--header-height);
-  background: rgba(15, 17, 23, 0.85);
+  background: var(--bg-header-blur);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
