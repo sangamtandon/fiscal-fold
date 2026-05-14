@@ -509,3 +509,98 @@
   border-color: var(--accent-primary);
   outline: none;
 }
+
+/* ---- Step 5 — Commitments ---- */
+
+.onboarding__commitments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.onboarding__commitment-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.onboarding__commitment-item {
+  display: grid;
+  grid-template-columns: auto 1fr 80px 92px 56px auto;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.onboarding__commitment-name,
+.onboarding__commitment-amount,
+.onboarding__commitment-due,
+.onboarding__commitment-macro {
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+}
+
+.onboarding__commitment-amount,
+.onboarding__commitment-due {
+  font-family: var(--font-mono);
+  text-align: right;
+  -moz-appearance: textfield;
+}
+
+.onboarding__commitment-amount::-webkit-inner-spin-button,
+.onboarding__commitment-amount::-webkit-outer-spin-button,
+.onboarding__commitment-due::-webkit-inner-spin-button,
+.onboarding__commitment-due::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.onboarding__commitment-name:focus,
+.onboarding__commitment-amount:focus,
+.onboarding__commitment-due:focus,
+.onboarding__commitment-macro:focus {
+  border-color: var(--accent-primary);
+  outline: none;
+}
+
+.onboarding__commitment-templates {
+  margin-top: var(--space-2);
+}
+
+.onboarding__commitment-template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.onboarding__commitment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill, 999px);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+}
+
+.onboarding__commitment-chip:hover {
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.onboarding__commitment-chip.is-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
