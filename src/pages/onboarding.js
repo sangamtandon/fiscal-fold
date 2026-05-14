@@ -654,6 +654,18 @@ function finishOnboarding() {
     return;
   }
 
+  // Block over-allocation: bucket sum per macro must not exceed the macro's share of salary
+  const overAllocated = ['needs', 'wants', 'future'].filter(macroType => {
+    const macroAmount = Math.round(salary * ratios[macroType] / 100);
+    const sumAllocated = buckets[macroType].reduce((s, b) => s + (b.allocated ?? 0), 0);
+    return sumAllocated > macroAmount;
+  });
+  if (overAllocated.length > 0) {
+    const labels = { needs: 'Needs', wants: 'Wants', future: 'Future' };
+    showToast(`Trim ${overAllocated.map(m => labels[m]).join(', ')} — buckets exceed the macro budget`);
+    return;
+  }
+
   // 1. Set user
   setUser({
     name,
