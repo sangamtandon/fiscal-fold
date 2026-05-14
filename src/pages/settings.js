@@ -223,7 +223,6 @@ function _openProfileEdit(container, field) {
       const val = container.querySelector('#edit-input-name').value.trim();
       if (!val) { showToast('Name cannot be empty'); return; }
       setUser({ name: val });
-      container.querySelector('#val-name').textContent = val;
       _restoreProfileField(container, field, val);
       showToast('Name updated ✓');
     });
