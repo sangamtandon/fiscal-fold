@@ -298,6 +298,7 @@ function _openProfileEdit(container, field) {
       setUser({ salary: num });
       _restoreProfileField(container, field, formatCurrency(num));
       showToast('Salary updated ✓');
+      _showSalaryRecalcPrompt(container, num);
     });
     container.querySelector('[data-cancel="salary"]').addEventListener('click', () => {
       _restoreProfileField(container, field, user ? formatCurrency(user.salary) : '—');
@@ -353,6 +354,49 @@ function _restoreProfileField(container, field, displayValue) {
   rightEl.querySelector('.settings-edit-btn').addEventListener('click', () => {
     _openProfileEdit(container, field);
   });
+}
+
+function _showSalaryRecalcPrompt(container, newSalary) {
+  container.querySelector('#salary-recalc-prompt')?.remove();
+  const fieldEl = container.querySelector('#field-salary');
+  if (!fieldEl) return;
+
+  const el = document.createElement('div');
+  el.id = 'salary-recalc-prompt';
+  el.className = 'settings-recalc-prompt';
+  el.innerHTML = `
+    <span class="settings-recalc-prompt__note">Changes apply from your next payday cycle.</span>
+    <button class="btn btn-ghost btn-sm" id="btn-recalc-now">Recalculate current cycle →</button>
+  `;
+  fieldEl.after(el);
+
+  el.querySelector('#btn-recalc-now').addEventListener('click', () => {
+    _recalculateBucketAllocations(newSalary);
+    el.remove();
+    showToast('Current cycle recalculated ✓');
+  });
+}
+
+function _recalculateBucketAllocations(newSalary) {
+  const { ratios } = getUser();
+  const newNeeds = Math.round(newSalary * ratios.needs / 100);
+  const newWants = Math.round(newSalary * ratios.wants / 100);
+  const newFuture = newSalary - newNeeds - newWants;
+
+  for (const [macro, newTotal] of [['needs', newNeeds], ['wants', newWants], ['future', newFuture]]) {
+    const buckets = getBuckets(macro);
+    if (!buckets.length) continue;
+    const oldTotal = buckets.reduce((s, b) => s + b.allocated, 0);
+    let distributed = 0;
+    buckets.forEach((b, i) => {
+      const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / buckets.length;
+      const newAlloc = i === buckets.length - 1
+        ? newTotal - distributed
+        : Math.round(newTotal * proportion);
+      distributed += newAlloc;
+      updateBucket(b.id, { allocated: newAlloc });
+    });
+  }
 }
 
 // ---- Bucket inline actions ----
