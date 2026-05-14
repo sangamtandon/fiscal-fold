@@ -24,14 +24,38 @@ import { EMOJI_PALETTE } from '../data/models.js';
 
 // ---- Due-date helpers ----
 
+const MS_DAY = 1000 * 60 * 60 * 24;
+
+/**
+ * Compute whole-day diff from now to the next occurrence of dueDate (day-of-month).
+ * If dueDate <= today, the next occurrence is in the following month.
+ * @param {number} dueDate  1–31
+ * @returns {number}  negative = overdue
+ */
+function _dueDiffDays(dueDate) {
+  const now = new Date();
+  const today = now.getDate();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  // Try this month first
+  let target = new Date(year, month, dueDate);
+  // If the day doesn't exist in this month (e.g. dueDate=31 in April) or it has already passed, use next month
+  if (target.getDate() !== dueDate || dueDate < today) {
+    target = new Date(year, month + 1, dueDate);
+    // Clamp to last day of next month if needed
+    if (target.getDate() !== dueDate) target = new Date(year, month + 2, 0);
+  }
+  const startOfToday = new Date(year, month, today);
+  return Math.round((target - startOfToday) / MS_DAY);
+}
+
 /**
  * @param {import('../data/models.js').Commitment} c
  * @returns {'paid'|'overdue'|'due-today'|'due-soon'|'upcoming'}
  */
 function _dueStatus(c) {
   if (c.isPaid) return 'paid';
-  const today = new Date().getDate();
-  const diff = c.dueDate - today;
+  const diff = _dueDiffDays(c.dueDate);
   if (diff < 0) return 'overdue';
   if (diff === 0) return 'due-today';
   if (diff <= 3) return 'due-soon';
@@ -433,8 +457,7 @@ export function getDueSoonCommitments() {
  */
 export function renderCommitmentDueRow(c) {
   const status = _dueStatus(c);
-  const today = new Date().getDate();
-  const diff = c.dueDate - today;
+  const diff = _dueDiffDays(c.dueDate);
   let timeLabel = '';
   if (status === 'overdue') timeLabel = `${Math.abs(diff)}d overdue`;
   else if (status === 'due-today') timeLabel = 'Due today';

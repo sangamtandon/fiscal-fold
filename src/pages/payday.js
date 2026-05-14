@@ -15,7 +15,7 @@ import {
   createCycle,
   copyBucketsToNewCycle,
 } from '../data/store.js';
-import { formatCurrency, percent } from '../utils/helpers.js';
+import { formatCurrency, percent, cycleDayCount } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 
 const _macroColor = {
@@ -49,12 +49,12 @@ export function renderPaydayPage(container) {
     .filter(b => b.remaining > 0);
   const sweepTotal = sweepBuckets.reduce((s, b) => s + b.remaining, 0);
 
-  // New cycle allocation preview
-  const salary = user.salary;
+  // New cycle allocation preview (B6: use user.salary for next month, B1: derive future as remainder)
+  const nextSalary = user.salary;
   const ratios = user.ratios;
-  const baseNeeds = Math.round(salary * ratios.needs / 100);
-  const baseWants = Math.round(salary * ratios.wants / 100);
-  const baseFuture = Math.round(salary * ratios.future / 100);
+  const baseNeeds = Math.round(nextSalary * ratios.needs / 100);
+  const baseWants = Math.round(nextSalary * ratios.wants / 100);
+  const baseFuture = nextSalary - baseNeeds - baseWants;
 
   container.innerHTML = `
     <div class="pd-page">
@@ -193,30 +193,27 @@ function _startNewCycle(container, cycle, user) {
   const sweep = runSweep();
   const sweepAmount = sweep?.amount || 0;
 
-  // Build new cycle allocations
+  // Build new cycle allocations (B6: use user.salary, B1: derive future as remainder)
   const salary = user.salary;
   const ratios = user.ratios;
+  const newNeeds = Math.round(salary * ratios.needs / 100);
+  const newWants = Math.round(salary * ratios.wants / 100);
   const newAllocations = {
-    needs: Math.round(salary * ratios.needs / 100),
-    wants: Math.round(salary * ratios.wants / 100),
-    future: Math.round(salary * ratios.future / 100) + sweepAmount,
+    needs: newNeeds,
+    wants: newWants,
+    future: salary - newNeeds - newWants + sweepAmount,
   };
 
-  // Compute next cycle date range (same duration as old cycle)
-  const oldStart = new Date(cycle.startDate);
-  const oldEnd = new Date(cycle.endDate);
-  const durationDays = Math.ceil((oldEnd - oldStart) / (1000 * 60 * 60 * 24));
-
-  const newStart = new Date(oldEnd);
-  newStart.setDate(newStart.getDate() + 1);
-  const newEnd = new Date(newStart);
-  newEnd.setDate(newEnd.getDate() + durationDays);
-
-  const fmt = d => d.toISOString().split('T')[0];
+  // Compute next cycle date range in UTC string math (A4: avoid local-tz shift)
+  const durationDays = cycleDayCount(cycle.startDate, cycle.endDate);
+  const [ey, em, ed] = cycle.endDate.split('-').map(Number);
+  const newStartMs = Date.UTC(ey, em - 1, ed + 1);
+  const newEndMs   = Date.UTC(ey, em - 1, ed + durationDays);
+  const fmtUtc = ms => new Date(ms).toISOString().split('T')[0];
 
   const newCycle = createCycle({
-    startDate: fmt(newStart),
-    endDate: fmt(newEnd),
+    startDate: fmtUtc(newStartMs),
+    endDate: fmtUtc(newEndMs),
     salary,
     allocations: newAllocations,
   });
