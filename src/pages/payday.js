@@ -187,42 +187,48 @@ function _startNewCycle(container, cycle, user) {
   const btn = container.querySelector('#pd-confirm');
   if (btn) btn.disabled = true;
 
-  const oldCycleId = cycle.id;
+  try {
+    const oldCycleId = cycle.id;
 
-  // Run sweep — zeros out unspent Wants+Future and records the amount
-  const sweep = runSweep();
-  const sweepAmount = sweep?.amount || 0;
+    // Run sweep — zeros out unspent Wants+Future and records the amount
+    const sweep = runSweep();
+    const sweepAmount = sweep?.amount || 0;
 
-  // Build new cycle allocations (B6: use user.salary, B1: derive future as remainder)
-  const salary = user.salary;
-  const ratios = user.ratios;
-  const newNeeds = Math.round(salary * ratios.needs / 100);
-  const newWants = Math.round(salary * ratios.wants / 100);
-  const newAllocations = {
-    needs: newNeeds,
-    wants: newWants,
-    future: salary - newNeeds - newWants + sweepAmount,
-  };
+    // Build new cycle allocations (B6: use user.salary, B1: derive future as remainder)
+    const salary = user.salary;
+    const ratios = user.ratios;
+    const newNeeds = Math.round(salary * ratios.needs / 100);
+    const newWants = Math.round(salary * ratios.wants / 100);
+    const newAllocations = {
+      needs: newNeeds,
+      wants: newWants,
+      future: salary - newNeeds - newWants + sweepAmount,
+    };
 
-  // Compute next cycle date range in UTC string math (A4: avoid local-tz shift)
-  const durationDays = cycleDayCount(cycle.startDate, cycle.endDate);
-  const [ey, em, ed] = cycle.endDate.split('-').map(Number);
-  const newStartMs = Date.UTC(ey, em - 1, ed + 1);
-  const newEndMs   = Date.UTC(ey, em - 1, ed + durationDays);
-  const fmtUtc = ms => new Date(ms).toISOString().split('T')[0];
+    // Compute next cycle date range in UTC string math (A4: avoid local-tz shift)
+    const durationDays = cycleDayCount(cycle.startDate, cycle.endDate);
+    const [ey, em, ed] = cycle.endDate.split('-').map(Number);
+    const newStartMs = Date.UTC(ey, em - 1, ed + 1);
+    const newEndMs   = Date.UTC(ey, em - 1, ed + durationDays);
+    const fmtUtc = ms => new Date(ms).toISOString().split('T')[0];
 
-  const newCycle = createCycle({
-    startDate: fmtUtc(newStartMs),
-    endDate: fmtUtc(newEndMs),
-    salary,
-    allocations: newAllocations,
-  });
+    const newCycle = createCycle({
+      startDate: fmtUtc(newStartMs),
+      endDate: fmtUtc(newEndMs),
+      salary,
+      allocations: newAllocations,
+    });
 
-  // Copy bucket structure from old cycle with proportional re-allocation
-  copyBucketsToNewCycle(oldCycleId, newCycle.id, newAllocations);
+    // Copy bucket structure from old cycle with proportional re-allocation
+    copyBucketsToNewCycle(oldCycleId, newCycle.id, newAllocations);
 
-  import('../router.js').then(({ navigate }) => {
-    navigate('/dashboard');
-    showToast('New cycle started! 🎉', 'success');
-  });
+    import('../router.js').then(({ navigate }) => {
+      navigate('/dashboard');
+      showToast('New cycle started! 🎉', 'success');
+    });
+  } catch (e) {
+    if (btn) btn.disabled = false;
+    showToast('Failed to start new cycle — please try again');
+    console.error('_startNewCycle failed:', e);
+  }
 }

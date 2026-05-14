@@ -19,6 +19,7 @@ import {
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
 import { formatCurrency, formatNumber, uid, cycleDayCount } from '../utils/helpers.js';
 import { navigate } from '../router.js';
+import { showToast } from '../utils/toast.js';
 
 // ---- Onboarding State (local, not persisted until completion) ----
 let currentStep = 1;
@@ -337,7 +338,7 @@ function renderStep3(container) {
   });
 
   // Custom sliders
-  container.querySelectorAll('.onboarding__slider input[type="range"]').forEach(slider => {
+  container.querySelectorAll('input.onboarding__slider').forEach(slider => {
     slider.addEventListener('input', () => {
       const needsVal = parseInt(container.querySelector('#slider-needs').value, 10);
       const wantsVal = parseInt(container.querySelector('#slider-wants').value, 10);
@@ -581,6 +582,12 @@ function wireUpBucketEvents(container) {
 // ===================================================================
 function finishOnboarding() {
   const { name, salary, salaryDate, preset, ratios, buckets } = formData;
+
+  const totalNamed = Object.values(buckets).flat().filter(b => b.name.trim()).length;
+  if (totalNamed === 0) {
+    showToast('Add at least one bucket name to continue');
+    return;
+  }
 
   // 1. Set user
   setUser({
