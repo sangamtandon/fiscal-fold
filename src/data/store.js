@@ -671,7 +671,19 @@ export function addIncome(amount, targetBucketId, note = '') {
       notify('transactions');
     }
   } else {
+    // Untargeted income: split across macros using the user's ratio so the
+    // new money flows into each macro's unallocated pool — not silently lost
+    // against an unchanged cycle.allocations.
     cycle.salary += amount;
+    const ratios = _state.user?.ratios;
+    if (ratios) {
+      const addNeeds = Math.round(amount * ratios.needs / 100);
+      const addWants = Math.round(amount * ratios.wants / 100);
+      const addFuture = amount - addNeeds - addWants;
+      cycle.allocations.needs = (cycle.allocations.needs ?? 0) + addNeeds;
+      cycle.allocations.wants = (cycle.allocations.wants ?? 0) + addWants;
+      cycle.allocations.future = (cycle.allocations.future ?? 0) + addFuture;
+    }
   }
 
   save();

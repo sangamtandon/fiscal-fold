@@ -139,12 +139,12 @@ function _renderBucket() {
     </div>
 
     <div class="income-bucket-list">
-      <!-- Option: boost cycle salary (unallocated) -->
+      <!-- Option: boost cycle salary, split across macros by ratio -->
       <button class="income-bucket-option${_targetBucketId === null ? ' is-selected' : ''}" data-bucket-id="">
         <span style="font-size:20px;">🏦</span>
         <div class="income-bucket-option__info">
           <span class="income-bucket-option__name">Add to overall budget</span>
-          <span class="income-bucket-option__sub text-tertiary">Increases this cycle's total salary</span>
+          <span class="income-bucket-option__sub text-tertiary">Splits across Needs/Wants/Future by your budget ratio</span>
         </div>
         ${_targetBucketId === null ? '<span class="income-bucket-option__check">✓</span>' : ''}
       </button>
