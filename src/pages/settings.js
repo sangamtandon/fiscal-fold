@@ -15,6 +15,7 @@ import {
   updateBucket,
   removeBucket,
   resetState,
+  getCurrentCycle,
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
@@ -157,12 +158,19 @@ function _renderBucketGroup(macroType, label) {
   const colors = { needs: 'var(--needs)', wants: 'var(--wants)', future: 'var(--future)' };
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
 
+  const cycle = getCurrentCycle();
+  const macroTotal = cycle?.allocations?.[macroType] ?? 0;
+  const sumAllocated = buckets.reduce((s, b) => s + b.allocated, 0);
+  const unallocated = macroTotal - sumAllocated;
+
   return `
     <div class="settings-bucket-group" id="bucket-group-${macroType}">
       <div class="settings-bucket-group__header">
         <span class="settings-bucket-dot" style="background:${colors[macroType]};"></span>
         <span class="font-semibold" style="font-size:var(--text-sm);">${label}</span>
         <span class="text-tertiary" style="font-size:var(--text-xs); margin-left:auto;">${buckets.length} bucket${buckets.length !== 1 ? 's' : ''}</span>
+        ${unallocated > 0 ? `<span class="settings-pool-badge" title="Unallocated in this macro">+${formatCurrency(unallocated)} unallocated</span>` : ''}
+        ${unallocated < 0 ? `<span class="settings-pool-badge settings-pool-badge--over" title="Over-allocated">−${formatCurrency(Math.abs(unallocated))} over</span>` : ''}
       </div>
       ${buckets.map(b => `
         <div class="settings-bucket-row" data-bucket-id="${b.id}">
@@ -429,6 +437,8 @@ function _openBucketEditInline(container, bucketId, macro) {
     <span class="settings-bucket-row__emoji" style="cursor:pointer;" data-action="pick-emoji" data-bucket-id="${bucketId}" id="emoji-picker-target-${bucketId}">${bucket.emoji}</span>
     <input type="text" class="input-field settings-inline-input" id="edit-bucket-name-${bucketId}"
       value="${bucket.name}" placeholder="Bucket name" maxlength="25" style="flex:1;" />
+    <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${bucketId}"
+      inputmode="numeric" value="${bucket.allocated > 0 ? formatNumber(bucket.allocated) : ''}" placeholder="₹0" style="max-width:90px;" />
     <button class="btn btn-primary btn-sm" data-save-bucket="${bucketId}">Save</button>
     <button class="btn btn-ghost btn-sm" data-cancel-bucket>✕</button>
   `;
@@ -439,10 +449,19 @@ function _openBucketEditInline(container, bucketId, macro) {
     rowEl.querySelector(`#emoji-picker-target-${bucketId}`).textContent = selectedEmoji;
   });
 
+  const allocInput = rowEl.querySelector(`#edit-bucket-alloc-${bucketId}`);
+  allocInput.addEventListener('input', e => {
+    const raw = e.target.value.replace(/[^0-9]/g, '');
+    const num = parseInt(raw, 10) || 0;
+    e.target.value = num > 0 ? formatNumber(num) : '';
+  });
+
   rowEl.querySelector(`[data-save-bucket="${bucketId}"]`).addEventListener('click', () => {
     const newName = rowEl.querySelector(`#edit-bucket-name-${bucketId}`).value.trim();
     if (!newName) { showToast('Bucket name cannot be empty'); return; }
-    updateBucket(bucketId, { name: newName, emoji: selectedEmoji });
+    const rawAlloc = rowEl.querySelector(`#edit-bucket-alloc-${bucketId}`).value.replace(/[^0-9]/g, '');
+    const allocated = parseInt(rawAlloc, 10) || 0;
+    updateBucket(bucketId, { name: newName, emoji: selectedEmoji, allocated });
     _refreshBucketsPanel(container);
     showToast('Bucket updated ✓');
   });

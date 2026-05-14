@@ -130,6 +130,21 @@
   flex-shrink: 0;
 }
 
+.settings-pool-badge {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 99px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.settings-pool-badge--over {
+  color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 12%, transparent);
+}
+
 .settings-bucket-row {
   display: flex;
   align-items: center;
