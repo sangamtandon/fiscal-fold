@@ -17,6 +17,7 @@ import {
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
+import { getTheme, setTheme } from '../utils/theme.js';
 import { navigate } from '../router.js';
 import { exportTransactionsCSV, exportAllDataJSON } from '../utils/export.js';
 import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
@@ -60,6 +61,18 @@ function _render(container) {
             <span class="settings-field__value" id="val-salaryDate">${user ? `${user.salaryDate}${_ordinal(user.salaryDate)} of month` : '—'}</span>
             <button class="btn-text settings-edit-btn" data-edit="salaryDate">Edit</button>
           </div>
+        </div>
+      </div>
+
+      <!-- Appearance -->
+      <div class="card settings-section">
+        <h2 class="settings-section__heading">Appearance</h2>
+        <div class="settings-field">
+          <span class="settings-field__label">☀️ Light mode</span>
+          <label class="settings-toggle" aria-label="Toggle light mode">
+            <input type="checkbox" id="toggle-theme" ${getTheme() === 'light' ? 'checked' : ''}>
+            <span class="settings-toggle__track"></span>
+          </label>
         </div>
       </div>
 
@@ -166,6 +179,11 @@ function _renderBucketGroup(macroType, label) {
 
 function _wireEvents(container) {
   container.querySelector('#btn-back').addEventListener('click', () => navigate('/dashboard'));
+
+  container.querySelector('#toggle-theme').addEventListener('change', e => {
+    setTheme(e.target.checked ? 'light' : 'dark');
+  });
+
   container.querySelector('#btn-nav-commitments').addEventListener('click', () => navigate('/commitments'));
   container.querySelector('#btn-nav-history').addEventListener('click', () => navigate('/transactions'));
   container.querySelector('#btn-nav-income').addEventListener('click', () => {

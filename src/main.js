@@ -29,6 +29,11 @@ import { seedDemoData, renderDevToolbar } from './data/seed.js';
 import { formatCurrency, timeAgo, percent, daysRemaining, cycleDayCount } from './utils/helpers.js';
 import { showToast } from './utils/toast.js';
 
+// ---- Theme ----
+
+const _savedTheme = localStorage.getItem('theme');
+if (_savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
 // ---- PWA: Service Worker Registration ----
 
 if ('serviceWorker' in navigator) {
