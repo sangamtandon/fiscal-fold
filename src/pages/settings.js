@@ -14,6 +14,7 @@ import {
   addBucket,
   updateBucket,
   removeBucket,
+  resetState,
 } from '../data/store.js';
 import { formatCurrency, formatNumber } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
@@ -118,6 +119,19 @@ function _render(container) {
         </button>
       </div>
 
+      <!-- Danger Zone -->
+      <div class="settings-reset-wrap">
+        <button class="settings-reset-link" id="btn-reset-data">Reset all data</button>
+        <div class="settings-danger-zone__confirm" id="reset-confirm" hidden>
+          <p class="settings-danger-zone__warn">⚠️ This cannot be undone. All your financial data will be erased.</p>
+          <div class="settings-danger-zone__actions">
+            <button class="btn btn-ghost btn-sm" id="btn-reset-cancel">Cancel</button>
+            <button class="btn settings-danger-zone__btn-confirm btn-sm" id="btn-reset-confirm">Yes, delete everything</button>
+          </div>
+        </div>
+      </div>
+      </div>
+
       <button class="btn btn-ghost w-full" id="btn-back" style="margin-top: var(--space-2);">
         ← Back to Dashboard
       </button>
@@ -199,6 +213,26 @@ function _wireEvents(container) {
     showToast('All data exported as JSON ✓');
   });
 
+  const btnReset = container.querySelector('#btn-reset-data');
+  const resetConfirm = container.querySelector('#reset-confirm');
+  const btnResetCancel = container.querySelector('#btn-reset-cancel');
+  const btnResetConfirm = container.querySelector('#btn-reset-confirm');
+
+  btnReset.addEventListener('click', () => {
+    resetConfirm.hidden = false;
+    btnReset.hidden = true;
+  });
+
+  btnResetCancel.addEventListener('click', () => {
+    resetConfirm.hidden = true;
+    btnReset.hidden = false;
+  });
+
+  btnResetConfirm.addEventListener('click', () => {
+    resetState();
+    window.location.reload();
+  });
+
   // Profile field edit buttons
   container.querySelectorAll('.settings-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => _openProfileEdit(container, btn.dataset.edit));
@@ -264,6 +298,7 @@ function _openProfileEdit(container, field) {
       setUser({ salary: num });
       _restoreProfileField(container, field, formatCurrency(num));
       showToast('Salary updated ✓');
+      _showSalaryRecalcPrompt(container, num);
     });
     container.querySelector('[data-cancel="salary"]').addEventListener('click', () => {
       _restoreProfileField(container, field, user ? formatCurrency(user.salary) : '—');
@@ -319,6 +354,49 @@ function _restoreProfileField(container, field, displayValue) {
   rightEl.querySelector('.settings-edit-btn').addEventListener('click', () => {
     _openProfileEdit(container, field);
   });
+}
+
+function _showSalaryRecalcPrompt(container, newSalary) {
+  container.querySelector('#salary-recalc-prompt')?.remove();
+  const fieldEl = container.querySelector('#field-salary');
+  if (!fieldEl) return;
+
+  const el = document.createElement('div');
+  el.id = 'salary-recalc-prompt';
+  el.className = 'settings-recalc-prompt';
+  el.innerHTML = `
+    <span class="settings-recalc-prompt__note">Changes apply from your next payday cycle.</span>
+    <button class="btn btn-ghost btn-sm" id="btn-recalc-now">Recalculate current cycle →</button>
+  `;
+  fieldEl.after(el);
+
+  el.querySelector('#btn-recalc-now').addEventListener('click', () => {
+    _recalculateBucketAllocations(newSalary);
+    el.remove();
+    showToast('Current cycle recalculated ✓');
+  });
+}
+
+function _recalculateBucketAllocations(newSalary) {
+  const { ratios } = getUser();
+  const newNeeds = Math.round(newSalary * ratios.needs / 100);
+  const newWants = Math.round(newSalary * ratios.wants / 100);
+  const newFuture = newSalary - newNeeds - newWants;
+
+  for (const [macro, newTotal] of [['needs', newNeeds], ['wants', newWants], ['future', newFuture]]) {
+    const buckets = getBuckets(macro);
+    if (!buckets.length) continue;
+    const oldTotal = buckets.reduce((s, b) => s + b.allocated, 0);
+    let distributed = 0;
+    buckets.forEach((b, i) => {
+      const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / buckets.length;
+      const newAlloc = i === buckets.length - 1
+        ? newTotal - distributed
+        : Math.round(newTotal * proportion);
+      distributed += newAlloc;
+      updateBucket(b.id, { allocated: newAlloc });
+    });
+  }
 }
 
 // ---- Bucket inline actions ----
