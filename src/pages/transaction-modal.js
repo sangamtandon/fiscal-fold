@@ -19,6 +19,7 @@ import {
 import { formatCurrency } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { rerender } from '../router.js';
+import { enqueue as offlineEnqueue } from '../utils/offlineQueue.js';
 
 // ---- Modal State ----
 
@@ -368,8 +369,13 @@ function _renderNote(container) {
     btn.disabled = true;
     setTimeout(() => {
       addTransaction({ bucketId: _targetBucket.id, amount: _amount, note: _note, type: 'expense' });
+      if (!navigator.onLine) {
+        offlineEnqueue({ bucketId: _targetBucket.id, amount: _amount, note: _note });
+        showToast('Saved locally — will sync when online');
+      } else {
+        showToast(`Logged ${formatCurrency(_amount)} to ${_targetBucket.name}`, 'success');
+      }
       _closeModal();
-      showToast(`Logged ${formatCurrency(_amount)} to ${_targetBucket.name}`, 'success');
       rerender();
     }, 400);
   });
@@ -443,8 +449,13 @@ function _renderTradeOff(container) {
 
   container.querySelector('#txn-log-anyway')?.addEventListener('click', () => {
     addTransaction({ bucketId: _targetBucket.id, amount: _amount, note: _note, type: 'expense' });
+    if (!navigator.onLine) {
+      offlineEnqueue({ bucketId: _targetBucket.id, amount: _amount, note: _note });
+      showToast('Saved locally — will sync when online');
+    } else {
+      showToast(`Logged ${formatCurrency(_amount)} — over budget`, 'default');
+    }
     _closeModal();
-    showToast(`Logged ${formatCurrency(_amount)} — over budget`, 'default');
     rerender();
   });
 
@@ -542,8 +553,13 @@ function _renderTradeOffConfirm(container) {
         borrowAmount,
         note: _note,
       });
+      if (!navigator.onLine) {
+        offlineEnqueue({ bucketId: _targetBucket.id, amount: _amount, borrowFromId: _borrowBucket.id, note: _note });
+        showToast('Saved locally — will sync when online');
+      } else {
+        showToast(`Logged with trade-off from ${_borrowBucket.name}`, 'success');
+      }
       _closeModal();
-      showToast(`Logged with trade-off from ${_borrowBucket.name}`, 'success');
       rerender();
     }, 400);
   });
