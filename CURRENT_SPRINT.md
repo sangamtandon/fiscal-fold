@@ -5,9 +5,9 @@
 
 ---
 
-## ✅ Last Completed: Sprint 12 — Polish, Animations & Final QA
+## ✅ Last Completed: Sprint 12 — Polish, Animations & Final QA (merged)
 
-- **Branch:** `sprint-12/polish` → ready to merge to `main` as `v0.12.0`
+- **Branch:** `sprint-12/polish` → merged into `main` (commit `48bde76`).
 - **Key files modified:**
   - `src/main.js` — health bars now render with `width:0` + `data-width` attribute; `requestAnimationFrame` after dashboard innerHTML sets final widths to trigger CSS transition; `role="progressbar"` + `aria-valuenow/min/max/label` added to all three macro health bars
   - `src/pages/payday.js` — "Sweep & Start New Cycle →" click handler now staggers `.pd-sweep-row--flying` animations at 80ms per row, flashes the sweep total, then delays `_startNewCycle` until animation completes; falls back immediately if no sweep rows
@@ -28,27 +28,40 @@
 
 ## 🔜 Next Up: Closed Beta Deployment
 
-All 12 sprints complete. App is at v0.12.0, ready for closed beta.
+All 12 sprints complete and merged to `main`. Post-MVP polish is now landing as standalone PRs (see below).
+
+---
+
+## 🧰 Post-MVP — Merged Since v0.12.0
+
+In chronological merge order on `main` (newest at top):
+
+- **#9 — Onboarding gaps:** surface unallocated amount; ratios and per-bucket allocations are editable before completion.
+- **#7 — Manual bucket allocation:** users can set rupee amounts per bucket directly in onboarding step 4; dashboard day-1 zero-state messaging when no transactions yet.
+- **#6 — Settings: reset all data:** two-step confirmation in Settings; salary recalculation prompt on mid-cycle changes.
+- **#5 — Light mode:** persistent light/dark toggle in Settings (`src/utils/theme.js`).
+- **#4 — Frontend bug fixes:** F1 / F2 / G1 UI lifecycle defects; onboarding slider selector.
+- **#3 — Calculation bug fixes:** 24 math / logic defects from audit (cycle progress, sweep math, commitment reservation, macro summaries).
+
+See `CHANGELOG.md` for full details.
 
 ---
 
 ## 📋 Sprint Prompt Template
 
-Copy this when starting a new sprint conversation:
+Copy this when starting a new feature conversation:
 
 ```
-I'm working on Fiscal Fold (c:\Users\ADMIN\workspace\fiscal-fold).
+I'm working on Fiscal Fold.
 
 Read these files for context:
-- PRD.md (product requirements)
 - ARCHITECTURE.md (tech stack, file map, store API)
 - CHANGELOG.md (what's been built so far)
-- CURRENT_SPRINT.md (current status and next sprint details)
 - QUALITY_GATE.md (pre-merge checklist)
 
-Current sprint: Sprint 8 — Leak Warnings & Insights
-Create branch sprint-8/leak-warnings and build tasks 8.1 through 8.3.
-Run the quality gate when done, then merge to main and update CURRENT_SPRINT.md.
+Task: <describe the feature or fix>
+Create a feature branch off main, implement the task, run the quality gate,
+then open a PR.
 ```
 
 ---
@@ -59,20 +72,6 @@ _None currently._
 
 ---
 
-## 📊 Git State
+## 📊 Release Index
 
-```
-main
-├── v0.1.0  Sprint 1: Project scaffold, design system & app shell
-├── v0.2.0  Sprint 2: Data layer, state management & seed data
-├── v0.3.0  Sprint 3: Onboarding Flow
-├── v0.4.0  Sprint 4: Dashboard Core Layout
-├── v0.5.0  Sprint 5: 3-Tap FAB Logging
-├── v0.6.0  Sprint 6: Trade-Off Mechanic
-├── v0.7.0  Sprint 7: Commitments Layer
-├── v0.8.0  Sprint 8: Leak Warnings & Insights
-├── v0.9.0  Sprint 9: Cycle End & Sweep
-├── v0.10.0  Sprint 10: Settings, Export & Edge Cases
-├── v0.11.0  Sprint 11: PWA — Offline Support & Install Prompt (branch ready, pending merge)
-└── v0.12.0  Sprint 12: Polish, Animations & Final QA (branch ready, pending merge)
-```
+The full ordered release history (v0.1.0 → v0.12.0 plus post-MVP work) lives in `CHANGELOG.md`. No git tags are published — `CHANGELOG.md` is the source of truth for what shipped when.

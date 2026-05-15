@@ -1,5 +1,7 @@
 # Fiscal Fold — MVP Build Task Breakdown
 
+> **Status:** ✅ Completed — Sprints 1–12 shipped (May 2026). Kept here as a historical reference for the original build plan. See [`../CHANGELOG.md`](../CHANGELOG.md) for what was actually built and any post-MVP work.
+
 A sprint-by-sprint breakdown of the Smart Envelope PRD into **independently buildable tasks**. Each task is scoped to be completed in a single focused session, with clear inputs, outputs, and acceptance criteria.
 
 ---

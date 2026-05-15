@@ -60,10 +60,23 @@ npm run build
 The optimized files will be generated in the `dist` directory.
 
 ## 🗂️ Project Structure
-- `src/main.js` - App shell and entry point
-- `src/style.css` - Design system and tokens
-- `src/data/store.js` - Core reactive state manager
-- `src/router.js` - Client-side router
+- `index.html` — PWA entry point, font preloads, meta tags
+- `src/main.js` — App shell, route registration, FAB, toast, install banner
+- `src/router.js` — Hash-based client router with cleanup lifecycle
+- `src/style.css` — Design system tokens and shared components
+- `src/pages/` — One module + scoped CSS per route (onboarding, dashboard is in `main.js`, transactions, transaction-modal, commitments, income-modal, payday, settings)
+- `src/data/` — `store.js` (reactive state + localStorage), `models.js` (JSDoc typedefs), `seed.js` (demo data + dev toolbar)
+- `src/utils/` — `helpers.js` (currency/time/IDs), `theme.js` (light/dark toggle), `toast.js`, `offlineQueue.js`, `export.js` (CSV/JSON)
+- `public/` — `manifest.json`, `sw.js` (service worker), `favicon.svg`, `icons.svg`
+
+## 📚 Documentation
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — stack, file map, store API, design decisions
+- [`CHANGELOG.md`](CHANGELOG.md) — version history (sprint releases + post-MVP work)
+- [`QUALITY_GATE.md`](QUALITY_GATE.md) — pre-merge regression checklist
+- [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — original sprint plan (historical)
+
+## 📦 Status
+MVP complete — Sprints 1–12 shipped. See `CHANGELOG.md` for ongoing work.
 
 ## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check the `CURRENT_SPRINT.md` and `QUALITY_GATE.md` for current development context.
+Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check `QUALITY_GATE.md` and run through the regression checklist before requesting review.
