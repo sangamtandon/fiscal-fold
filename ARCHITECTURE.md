@@ -24,22 +24,36 @@ fiscal-fold/
 ├── index.html                  # PWA entry point, meta tags, font imports
 ├── package.json                # Vite dev/build scripts
 ├── public/
-│   ├── manifest.json           # PWA manifest (name, icons, theme)
+│   ├── manifest.json           # PWA manifest (name, icon, theme)
 │   ├── sw.js                   # Service worker — offline cache + install prompt
-│   └── favicon.svg             # Geometric origami triangle logo (also used as PWA icon)
+│   ├── favicon.svg             # Geometric origami triangle logo (also used as PWA icon)
+│   └── icons.svg               # Inline SVG icon sprite
 ├── src/
-│   ├── main.js                 # App shell, route registration, FAB, toast
+│   ├── main.js                 # App shell, route registration, dashboard, FAB, toast, install banner
 │   ├── router.js               # Hash-based client-side router
-│   ├── style.css               # Design system (60+ tokens, components)
+│   ├── style.css               # Design system (60+ tokens, components, light + dark)
+│   ├── pages/                  # Per-route modules with scoped CSS
+│   │   ├── onboarding.{js,css}        # 4-step wizard
+│   │   ├── transactions.{js,css}      # Full transaction history + filters
+│   │   ├── transaction-modal.{js,css} # 3-tap logging drawer + trade-off flow
+│   │   ├── commitments.{js,css}       # Recurring expenses management
+│   │   ├── income-modal.{js,css}      # Bonus/variable income drawer
+│   │   ├── payday.{js,css}            # End-of-cycle sweep + new-cycle preview
+│   │   └── settings.{js,css}          # Profile / buckets / commitments / export / reset
 │   ├── data/
 │   │   ├── models.js           # Data type definitions (JSDoc typedefs)
-│   │   ├── store.js            # Reactive state manager (25+ methods)
+│   │   ├── store.js            # Reactive state manager (30+ methods)
 │   │   └── seed.js             # Demo data generator + dev toolbar
 │   ├── utils/
-│   │   └── helpers.js          # Currency formatting, time, IDs, math
+│   │   ├── helpers.js          # Currency formatting, time, IDs, math
+│   │   ├── theme.js            # Light/dark theme toggle (persisted)
+│   │   ├── toast.js            # Toast notification system
+│   │   ├── offlineQueue.js     # Queue mutations while offline
+│   │   └── export.js           # CSV / JSON export
 │   └── assets/
 │       └── hero.png            # Onboarding hero image
-└── docs/                       # (created as needed)
+└── docs/
+    └── IMPLEMENTATION_PLAN.md  # Original sprint plan (historical)
 ```
 
 ---
@@ -87,13 +101,19 @@ All state flows through `src/data/store.js`. No component accesses `localStorage
 **Getters:**
 | Method | Returns |
 |--------|---------|
+| `subscribe(key, callback)` | `() => void` (unsubscribe) |
+| `getState()` | `AppState` (entire state snapshot) |
 | `getUser()` | `User \| null` |
+| `isOnboardingComplete()` | `boolean` |
 | `getCurrentCycle()` | `BudgetCycle \| null` |
+| `isCycleExpired()` | `boolean` (drives payday banner) |
 | `getBuckets(macroType?)` | `MicroBucket[]` |
 | `getBucketById(id)` | `MicroBucket \| undefined` |
 | `getQuickBuckets()` | `MicroBucket[]` (pinned) |
-| `getTransactions({ limit?, bucketId? })` | `Transaction[]` |
+| `getTransactions({ limit?, bucketId? })` | `Transaction[]` (current cycle) |
+| `getAllTransactions()` | `Transaction[]` (all cycles, newest first) |
 | `getCommitments()` | `Commitment[]` (active) |
+| `getMacroReserved(macroType)` | `number` (unpaid active commitments) |
 | `getSafeToSpend()` | `number` (₹ remaining in Wants) |
 | `getMacroSummary(macroType)` | `{ allocated, spent, remaining, percent }` |
 | `getCommitmentsTotal(macroType)` | `number` |
@@ -105,16 +125,18 @@ All state flows through `src/data/store.js`. No component accesses `localStorage
 | `setUser(data)` | Create or update user profile |
 | `completeOnboarding()` | Set onboarding flag |
 | `createCycle({ startDate, endDate, salary, allocations })` | New budget cycle |
+| `updateCycleAllocations(allocations)` | Adjust macro splits on the current cycle |
+| `copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations)` | Carry bucket structure into the next cycle |
 | `addBucket({ macroType, name, emoji, allocated, isPinned? })` | Add micro-bucket |
 | `updateBucket(id, updates)` | Partial bucket update |
 | `removeBucket(id)` | Delete bucket |
-| `addTransaction({ bucketId, amount, note?, type? })` | Log expense/refund |
+| `addTransaction({ bucketId, amount, note?, type? })` | Log expense/refund/income |
 | `addTradeOffTransaction({ bucketId, amount, borrowFromId, borrowAmount, note? })` | Trade-off transaction |
 | `addCommitment({ name, emoji, amount, dueDate, macroType })` | Recurring expense |
 | `updateCommitment(id, updates)` | Edit commitment |
 | `removeCommitment(id)` | Delete commitment |
 | `runSweep()` | End-of-cycle sweep to Future |
-| `addIncome(amount, targetBucketId?)` | Bonus/variable income |
+| `addIncome(amount, targetBucketId?, note?)` | Bonus/variable income |
 | `resetState()` | Wipe all data |
 | `replaceState(newState)` | Bulk replace (for seeding) |
 
@@ -141,12 +163,28 @@ All types are defined as JSDoc typedefs in `src/data/models.js`:
 
 ---
 
+## Routes
+
+All routes are hash-based and registered in `src/main.js` via `router.js`.
+
+| Hash | Page module | Purpose |
+|------|-------------|---------|
+| `#/onboarding` | `src/main.js` | Landing — "Get Started" / "Skip to Demo" |
+| `#/onboarding/wizard` | `src/pages/onboarding.js` | 4-step setup wizard |
+| `#/dashboard` | `src/main.js` | Safe to Spend hero, macro bars, quick buckets, leak warnings |
+| `#/transactions` | `src/pages/transactions.js` | Full history with search and macro filter |
+| `#/commitments` | `src/pages/commitments.js` | Recurring expenses CRUD |
+| `#/payday` | `src/pages/payday.js` | Cycle-end scorecard + sweep preview |
+| `#/settings` | `src/pages/settings.js` | Profile, buckets, commitments, theme, export, reset |
+
+---
+
 ## Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
 | **No framework** | Vanilla JS for speed, tiny bundle, no dependency churn. Fits PWA philosophy. |
-| **Dark mode first** | Finance apps feel premium in dark. Light mode is a Sprint 10 option. |
+| **Dark mode first** | Finance apps feel premium in dark. Light mode shipped post-MVP via `src/utils/theme.js` with a persistent toggle in Settings. |
 | **Local-first** | Works offline immediately. BaaS is a bolt-on, not a requirement. |
 | **Hash-based routing** | No server config needed. Works with any static host. |
 | **Indian currency (INR)** | Primary audience is salaried Indian professionals. Lakhs/crores formatting. |

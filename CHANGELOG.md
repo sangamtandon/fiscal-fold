@@ -2,7 +2,41 @@
 
 All notable changes to Fiscal Fold are documented here.  
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
-Versioning follows sprint tags: `v0.{sprint}.0`.
+Versioning follows sprint tags: `v0.{sprint}.0`. Post-MVP work lives under **[Unreleased]** until a new tagging scheme is decided.
+
+---
+
+## [Unreleased] — Post-MVP
+
+### Added
+- **Light mode** (`src/utils/theme.js`, `src/style.css`, `src/pages/settings.{js,css}`) — persistent light/dark toggle in Settings. Theme is stored in `localStorage` under `theme` and applied via `data-theme="light"` on `<html>`.
+- **Reset all data** (`src/pages/settings.js`) — two-step confirmation flow in Settings that clears state and returns to onboarding.
+- **Salary recalculation prompt** (`src/pages/settings.js`) — when salary changes mid-cycle, offers to re-pro-rate the current cycle.
+- **Manual bucket allocation in onboarding** (`src/pages/onboarding.js`) — step 4 now lets users edit per-bucket rupee allocations directly, with day-1 dashboard clarity (zero-state messaging when no transactions yet).
+- **Editable allocations & ratios in onboarding** (`src/pages/onboarding.js`) — unallocated amount is surfaced live; macro ratios and per-bucket amounts can be revised before completion.
+
+### Fixed
+- 24 math / logic defects across cycle progress, sweep math, commitment reservation, and macro summary calculations (`fix(calculation-bugs)`).
+- F1 / F2 / G1 UI lifecycle defects — event listener leaks and stale closures across page transitions (`fix(frontend-bugs)`).
+- Onboarding slider selector — wrong query selector caused step-3 slider events to silently drop (`fix(onboarding)`).
+- Settings — removed redundant `textContent` assignment before `_restoreProfileField` that flashed stale values.
+- Dead `allBuckets` variable in dashboard render path; corrected bucket limit in `QUALITY_GATE.md`.
+
+---
+
+## [0.12.0] — 2026-05-14 — Sprint 12: Polish, Animations & Final QA
+
+### Added
+- **Health bar animations** (`src/main.js`, `src/style.css`) — bars render at `width: 0` with a `data-width` attribute; a `requestAnimationFrame` after dashboard mount sets the final width to trigger the CSS transition.
+- **Sweep flight animation** (`src/pages/payday.{js,css}`) — `.pd-sweep-row--flying` rows stagger out at 80ms each, sweep total flashes green, then the new cycle is created.
+- **Accessibility pass:**
+  - Health bars: `role="progressbar"` + `aria-valuenow/min/max/label`.
+  - Transaction modal: `role="dialog"` + `aria-modal="true"` + `aria-label`; overlay `aria-hidden`; close buttons `aria-label="Close"`.
+  - `2px` accent-primary focus rings on `button:focus-visible`, `a:focus-visible`, `[role="button"]:focus-visible`.
+- **44px minimum touch targets** (`src/style.css`, `src/pages/transaction-modal.css`) — WCAG 2.5.5; bumped `.btn-icon` from 40px → 44px; `.txn-quick-btn` and `.txn-bucket-row` get `min-height: 44px`.
+
+### Changed
+- `QUALITY_GATE.md` — Sprint 12 regression checklist added.
 
 ---
 
@@ -16,6 +50,76 @@ Versioning follows sprint tags: `v0.{sprint}.0`.
 ### Changed
 - `public/manifest.json` — replaced broken PNG icon references with the existing `favicon.svg`; added `categories: ["finance", "productivity"]`.
 - `ARCHITECTURE.md` — PWA row updated to ✅; `sw.js` added to file map.
+
+---
+
+## [0.10.0] — 2026-05-14 — Sprint 10: Settings, Export & Edge Cases
+
+### Added
+- **Settings page** (`src/pages/settings.{js,css}`) — inline-edit name, salary, salary date (1–31 chip grid); per-macro bucket panels with pin/unpin, rename, emoji edit, remove, add (10-per-macro cap enforced by hiding the Add row).
+- **Add Income drawer** (`src/pages/income-modal.{js,css}`) — 3-step flow: numeric keypad → target (overall budget or specific bucket) → confirm with editable note. Allocating to a bucket bumps `allocated`; allocating to overall budget bumps cycle salary. Income transactions render in history with a green `+₹` amount.
+- **Transaction History** (`src/pages/transactions.{js,css}`) — `#/transactions` route, newest-first list grouped by date, real-time search across bucket name and note, macro filter tabs (All / Needs / Wants / Future), empty-state card.
+- **Export** (`src/utils/export.js`) — CSV (current cycle's transactions) and full-state JSON download from Settings.
+
+### Changed
+- Dashboard "See all" on Recent Transactions navigates to `#/transactions`.
+
+---
+
+## [0.9.0] — 2026-05-13 — Sprint 9: Cycle End & Sweep (Payday Ritual)
+
+### Added
+- **Payday banner** (`src/main.js`) — appears at the top of the dashboard when the cycle end date is in the past; taps navigate to `#/payday`.
+- **Payday page** (`src/pages/payday.{js,css}`) — last-cycle scorecard (total spent, % of budget used, carry-forward), macro progress bars, sweep preview listing all Wants+Future buckets with `remaining > 0`, and next-cycle preview with base allocations + sweep bonus badge on Future.
+- **Sweep & Start New Cycle** — creates the new cycle (same duration as old, starting day after old end), copies bucket structure with proportional allocation, resets all active commitments to `isPaid: false`, and adds the sweep bonus to Future. "New cycle started! 🎉" toast on dashboard.
+- **Store APIs:** `isCycleExpired()`, `copyBucketsToNewCycle()`, `updateCycleAllocations()`.
+
+### Changed
+- "Sweep & Start New Cycle" button is disabled on tap to prevent double-submission.
+
+---
+
+## [0.8.0] — 2026-05-13 — Sprint 8: Leak Warnings & Insights
+
+### Added
+- **Leak detection** (`src/main.js`) — flags any bucket that is ≥80% spent while cycle elapsed <50%; applies across all three macros, not just Wants.
+- **Warning cards** — warm amber (never red) ⚡ cards rendered below the hero. Tapping a card opens the transaction modal pre-targeted to that bucket.
+- **"All clear" affirmation** — fade-in card shown when no bucket is running hot.
+
+---
+
+## [0.7.0] — 2026-05-13 — Sprint 7: Commitments Layer
+
+### Added
+- **Commitments page** (`src/pages/commitments.{js,css}`) — `#/commitments` route accessible from Settings; add / edit / delete commitments with emoji, name, amount, due date, and macro category.
+- **Reservation logic** (`src/data/store.js`) — `getMacroReserved(macroType)` returns the sum of unpaid active commitments. Safe to Spend deducts reservations.
+- **Pause / resume** — paused commitments render at 55% opacity and are excluded from the reserved calculation.
+- **Dashboard hints** — macro bars show a 🔒 reserved hint when unpaid active commitments exist; "Due Soon" card surfaces overdue / due-today / due-soon items.
+- **Cycle reset** — new cycles reset all active commitments to `isPaid: false`.
+
+### Fixed
+- Several commitments-page bugs found during testing (event-listener leaks, stale form state).
+
+---
+
+## [0.6.0] — 2026-05-13 — Sprint 6: Trade-Off Mechanic
+
+### Added
+- **Insufficient-funds detection** (`src/pages/transaction-modal.js`) — when the selected bucket can't cover the amount, the trade-off drawer slides up showing all other buckets with available balance.
+- **Single-source trade-off** — selecting a source bucket deducts the shortfall from it and logs a `addTradeOffTransaction()` with `borrowedFrom` + `borrowedAmount` references.
+- **"From [bucket]" badge** — trade-off transactions render with a subtle source badge in the recent-transactions feed.
+
+---
+
+## [0.5.0] — 2026-05-13 — Sprint 5: 3-Tap FAB Logging
+
+### Added
+- **Floating Action Button** (`src/main.js`, `src/style.css`) — bottom-center FAB with a first-visit pulse animation; opens the transaction modal.
+- **Transaction modal** (`src/pages/transaction-modal.{js,css}`) — 3-tap drawer:
+  - Tap 1: numeric keypad with live ₹ formatting and Backspace/Clear.
+  - Tap 2: bucket grid, Quick Buckets row at top, all buckets grouped by macro with remaining balance shown.
+  - Tap 3: confirmation card (amount + bucket + remaining after) with an optional note field and a checkmark animation.
+- Logging updates `spent`, Safe to Spend, and the recent transactions feed immediately; toast confirms the log.
 
 ---
 

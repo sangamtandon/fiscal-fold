@@ -74,20 +74,6 @@ Check off each item. If any item fails, fix it before merging.
 - [ ] Safe to Spend = sum of remaining in Wants buckets
 - [ ] Macro summaries (allocated, spent, remaining, percent) are mathematically correct
 
-<!-- 
-### Sprint 3 — Onboarding Flow
-- [ ] 4-step wizard completes without errors
-- [ ] First budget cycle is created with correct allocations
-- [ ] Pro-rate logic works for mid-cycle starts
-
-### Sprint 4 — Dashboard Core Layout
-- [ ] Macro bars expand to show micro-buckets
-- [ ] Count-up animation on Safe to Spend
-- [ ] Color shifts based on spending health
-
-(Add more as sprints are completed)
--->
-
 ### Sprint 3 — Onboarding Flow
 - [ ] 4-step wizard completes without errors
 - [ ] First budget cycle is created with correct allocations
@@ -208,6 +194,16 @@ Check off each item. If any item fails, fix it before merging.
 - [ ] Transaction modal drawer has `role="dialog"` and `aria-modal="true"`
 - [ ] Modal overlay is `aria-hidden="true"`
 - [ ] Close buttons in modal have `aria-label="Close"`
+
+### Post-MVP — Theme, Reset & Onboarding Polish
+- [ ] Settings → theme toggle switches between light and dark
+- [ ] Theme choice persists across reload (stored under `theme` in `localStorage`)
+- [ ] Settings → "Reset all data" requires a second confirmation tap before wiping state
+- [ ] After reset, app returns to `/#/onboarding`
+- [ ] Editing salary mid-cycle prompts to re-pro-rate the current cycle
+- [ ] Onboarding step 4 surfaces the unallocated amount live as buckets are edited
+- [ ] Onboarding step 4 allows direct rupee allocation per bucket (not only sliders)
+- [ ] Dashboard shows a friendly zero-state when there are no transactions yet (day 1)
 
 ---
 
