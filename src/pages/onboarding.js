@@ -14,12 +14,28 @@ import {
   setUser,
   createCycle,
   addBucket,
+  addCommitment,
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
 import { formatCurrency, formatNumber, uid } from '../utils/helpers.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
+
+const MACRO_META = {
+  needs: {
+    desc: 'Essential expenses — survival, work, and basic functioning',
+    eg: 'Rent, EMI, Groceries, Electricity, Mobile, Transport, Insurance, Medicines, Loan payments',
+  },
+  wants: {
+    desc: 'Lifestyle, entertainment, and non-essential spending',
+    eg: 'Restaurants, Food Delivery, Shopping, Streaming, Vacations, Gaming, Hobbies',
+  },
+  future: {
+    desc: 'Money for future financial growth and security',
+    eg: 'Emergency Fund, Mutual Funds, Stocks, PPF, NPS, FD, Extra Loan Repayment',
+  },
+};
 
 // ---- Onboarding State (local, not persisted until completion) ----
 let currentStep = 1;
@@ -49,17 +65,6 @@ export function renderOnboarding(container) {
     ratios: { ...PRESETS.balanced },
     buckets: { needs: [], wants: [], future: [] },
   };
-
-  // Pre-populate bucket templates
-  Object.keys(BUCKET_TEMPLATES).forEach(macro => {
-    formData.buckets[macro] = BUCKET_TEMPLATES[macro].map((t, i) => ({
-      id: uid(),
-      name: t.name,
-      emoji: t.emoji,
-      pct: Math.round(100 / BUCKET_TEMPLATES[macro].length),
-      isPinned: i < 2,
-    }));
-  });
 
   renderCurrentStep(container);
 }
@@ -484,29 +489,12 @@ function renderDonut() {
 // STEP 4 — Emotional Anchors (Micro-Bucket Setup)
 // ===================================================================
 function renderStep4(container) {
-  // Pre-fill allocated defaults from even split (only if not yet set)
-  ['needs', 'wants', 'future'].forEach(macroType => {
-    const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
-    const bkts = formData.buckets[macroType];
-    const perBucket = bkts.length > 0 ? Math.floor(macroAmount / bkts.length) : 0;
-    const rem = macroAmount - perBucket * bkts.length;
-    bkts.forEach((b, i) => {
-      if (b.allocated === undefined) {
-        b.allocated = perBucket + (i === 0 ? rem : 0);
-      }
-    });
-  });
-
   container.innerHTML = `
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
-      <h2 class="onboarding__title">Name your buckets</h2>
-      <p class="onboarding__subtitle">A bucket is a spending category with its own budget — like an envelope for each expense type.</p>
+      <h2 class="onboarding__title">Set up your buckets</h2>
+      <p class="onboarding__subtitle">Pick what you spend on and set a monthly budget for each.</p>
     </div>
-
-    <p class="onboarding__bucket-tip" data-testid="bucket-tip">
-      📌 Pin up to 4 buckets for one-tap logging on the dashboard.
-    </p>
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
       ${renderBucketSection('needs', 'Needs')}
@@ -527,34 +515,31 @@ function renderBucketSection(macroType, label) {
   const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
   const unallocated = macroAmount - sumAllocated;
 
-  let poolText, poolClass;
-  if (unallocated === 0) {
-    poolText = '✓ All assigned';
-    poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
-  } else if (unallocated > 0) {
-    poolText = `${formatCurrency(unallocated)} left to assign`;
-    poolClass = 'onboarding__pool-counter';
-  } else {
-    poolText = `${formatCurrency(-unallocated)} over budget`;
-    poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
-  }
+  const activeNames = new Set(buckets.map(b => b.name));
+  const templateChips = BUCKET_TEMPLATES[macroType].map(t => `
+    <button class="onboarding__template-chip ${activeNames.has(t.name) ? 'is-active' : ''}"
+      data-macro="${macroType}" data-name="${t.name}" data-emoji="${t.emoji}">
+      ${t.emoji} ${t.name}
+    </button>
+  `).join('');
 
   return `
     <div class="onboarding__bucket-section" data-macro="${macroType}">
-      <div class="flex items-center justify-between mb-1">
+      <div class="onboarding__macro-header">
         <div class="flex items-center gap-2">
           <div class="onboarding__alloc-dot" style="background: ${colors[macroType]};"></div>
-          <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
+          <span class="onboarding__macro-label">${label}</span>
         </div>
-        <span class="text-mono text-secondary" style="font-size: var(--text-xs);">${formatCurrency(macroAmount)}</span>
+        <span class="onboarding__macro-amount">${formatCurrency(macroAmount)}</span>
       </div>
-      <div class="${poolClass}" id="pool-counter-${macroType}">${poolText}</div>
+      <div class="onboarding__template-chips">${templateChips}</div>
+      <div class="onboarding__pool-row" id="pool-row-${macroType}">${renderPoolRow(macroType)}</div>
       <div class="onboarding__bucket-list" data-macro="${macroType}">
         ${buckets.map(b => renderBucketItem(b, macroType)).join('')}
       </div>
       ${canAdd ? `
         <button class="onboarding__add-bucket-btn" data-macro="${macroType}">
-          + Add bucket
+          + Add custom bucket
         </button>
       ` : ''}
     </div>
@@ -574,16 +559,22 @@ function renderBucketItem(bucket, macroType) {
         data-id="${bucket.id}"
         data-macro="${macroType}"
       />
-      <input
-        type="number"
-        class="onboarding__bucket-allocated"
-        value="${bucket.allocated ?? 0}"
-        min="0"
-        inputmode="numeric"
-        data-id="${bucket.id}"
-        data-macro="${macroType}"
-        placeholder="0"
-      />
+      <div class="onboarding__amount-wrap">
+        <span class="onboarding__amount-prefix">₹</span>
+        <input
+          type="number"
+          class="onboarding__bucket-allocated"
+          value="${bucket.allocated ?? 0}"
+          min="0"
+          inputmode="numeric"
+          data-id="${bucket.id}"
+          data-macro="${macroType}"
+          placeholder="0"
+        />
+      </div>
+      <button class="onboarding__bucket-recurring ${bucket.isRecurring ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Fixed monthly bill — will be set up as a Commitment">
+        🔄
+      </button>
       <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket">
         📌
       </button>
@@ -592,6 +583,34 @@ function renderBucketItem(bucket, macroType) {
       </button>
     </div>
   `;
+}
+
+function renderPoolRow(macroType) {
+  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
+  const buckets = formData.buckets[macroType];
+  const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
+  const unallocated = macroAmount - sumAllocated;
+
+  let poolText, poolClass;
+  if (buckets.length === 0) {
+    poolText = `${formatCurrency(macroAmount)} unassigned`;
+    poolClass = 'onboarding__pool-counter';
+  } else if (unallocated === 0) {
+    poolText = '✓ All assigned';
+    poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
+  } else if (unallocated > 0) {
+    poolText = `${formatCurrency(unallocated)} unassigned`;
+    poolClass = 'onboarding__pool-counter';
+  } else {
+    poolText = `${formatCurrency(-unallocated)} over — <button class="onboarding__adjust-split-link" data-action="adjust-split">adjust split?</button>`;
+    poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
+  }
+
+  const legend = buckets.length > 0
+    ? `<span class="onboarding__bucket-legend">📌 quick access &nbsp;·&nbsp; 🔄 monthly</span>`
+    : '';
+
+  return `${legend}<span class="${poolClass}">${poolText}</span>`;
 }
 
 function refreshBucketSections(container) {
@@ -605,21 +624,9 @@ function refreshBucketSections(container) {
 }
 
 function updatePoolCounter(macroType) {
-  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
-  const sumAllocated = formData.buckets[macroType].reduce((s, b) => s + (b.allocated ?? 0), 0);
-  const unallocated = macroAmount - sumAllocated;
-  const el = document.getElementById(`pool-counter-${macroType}`);
+  const el = document.getElementById(`pool-row-${macroType}`);
   if (!el) return;
-  if (unallocated === 0) {
-    el.textContent = '✓ All assigned';
-    el.className = 'onboarding__pool-counter onboarding__pool-counter--ok';
-  } else if (unallocated > 0) {
-    el.textContent = `${formatCurrency(unallocated)} left to assign`;
-    el.className = 'onboarding__pool-counter';
-  } else {
-    el.textContent = `${formatCurrency(-unallocated)} over budget`;
-    el.className = 'onboarding__pool-counter onboarding__pool-counter--warn';
-  }
+  el.innerHTML = renderPoolRow(macroType);
 }
 
 function wireUpBucketEvents(container) {
@@ -642,11 +649,53 @@ function wireUpBucketEvents(container) {
     }
   });
 
-  // Click delegation for pins and removes
+  // Click delegation for chips, pins, recurring toggles, removes, and add
   container.addEventListener('click', (e) => {
+    const adjustSplitBtn = e.target.closest('[data-action="adjust-split"]');
+    const chipBtn = e.target.closest('.onboarding__template-chip');
+    const recurringBtn = e.target.closest('.onboarding__bucket-recurring');
     const pinBtn = e.target.closest('.onboarding__bucket-pin');
     const removeBtn = e.target.closest('.onboarding__bucket-remove');
     const addBtn = e.target.closest('.onboarding__add-bucket-btn');
+
+    if (adjustSplitBtn) {
+      currentStep = 3;
+      renderCurrentStep(container.closest('.onboarding')?.parentElement ?? container);
+      return;
+    }
+
+    if (chipBtn) {
+      const macro = chipBtn.dataset.macro;
+      const name = chipBtn.dataset.name;
+      const emoji = chipBtn.dataset.emoji;
+      const existingIdx = formData.buckets[macro].findIndex(b => b.name === name);
+      if (existingIdx !== -1) {
+        // Toggle off — remove the bucket
+        formData.buckets[macro].splice(existingIdx, 1);
+      } else {
+        // Toggle on — add the bucket with blank amount (user fills it in)
+        const wantsPinned = formData.buckets.wants.filter(b => b.isPinned).length;
+        formData.buckets[macro].push({
+          id: uid(),
+          name,
+          emoji,
+          allocated: 0,
+          isPinned: macro === 'wants' && wantsPinned < 2,
+          isRecurring: false,
+        });
+      }
+      refreshBucketSections(container);
+    }
+
+    if (recurringBtn) {
+      const id = recurringBtn.dataset.id;
+      const macro = recurringBtn.dataset.macro;
+      const bucket = formData.buckets[macro].find(b => b.id === id);
+      if (bucket) {
+        bucket.isRecurring = !bucket.isRecurring;
+        recurringBtn.classList.toggle('is-active');
+      }
+    }
 
     if (pinBtn) {
       const id = pinBtn.dataset.id;
@@ -673,8 +722,9 @@ function wireUpBucketEvents(container) {
           id: uid(),
           name: '',
           emoji: randomEmoji,
-          pct: 0,
+          allocated: 0,
           isPinned: false,
+          isRecurring: false,
         });
         refreshBucketSections(container);
         // Focus the new input
@@ -773,6 +823,15 @@ function finishOnboarding() {
         allocated: b.allocated ?? 0,
         isPinned: b.isPinned,
       });
+      if (b.isRecurring) {
+        addCommitment({
+          name: b.name,
+          emoji: b.emoji,
+          amount: b.allocated ?? 0,
+          dueDate: 1,
+          macroType,
+        });
+      }
     });
   });
 

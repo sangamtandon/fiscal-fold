@@ -35,15 +35,19 @@ test('Step 3 mentions the carry-forward behaviour up front', async ({ page }) =>
   await expect(carry).toContainText(/Future/);
 });
 
-test('Step 4 explains what a bucket is and what pinning does', async ({ page }) => {
+test('Step 4 uses "bucket" terminology and shows pin/recurring legend after selection', async ({ page }) => {
   await stepThroughToStep3(page);
   await page.locator('#btn-next').click();
 
-  // The bucket subtitle should define the metaphor, not just instruct
-  await expect(page.locator('.onboarding__subtitle')).toContainText(/envelope|category/i);
+  // Title should use the word "bucket"
+  await expect(page.locator('.onboarding__title')).toContainText(/bucket/i);
 
-  const tip = page.getByTestId('bucket-tip');
-  await expect(tip).toBeVisible();
-  await expect(tip).toContainText(/Pin/i);
-  await expect(tip).toContainText(/dashboard/i);
+  // Before any chip is selected, legend is hidden
+  await expect(page.locator('.onboarding__bucket-legend').first()).not.toBeVisible();
+
+  // Select a chip — legend should appear with dashboard and monthly hints
+  await page.locator('.onboarding__template-chip').first().click();
+  await expect(page.locator('.onboarding__bucket-legend').first()).toBeVisible();
+  await expect(page.locator('.onboarding__bucket-legend').first()).toContainText(/quick access/i);
+  await expect(page.locator('.onboarding__bucket-legend').first()).toContainText(/monthly/i);
 });
