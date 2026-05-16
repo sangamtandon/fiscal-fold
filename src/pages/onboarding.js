@@ -505,13 +505,9 @@ function renderStep4(container) {
   container.innerHTML = `
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
-      <h2 class="onboarding__title">Set up your buckets</h2>
-      <p class="onboarding__subtitle">Tap a suggestion to add it, or create your own. Set a monthly budget for each bucket.</p>
+      <h2 class="onboarding__title">Set up your categories</h2>
+      <p class="onboarding__subtitle">Pick what you spend on and set a monthly budget for each.</p>
     </div>
-
-    <p class="onboarding__bucket-tip" data-testid="bucket-tip">
-      Tap a suggestion to add it, or create your own.
-    </p>
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
       ${renderBucketSection('needs', 'Needs')}
@@ -531,22 +527,6 @@ function renderBucketSection(macroType, label) {
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
   const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
   const unallocated = macroAmount - sumAllocated;
-  const { eg } = MACRO_META[macroType];
-
-  let poolText, poolClass;
-  if (buckets.length === 0) {
-    poolText = `${formatCurrency(macroAmount)} to assign`;
-    poolClass = 'onboarding__pool-counter';
-  } else if (unallocated === 0) {
-    poolText = '✓ All assigned';
-    poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
-  } else if (unallocated > 0) {
-    poolText = `${formatCurrency(unallocated)} left to assign`;
-    poolClass = 'onboarding__pool-counter';
-  } else {
-    poolText = `${formatCurrency(-unallocated)} over — <button class="onboarding__adjust-split-link" data-action="adjust-split">adjust split?</button>`;
-    poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
-  }
 
   const activeNames = new Set(buckets.map(b => b.name));
   const templateChips = BUCKET_TEMPLATES[macroType].map(t => `
@@ -565,9 +545,8 @@ function renderBucketSection(macroType, label) {
         </div>
         <span class="text-mono text-secondary" style="font-size: var(--text-xs);">${formatCurrency(macroAmount)}</span>
       </div>
-      <p class="onboarding__macro-desc"><span class="onboarding__macro-eg">${eg}</span></p>
       <div class="onboarding__template-chips">${templateChips}</div>
-      <div class="${poolClass}" id="pool-counter-${macroType}">${poolText}</div>
+      <div class="onboarding__pool-row" id="pool-row-${macroType}">${renderPoolRow(macroType)}</div>
       <div class="onboarding__bucket-list" data-macro="${macroType}">
         ${buckets.map(b => renderBucketItem(b, macroType)).join('')}
       </div>
@@ -619,6 +598,34 @@ function renderBucketItem(bucket, macroType) {
   `;
 }
 
+function renderPoolRow(macroType) {
+  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
+  const buckets = formData.buckets[macroType];
+  const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
+  const unallocated = macroAmount - sumAllocated;
+
+  let poolText, poolClass;
+  if (buckets.length === 0) {
+    poolText = `${formatCurrency(macroAmount)} to assign`;
+    poolClass = 'onboarding__pool-counter';
+  } else if (unallocated === 0) {
+    poolText = '✓ All assigned';
+    poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
+  } else if (unallocated > 0) {
+    poolText = `${formatCurrency(unallocated)} left to assign`;
+    poolClass = 'onboarding__pool-counter';
+  } else {
+    poolText = `${formatCurrency(-unallocated)} over — <button class="onboarding__adjust-split-link" data-action="adjust-split">adjust split?</button>`;
+    poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
+  }
+
+  const legend = buckets.length > 0
+    ? `<span class="onboarding__bucket-legend">📌 pin &nbsp;·&nbsp; 🔄 monthly</span>`
+    : '';
+
+  return `${legend}<span class="${poolClass}">${poolText}</span>`;
+}
+
 function refreshBucketSections(container) {
   const sectionsEl = container.querySelector('#bucket-sections');
   if (sectionsEl) {
@@ -630,21 +637,9 @@ function refreshBucketSections(container) {
 }
 
 function updatePoolCounter(macroType) {
-  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
-  const sumAllocated = formData.buckets[macroType].reduce((s, b) => s + (b.allocated ?? 0), 0);
-  const unallocated = macroAmount - sumAllocated;
-  const el = document.getElementById(`pool-counter-${macroType}`);
+  const el = document.getElementById(`pool-row-${macroType}`);
   if (!el) return;
-  if (unallocated === 0) {
-    el.textContent = '✓ All assigned';
-    el.className = 'onboarding__pool-counter onboarding__pool-counter--ok';
-  } else if (unallocated > 0) {
-    el.textContent = `${formatCurrency(unallocated)} left to assign`;
-    el.className = 'onboarding__pool-counter';
-  } else {
-    el.textContent = `${formatCurrency(-unallocated)} over budget`;
-    el.className = 'onboarding__pool-counter onboarding__pool-counter--warn';
-  }
+  el.innerHTML = renderPoolRow(macroType);
 }
 
 function recalcAllocations(macroType) {
