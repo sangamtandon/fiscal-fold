@@ -97,3 +97,38 @@ describe('integration: full cycle lifecycle', () => {
     expect(reloaded.getState()).toEqual(snapshot);
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────
+// KNOWN BUGS — marked .fails so the test "passes" while the bug exists.
+// When the production code is fixed, vitest reports these as failing and
+// the .fails marker should be removed.
+// ──────────────────────────────────────────────────────────────────────────
+
+describe('integration: post-sweep overdraft (KNOWN BUG)', () => {
+  // runSweep() at store.js:518-560 marks `b.swept = allocated - spent` and
+  // records a Sweep that promises the surplus to the next cycle's Future.
+  // But addTransaction continues to accept new expenses against that bucket
+  // — silently overdrawing money that has already been committed elsewhere.
+  //
+  // Expected fix options:
+  //   (a) addTransaction should reject expenses when bucketId has swept > 0
+  //   (b) runSweep should also lock the bucket from further spending
+  //
+  // When the fix lands and addTransaction throws (or otherwise rejects),
+  // this test will "fail" — remove `.fails` at that point.
+  it.fails('rejects expenses against a bucket whose surplus has been swept', async () => {
+    const { store, buckets } = await bootstrapStore(freshStore, {
+      buckets: [{ macroType: 'wants', name: 'Dining', emoji: '🍕', allocated: 1000 }],
+    });
+    const b = buckets[0];
+
+    store.runSweep();
+    // Sanity: sweep moved the surplus
+    expect(store.getBucketById(b.id).swept).toBe(1000);
+
+    // BUG: this should throw / be rejected, but currently silently succeeds.
+    expect(() =>
+      store.addTransaction({ bucketId: b.id, amount: 200 })
+    ).toThrow();
+  });
+});
