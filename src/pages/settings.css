@@ -97,14 +97,6 @@
   height: 36px;
 }
 
-.settings-date-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-1);
-  justify-content: flex-end;
-  margin-bottom: var(--space-1);
-}
-
 /* Bucket management */
 .settings-bucket-group {
   margin-bottom: var(--space-4);

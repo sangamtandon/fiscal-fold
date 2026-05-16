@@ -18,7 +18,8 @@ import {
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
-import { formatCurrency, formatNumber, uid } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, uid, formatPayday } from '../utils/helpers.js';
+import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
 
@@ -209,16 +210,7 @@ function renderStep2(container) {
 
     <div class="onboarding__field mt-6">
       <label class="input-group__label">When do you get paid?</label>
-      <div class="onboarding__date-grid" id="date-grid">
-        ${[1, 5, 7, 10, 15, 20, 25, 28, 30, 31].map(d => `
-          <button class="onboarding__date-chip ${formData.salaryDate === d ? 'is-active' : ''}" data-date="${d}">
-            ${d}${ordinalSuffix(d)}
-          </button>
-        `).join('')}
-        <button class="onboarding__date-chip ${formData.salaryDate === 99 ? 'is-active' : ''}" data-date="99" data-testid="payday-last">
-          Last day
-        </button>
-      </div>
+      ${renderDayPicker({ value: formData.salaryDate })}
     </div>
 
     <div class="onboarding__preview card card--glass mt-4" id="salary-preview" style="${formData.salary > 0 ? '' : 'opacity: 0.3;'}">
@@ -254,13 +246,9 @@ function renderStep2(container) {
   });
 
   // Date chips
-  container.querySelectorAll('.onboarding__date-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      container.querySelectorAll('.onboarding__date-chip').forEach(c => c.classList.remove('is-active'));
-      chip.classList.add('is-active');
-      formData.salaryDate = parseInt(chip.dataset.date, 10);
-      previewDate.textContent = formatPayday(formData.salaryDate);
-    });
+  bindDayPicker(container, {}, v => {
+    formData.salaryDate = v;
+    previewDate.textContent = formatPayday(v);
   });
 
   requestAnimationFrame(() => salaryInput.focus());
@@ -862,17 +850,3 @@ function presetHint(key) {
   return hints[key] || '';
 }
 
-function ordinalSuffix(n) {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return (s[(v - 20) % 10] || s[v] || s[0]);
-}
-
-/**
- * Format the payday display, treating 99 as the special "Last day of month" sentinel.
- * Exported for tests + Settings reuse.
- */
-export function formatPayday(n) {
-  if (n === 99) return 'Last day of every month';
-  return `${n}${ordinalSuffix(n)} of every month`;
-}

@@ -35,12 +35,14 @@ test('Backup section uses non-jargon labels', async ({ page }) => {
   await expect(page.locator('#btn-export-csv')).toContainText(/Download transactions/i);
 });
 
-test('Settings exposes the new salary-date chips (Last day)', async ({ page }) => {
+test('Settings salary-date editor shows four preset chips and custom dropdown', async ({ page }) => {
   await seedState(page);
   await page.goto('/#/settings');
 
   await page.locator('[data-edit="salaryDate"]').click();
-  await expect(page.getByTestId('payday-last-settings')).toBeVisible();
-  await expect(page.locator('.onboarding__date-chip[data-date="30"]')).toBeVisible();
-  await expect(page.locator('.onboarding__date-chip[data-date="31"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="1"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="7"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="25"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="30"]')).toBeVisible();
+  await expect(page.locator('#day-picker-select')).toBeVisible();
 });
