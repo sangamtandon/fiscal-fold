@@ -127,7 +127,7 @@ export function renderPaydayPage(container) {
         </div>
       </div>
 
-      <button class="btn btn-primary btn-full pd-cta" id="pd-confirm">
+      <button class="btn btn-primary btn-full pd-cta" id="pd-confirm" data-testid="pd-confirm">
         Sweep & Start New Cycle →
       </button>
     </div>

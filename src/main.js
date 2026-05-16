@@ -127,7 +127,7 @@ function renderAppShell() {
     <main class="app-main" id="router-mount"></main>
 
     <!-- Floating Action Button -->
-    <button class="fab fab--pulse" id="fab-add" aria-label="Log transaction" title="Log a transaction">
+    <button class="fab fab--pulse" id="fab-add" data-testid="fab-add" aria-label="Log transaction" title="Log a transaction">
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
         <line x1="12" y1="5" x2="12" y2="19"/>
         <line x1="5" y1="12" x2="19" y2="12"/>
@@ -229,7 +229,7 @@ function registerRoutes() {
           <button class="btn btn-primary btn-lg btn-full" id="btn-start-onboarding">
             Get Started
           </button>
-          <button class="btn btn-ghost" id="btn-skip-to-demo">
+          <button class="btn btn-ghost" id="btn-skip-to-demo" data-testid="btn-skip-demo">
             Skip to demo dashboard →
           </button>
         </div>
@@ -302,7 +302,7 @@ function registerRoutes() {
       <div class="flex flex-col gap-6">
         <!-- Payday Banner — shown when cycle has expired -->
         ${cycleExpired ? `
-          <div class="card payday-banner" id="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
+          <div class="card payday-banner" id="payday-banner" data-testid="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
             <div class="flex items-center gap-3">
               <span style="font-size: 28px;">🎉</span>
               <div style="flex: 1; min-width: 0;">
@@ -318,7 +318,7 @@ function registerRoutes() {
         <div class="card card--accent text-center" style="padding: var(--space-8) var(--space-5);">
           <p class="text-secondary" style="font-size: var(--text-sm); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">Safe to Spend</p>
           <div class="hero-amount-wrap" id="hero-amount-wrap">
-            <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount">₹0</p>
+            <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount" data-testid="safe-to-spend">₹0</p>
           </div>
           <p class="text-tertiary mt-2" style="font-size: var(--text-xs); letter-spacing: 0.04em;">from your Wants budget</p>
           <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">${daysLeft} days left in cycle</p>
