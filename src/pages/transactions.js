@@ -14,6 +14,7 @@ import {
   getBucketById,
 } from '../data/store.js';
 import { formatCurrency, timeAgo } from '../utils/helpers.js';
+import { groupByMonth } from '../utils/txn-grouping.js';
 import { navigate } from '../router.js';
 
 const MACRO_FILTERS = ['all', 'needs', 'wants', 'future'];
@@ -51,7 +52,7 @@ function _render(container) {
       <!-- View mode tabs: Current pay period vs full History -->
       <div class="txn-view-tabs" id="txn-view-tabs" role="tablist">
         ${VIEW_MODES.map(m => `
-          <button class="txn-view-tab${m === _viewMode ? ' is-active' : ''}" data-view="${m}" role="tab" aria-selected="${m === _viewMode}">
+          <button class="txn-view-tab${m === _viewMode ? ' is-active' : ''}" data-view="${m}" data-testid="txn-view-tab-${m}" role="tab" aria-selected="${m === _viewMode}">
             ${VIEW_LABELS[m]}
           </button>
         `).join('')}
@@ -126,43 +127,27 @@ function _renderDayGroups(filtered) {
 }
 
 function _renderMonthGroups(filtered) {
-  // Bucket transactions by YYYY-MM derived from each txn's own date — independent of cycles.
-  const monthBuckets = new Map();
-  filtered.forEach(t => {
-    const d = new Date(t.timestamp);
-    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    if (!monthBuckets.has(key)) monthBuckets.set(key, []);
-    monthBuckets.get(key).push(t);
-  });
+  const groups = groupByMonth(filtered, getBucketById);
 
-  const sortedKeys = [...monthBuckets.keys()].sort().reverse();
-  const now = new Date();
-  const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  let html = `<div class="txn-list-summary text-tertiary" style="font-size:var(--text-xs); margin-bottom:var(--space-2);">${filtered.length} transaction${filtered.length !== 1 ? 's' : ''} across ${groups.length} month${groups.length !== 1 ? 's' : ''}</div>`;
 
-  let html = `<div class="txn-list-summary text-tertiary" style="font-size:var(--text-xs); margin-bottom:var(--space-2);">${filtered.length} transaction${filtered.length !== 1 ? 's' : ''} across ${sortedKeys.length} month${sortedKeys.length !== 1 ? 's' : ''}</div>`;
-
-  sortedKeys.forEach(monthKey => {
-    const monthTxns = monthBuckets.get(monthKey);
-    const isInProgress = monthKey === currentMonthKey;
-    const totals = _computeMonthTotals(monthTxns);
-
+  groups.forEach(({ label, isCurrent, txns, totals }) => {
     const dayGroups = new Map();
-    monthTxns.forEach(t => {
+    txns.forEach(t => {
       const dateKey = new Date(t.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
       if (!dayGroups.has(dateKey)) dayGroups.set(dateKey, []);
       dayGroups.get(dateKey).push(t);
     });
 
-    const monthLabel = _formatMonthLabel(monthKey);
     const macroPills = _renderMacroPills(totals.macros);
 
     html += `
-      <section class="txn-month-section">
+      <section class="txn-month-section" data-testid="txn-month-section" data-month-key="${label}">
         <header class="txn-month-header">
           <div class="txn-month-header__top">
             <div class="txn-month-label-wrap">
-              <span class="txn-month-label">${monthLabel}</span>
-              ${isInProgress ? `<span class="txn-month-badge">in progress</span>` : ''}
+              <span class="txn-month-label">${label}</span>
+              ${isCurrent ? `<span class="txn-month-badge">in progress</span>` : ''}
             </div>
             <span class="txn-month-total text-mono">${formatCurrency(totals.netSpent)}</span>
           </div>
@@ -183,37 +168,12 @@ function _renderMonthGroups(filtered) {
   return html;
 }
 
-function _computeMonthTotals(monthTxns) {
-  const macros = { needs: 0, wants: 0, future: 0 };
-  let spent = 0;
-  let income = 0;
-
-  monthTxns.forEach(t => {
-    if (t.type === 'income' || t.type === 'refund') {
-      income += t.amount;
-    } else {
-      spent += t.amount;
-      const bucket = getBucketById(t.bucketId);
-      if (bucket && macros[bucket.macroType] !== undefined) {
-        macros[bucket.macroType] += t.amount;
-      }
-    }
-  });
-
-  return { netSpent: Math.max(0, spent - income), spent, income, macros };
-}
-
 function _renderMacroPills(macros) {
   const parts = [];
   if (macros.needs > 0) parts.push(`<span class="txn-month-macro txn-month-macro--needs">Needs ${formatCurrency(macros.needs)}</span>`);
   if (macros.wants > 0) parts.push(`<span class="txn-month-macro txn-month-macro--wants">Wants ${formatCurrency(macros.wants)}</span>`);
   if (macros.future > 0) parts.push(`<span class="txn-month-macro txn-month-macro--future">Future ${formatCurrency(macros.future)}</span>`);
   return parts.join('');
-}
-
-function _formatMonthLabel(monthKey) {
-  const [year, month] = monthKey.split('-').map(Number);
-  return new Date(year, month - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' });
 }
 
 function _renderTxnRow(t) {
