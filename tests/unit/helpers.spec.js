@@ -193,10 +193,6 @@ describe('formatPayday', () => {
   it('formats 1st correctly', () => {
     expect(formatPayday(1)).toBe('1st of every month');
   });
-
-  it('formats sentinel 99 as Last day', () => {
-    expect(formatPayday(99)).toBe('Last day of every month');
-  });
 });
 
 describe('timeAgo', () => {

@@ -404,17 +404,12 @@ function _openProfileEdit(container, field) {
   } else if (field === 'salaryDate') {
     const current = user?.salaryDate || 1;
     rightEl.innerHTML = `
-      ${renderDayPicker({
-        days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31],
-        value: current,
-        lastDay: true,
-        lastDayTestId: 'payday-last-settings',
-      })}
+      ${renderDayPicker({ value: current > 31 ? 1 : current })}
       <button class="btn btn-primary btn-sm" id="save-salary-date">Save</button>
       <button class="btn btn-ghost btn-sm" id="cancel-salary-date">✕</button>
     `;
     let selectedDate = current;
-    bindDayPicker(rightEl, { days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31], lastDay: true }, v => {
+    bindDayPicker(rightEl, {}, v => {
       selectedDate = v;
     });
     container.querySelector('#save-salary-date').addEventListener('click', () => {

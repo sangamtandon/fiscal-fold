@@ -1,87 +1,78 @@
 import { ordinalSuffix } from './helpers.js';
 
+const PRESET_DAYS = [1, 7, 25, 30];
+
 /**
  * @typedef {Object} DayPickerOptions
- * @property {number[]} days           - Preset day values to show as chips
- * @property {number}   [value]        - Currently selected day (defaults to days[0])
- * @property {boolean}  [lastDay]      - Append a "Last day" chip with sentinel value 99
- * @property {string}   [lastDayTestId]- data-testid for the "Last day" chip
- * @property {boolean}  [customInput]  - Render a number input below chips for any day 1–31
- * @property {string}   [inputId]      - id for the custom input (required when customInput: true)
+ * @property {number}  value   - Currently selected day (1–31)
+ * @property {string}  [selectId] - id for the custom <select> (default: 'day-picker-select')
  */
 
 /**
- * Returns the HTML string for a day-of-month chip picker.
+ * Returns the HTML string for a day-of-month picker:
+ * four preset chips (1st, 7th, 25th, 30th) and a 1–31 dropdown.
  * @param {DayPickerOptions} opts
  * @returns {string}
  */
-export function renderDayPicker(opts) {
-  const {
-    days,
-    value = days[0],
-    lastDay = false,
-    lastDayTestId = null,
-    customInput = false,
-    inputId = 'day-picker-custom',
-  } = opts;
+export function renderDayPicker({ value = 1, selectId = 'day-picker-select' }) {
+  const inPreset = PRESET_DAYS.includes(value);
 
-  const chips = days.map(d =>
+  const chips = PRESET_DAYS.map(d =>
     `<button class="day-picker__chip${value === d ? ' is-active' : ''}" data-day="${d}">${d}${ordinalSuffix(d)}</button>`
   ).join('');
 
-  const lastDayChip = lastDay
-    ? `<button class="day-picker__chip${value === 99 ? ' is-active' : ''}" data-day="99"${lastDayTestId ? ` data-testid="${lastDayTestId}"` : ''}>Last day</button>`
-    : '';
+  const options = Array.from({ length: 31 }, (_, i) => i + 1).map(d =>
+    `<option value="${d}"${!inPreset && value === d ? ' selected' : ''}>${d}${ordinalSuffix(d)}</option>`
+  ).join('');
 
-  const customEl = customInput ? `
-    <div class="day-picker__custom">
-      <input
-        type="number"
-        class="input-field"
-        id="${inputId}"
-        placeholder="Custom day (1–31)"
-        min="1"
-        max="31"
-        style="font-size:var(--text-sm)"
-        value="${!days.includes(value) && value !== 99 ? value : ''}"
-      />
-    </div>` : '';
-
-  return `<div class="day-picker">${chips}${lastDayChip}</div>${customEl}`;
+  return `
+    <div class="day-picker">
+      ${chips}
+      <select class="day-picker__select" id="${selectId}">
+        <option value="" ${inPreset ? 'selected' : ''} disabled>Custom…</option>
+        ${options}
+      </select>
+    </div>`;
 }
 
 /**
- * Binds click and input events for a rendered day picker.
- * @param {HTMLElement}    root     - Scope element containing the picker
- * @param {DayPickerOptions} opts
- * @param {function(number): void} onChange  - Called with the selected day value
+ * Binds chip clicks and select changes for a rendered day picker.
+ * @param {HTMLElement}              root      - Scope element containing the picker
+ * @param {DayPickerOptions}         opts
+ * @param {function(number): void}   onChange  - Called with the selected day (1–31)
  */
 export function bindDayPicker(root, opts, onChange) {
-  const { customInput = false, inputId = 'day-picker-custom' } = opts;
+  const { selectId = 'day-picker-select' } = opts;
   const chips = root.querySelectorAll('[data-day]');
+  const sel = root.querySelector(`#${selectId}`);
+
+  function activateChip(day) {
+    chips.forEach(c => c.classList.remove('is-active'));
+    const match = root.querySelector(`[data-day="${day}"]`);
+    if (match) match.classList.add('is-active');
+  }
 
   chips.forEach(chip => {
     chip.addEventListener('click', () => {
-      chips.forEach(c => c.classList.remove('is-active'));
-      chip.classList.add('is-active');
-      if (customInput) {
-        const inp = root.querySelector(`#${inputId}`);
-        if (inp) inp.value = '';
-      }
-      onChange(parseInt(chip.dataset.day, 10));
+      const v = parseInt(chip.dataset.day, 10);
+      activateChip(v);
+      if (sel) sel.value = '';
+      onChange(v);
     });
   });
 
-  if (customInput) {
-    const inp = root.querySelector(`#${inputId}`);
-    if (inp) {
-      inp.addEventListener('input', e => {
-        const v = parseInt(e.target.value, 10);
-        if (v >= 1 && v <= 31) {
+  if (sel) {
+    sel.addEventListener('change', e => {
+      const v = parseInt(e.target.value, 10);
+      if (v >= 1 && v <= 31) {
+        if (PRESET_DAYS.includes(v)) {
+          activateChip(v);
+          sel.value = '';
+        } else {
           chips.forEach(c => c.classList.remove('is-active'));
-          onChange(v);
         }
-      });
-    }
+        onChange(v);
+      }
+    });
   }
 }

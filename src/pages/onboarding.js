@@ -210,12 +210,7 @@ function renderStep2(container) {
 
     <div class="onboarding__field mt-6">
       <label class="input-group__label">When do you get paid?</label>
-      ${renderDayPicker({
-        days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31],
-        value: formData.salaryDate,
-        lastDay: true,
-        lastDayTestId: 'payday-last',
-      })}
+      ${renderDayPicker({ value: formData.salaryDate })}
     </div>
 
     <div class="onboarding__preview card card--glass mt-4" id="salary-preview" style="${formData.salary > 0 ? '' : 'opacity: 0.3;'}">
@@ -251,7 +246,7 @@ function renderStep2(container) {
   });
 
   // Date chips
-  bindDayPicker(container, { days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31], lastDay: true }, v => {
+  bindDayPicker(container, {}, v => {
     formData.salaryDate = v;
     previewDate.textContent = formatPayday(v);
   });

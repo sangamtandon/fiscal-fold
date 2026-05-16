@@ -414,12 +414,7 @@ function _renderForm(existing, pageContainer) {
       <!-- Due date -->
       <div class="cm-form__section">
         <p class="cm-form__label">Due Date (day of month)</p>
-        ${renderDayPicker({
-          days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31],
-          value: state.dueDate,
-          customInput: true,
-          inputId: 'cf-due-custom',
-        })}
+        ${renderDayPicker({ value: state.dueDate, selectId: 'cf-due-select' })}
       </div>
 
       <button class="btn btn-primary btn-full" id="cf-save" style="margin-top:var(--space-2)">
@@ -454,8 +449,8 @@ function _renderForm(existing, pageContainer) {
     });
   });
 
-  // Due date chips + custom input
-  bindDayPicker(_formDrawer, { days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31], customInput: true, inputId: 'cf-due-custom' }, v => {
+  // Due date chips + custom select
+  bindDayPicker(_formDrawer, { selectId: 'cf-due-select' }, v => {
     state.dueDate = v;
   });
 
