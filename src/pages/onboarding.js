@@ -24,16 +24,16 @@ import { showToast } from '../utils/toast.js';
 
 const MACRO_META = {
   needs: {
-    desc: 'Must-pays — essentials you can\'t skip',
-    eg: 'Rent, Groceries, Electricity, Transport, Insurance, EMI',
+    desc: 'Essential expenses — survival, work, and basic functioning',
+    eg: 'Rent, EMI, Groceries, Electricity, Mobile, Transport, Insurance, Medicines, Loan payments',
   },
   wants: {
-    desc: 'Fun money — spending you control',
-    eg: 'Dining Out, Shopping, Streaming, Vacations, Hobbies',
+    desc: 'Lifestyle, entertainment, and non-essential spending',
+    eg: 'Restaurants, Food Delivery, Shopping, Streaming, Vacations, Gaming, Hobbies',
   },
   future: {
-    desc: 'Your future self — savings & goals',
-    eg: 'Emergency Fund, Mutual Funds, PPF, NPS, Loan Repayment',
+    desc: 'Money for future financial growth and security',
+    eg: 'Emergency Fund, Mutual Funds, Stocks, PPF, NPS, FD, Extra Loan Repayment',
   },
 };
 
@@ -510,7 +510,7 @@ function renderStep4(container) {
     </div>
 
     <p class="onboarding__bucket-tip" data-testid="bucket-tip">
-      📌 Pin your most-used <strong>Wants</strong> buckets for one-tap logging on the dashboard. &nbsp;🔄 Mark fixed monthly bills as recurring — they'll be reserved automatically.
+      Tap a suggestion to add it, or create your own.
     </p>
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
@@ -531,7 +531,7 @@ function renderBucketSection(macroType, label) {
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
   const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
   const unallocated = macroAmount - sumAllocated;
-  const { desc, eg } = MACRO_META[macroType];
+  const { eg } = MACRO_META[macroType];
 
   let poolText, poolClass;
   if (buckets.length === 0) {
@@ -544,7 +544,7 @@ function renderBucketSection(macroType, label) {
     poolText = `${formatCurrency(unallocated)} left to assign`;
     poolClass = 'onboarding__pool-counter';
   } else {
-    poolText = `${formatCurrency(-unallocated)} over budget`;
+    poolText = `${formatCurrency(-unallocated)} over — <button class="onboarding__adjust-split-link" data-action="adjust-split">adjust split?</button>`;
     poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
   }
 
@@ -565,14 +565,9 @@ function renderBucketSection(macroType, label) {
         </div>
         <span class="text-mono text-secondary" style="font-size: var(--text-xs);">${formatCurrency(macroAmount)}</span>
       </div>
-      <p class="onboarding__macro-desc">${desc} <span class="onboarding__macro-eg">e.g. ${eg}</span></p>
+      <p class="onboarding__macro-desc"><span class="onboarding__macro-eg">${eg}</span></p>
       <div class="onboarding__template-chips">${templateChips}</div>
       <div class="${poolClass}" id="pool-counter-${macroType}">${poolText}</div>
-      ${buckets.length > 0 ? `
-        <div class="onboarding__bucket-col-headers">
-          <span>Name</span><span>Budget</span>
-        </div>
-      ` : ''}
       <div class="onboarding__bucket-list" data-macro="${macroType}">
         ${buckets.map(b => renderBucketItem(b, macroType)).join('')}
       </div>
@@ -685,11 +680,18 @@ function wireUpBucketEvents(container) {
 
   // Click delegation for chips, pins, recurring toggles, removes, and add
   container.addEventListener('click', (e) => {
+    const adjustSplitBtn = e.target.closest('[data-action="adjust-split"]');
     const chipBtn = e.target.closest('.onboarding__template-chip');
     const recurringBtn = e.target.closest('.onboarding__bucket-recurring');
     const pinBtn = e.target.closest('.onboarding__bucket-pin');
     const removeBtn = e.target.closest('.onboarding__bucket-remove');
     const addBtn = e.target.closest('.onboarding__add-bucket-btn');
+
+    if (adjustSplitBtn) {
+      currentStep = 3;
+      renderCurrentStep(container.closest('.onboarding')?.parentElement ?? container);
+      return;
+    }
 
     if (chipBtn) {
       const macro = chipBtn.dataset.macro;
