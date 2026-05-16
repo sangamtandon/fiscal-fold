@@ -14,12 +14,28 @@ import {
   setUser,
   createCycle,
   addBucket,
+  addCommitment,
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
 import { formatCurrency, formatNumber, uid } from '../utils/helpers.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
+
+const MACRO_META = {
+  needs: {
+    desc: 'Must-pays — essentials you can\'t skip',
+    eg: 'Rent, Groceries, Electricity, Transport, Insurance, EMI',
+  },
+  wants: {
+    desc: 'Fun money — spending you control',
+    eg: 'Dining Out, Shopping, Streaming, Vacations, Hobbies',
+  },
+  future: {
+    desc: 'Your future self — savings & goals',
+    eg: 'Emergency Fund, Mutual Funds, PPF, NPS, Loan Repayment',
+  },
+};
 
 // ---- Onboarding State (local, not persisted until completion) ----
 let currentStep = 1;
@@ -49,17 +65,6 @@ export function renderOnboarding(container) {
     ratios: { ...PRESETS.balanced },
     buckets: { needs: [], wants: [], future: [] },
   };
-
-  // Pre-populate bucket templates
-  Object.keys(BUCKET_TEMPLATES).forEach(macro => {
-    formData.buckets[macro] = BUCKET_TEMPLATES[macro].map((t, i) => ({
-      id: uid(),
-      name: t.name,
-      emoji: t.emoji,
-      pct: Math.round(100 / BUCKET_TEMPLATES[macro].length),
-      isPinned: i < 2,
-    }));
-  });
 
   renderCurrentStep(container);
 }
@@ -500,12 +505,12 @@ function renderStep4(container) {
   container.innerHTML = `
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
-      <h2 class="onboarding__title">Name your buckets</h2>
-      <p class="onboarding__subtitle">A bucket is a spending category with its own budget — like an envelope for each expense type.</p>
+      <h2 class="onboarding__title">Set up your buckets</h2>
+      <p class="onboarding__subtitle">Tap a suggestion to add it, or create your own. Set a monthly budget for each bucket.</p>
     </div>
 
     <p class="onboarding__bucket-tip" data-testid="bucket-tip">
-      📌 Pin up to 4 buckets for one-tap logging on the dashboard.
+      📌 Pin your most-used <strong>Wants</strong> buckets for one-tap logging on the dashboard. &nbsp;🔄 Mark fixed monthly bills as recurring — they'll be reserved automatically.
     </p>
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
@@ -526,9 +531,13 @@ function renderBucketSection(macroType, label) {
   const canAdd = buckets.length < MAX_BUCKETS_PER_MACRO;
   const sumAllocated = buckets.reduce((s, b) => s + (b.allocated ?? 0), 0);
   const unallocated = macroAmount - sumAllocated;
+  const { desc, eg } = MACRO_META[macroType];
 
   let poolText, poolClass;
-  if (unallocated === 0) {
+  if (buckets.length === 0) {
+    poolText = `${formatCurrency(macroAmount)} to assign`;
+    poolClass = 'onboarding__pool-counter';
+  } else if (unallocated === 0) {
     poolText = '✓ All assigned';
     poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
   } else if (unallocated > 0) {
@@ -539,6 +548,14 @@ function renderBucketSection(macroType, label) {
     poolClass = 'onboarding__pool-counter onboarding__pool-counter--warn';
   }
 
+  const activeNames = new Set(buckets.map(b => b.name));
+  const templateChips = BUCKET_TEMPLATES[macroType].map(t => `
+    <button class="onboarding__template-chip ${activeNames.has(t.name) ? 'is-active' : ''}"
+      data-macro="${macroType}" data-name="${t.name}" data-emoji="${t.emoji}">
+      ${t.emoji} ${t.name}
+    </button>
+  `).join('');
+
   return `
     <div class="onboarding__bucket-section" data-macro="${macroType}">
       <div class="flex items-center justify-between mb-1">
@@ -548,13 +565,20 @@ function renderBucketSection(macroType, label) {
         </div>
         <span class="text-mono text-secondary" style="font-size: var(--text-xs);">${formatCurrency(macroAmount)}</span>
       </div>
+      <p class="onboarding__macro-desc">${desc} <span class="onboarding__macro-eg">e.g. ${eg}</span></p>
+      <div class="onboarding__template-chips">${templateChips}</div>
       <div class="${poolClass}" id="pool-counter-${macroType}">${poolText}</div>
+      ${buckets.length > 0 ? `
+        <div class="onboarding__bucket-col-headers">
+          <span>Name</span><span>Budget</span>
+        </div>
+      ` : ''}
       <div class="onboarding__bucket-list" data-macro="${macroType}">
         ${buckets.map(b => renderBucketItem(b, macroType)).join('')}
       </div>
       ${canAdd ? `
         <button class="onboarding__add-bucket-btn" data-macro="${macroType}">
-          + Add bucket
+          + Add custom bucket
         </button>
       ` : ''}
     </div>
@@ -574,16 +598,22 @@ function renderBucketItem(bucket, macroType) {
         data-id="${bucket.id}"
         data-macro="${macroType}"
       />
-      <input
-        type="number"
-        class="onboarding__bucket-allocated"
-        value="${bucket.allocated ?? 0}"
-        min="0"
-        inputmode="numeric"
-        data-id="${bucket.id}"
-        data-macro="${macroType}"
-        placeholder="0"
-      />
+      <div class="onboarding__amount-wrap">
+        <span class="onboarding__amount-prefix">₹</span>
+        <input
+          type="number"
+          class="onboarding__bucket-allocated"
+          value="${bucket.allocated ?? 0}"
+          min="0"
+          inputmode="numeric"
+          data-id="${bucket.id}"
+          data-macro="${macroType}"
+          placeholder="0"
+        />
+      </div>
+      <button class="onboarding__bucket-recurring ${bucket.isRecurring ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Fixed monthly bill — will be set up as a Commitment">
+        🔄
+      </button>
       <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket">
         📌
       </button>
@@ -622,6 +652,17 @@ function updatePoolCounter(macroType) {
   }
 }
 
+function recalcAllocations(macroType) {
+  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
+  const bkts = formData.buckets[macroType];
+  if (bkts.length === 0) return;
+  const perBucket = Math.floor(macroAmount / bkts.length);
+  const rem = macroAmount - perBucket * bkts.length;
+  bkts.forEach((b, i) => {
+    b.allocated = perBucket + (i === 0 ? rem : 0);
+  });
+}
+
 function wireUpBucketEvents(container) {
   // Name and allocation editing
   container.addEventListener('input', (e) => {
@@ -642,11 +683,46 @@ function wireUpBucketEvents(container) {
     }
   });
 
-  // Click delegation for pins and removes
+  // Click delegation for chips, pins, recurring toggles, removes, and add
   container.addEventListener('click', (e) => {
+    const chipBtn = e.target.closest('.onboarding__template-chip');
+    const recurringBtn = e.target.closest('.onboarding__bucket-recurring');
     const pinBtn = e.target.closest('.onboarding__bucket-pin');
     const removeBtn = e.target.closest('.onboarding__bucket-remove');
     const addBtn = e.target.closest('.onboarding__add-bucket-btn');
+
+    if (chipBtn) {
+      const macro = chipBtn.dataset.macro;
+      const name = chipBtn.dataset.name;
+      const emoji = chipBtn.dataset.emoji;
+      const existingIdx = formData.buckets[macro].findIndex(b => b.name === name);
+      if (existingIdx !== -1) {
+        // Toggle off — remove the bucket
+        formData.buckets[macro].splice(existingIdx, 1);
+      } else {
+        // Toggle on — add the bucket
+        const wantsPinned = formData.buckets.wants.filter(b => b.isPinned).length;
+        formData.buckets[macro].push({
+          id: uid(),
+          name,
+          emoji,
+          isPinned: macro === 'wants' && wantsPinned < 2,
+          isRecurring: false,
+        });
+      }
+      recalcAllocations(macro);
+      refreshBucketSections(container);
+    }
+
+    if (recurringBtn) {
+      const id = recurringBtn.dataset.id;
+      const macro = recurringBtn.dataset.macro;
+      const bucket = formData.buckets[macro].find(b => b.id === id);
+      if (bucket) {
+        bucket.isRecurring = !bucket.isRecurring;
+        recurringBtn.classList.toggle('is-active');
+      }
+    }
 
     if (pinBtn) {
       const id = pinBtn.dataset.id;
@@ -662,6 +738,7 @@ function wireUpBucketEvents(container) {
       const id = removeBtn.dataset.id;
       const macro = removeBtn.dataset.macro;
       formData.buckets[macro] = formData.buckets[macro].filter(b => b.id !== id);
+      recalcAllocations(macro);
       refreshBucketSections(container);
     }
 
@@ -673,9 +750,10 @@ function wireUpBucketEvents(container) {
           id: uid(),
           name: '',
           emoji: randomEmoji,
-          pct: 0,
           isPinned: false,
+          isRecurring: false,
         });
+        recalcAllocations(macro);
         refreshBucketSections(container);
         // Focus the new input
         requestAnimationFrame(() => {
@@ -773,6 +851,15 @@ function finishOnboarding() {
         allocated: b.allocated ?? 0,
         isPinned: b.isPinned,
       });
+      if (b.isRecurring) {
+        addCommitment({
+          name: b.name,
+          emoji: b.emoji,
+          amount: b.allocated ?? 0,
+          dueDate: 1,
+          macroType,
+        });
+      }
     });
   });
 

@@ -542,29 +542,128 @@
   color: var(--warn);
 }
 
-/* Allocation amount input per bucket */
-.onboarding__bucket-allocated {
-  width: 84px;
+
+/* Amount input wrapper with ₹ prefix */
+.onboarding__amount-wrap {
+  display: flex;
+  align-items: center;
+  width: 90px;
   flex-shrink: 0;
-  padding: var(--space-1) var(--space-2);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0 var(--space-1) 0 var(--space-2);
+  gap: 2px;
+}
+
+.onboarding__amount-wrap:focus-within {
+  border-color: var(--accent-primary);
+}
+
+.onboarding__amount-prefix {
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.onboarding__bucket-allocated {
+  width: 100%;
+  padding: var(--space-1) 0;
   font-size: var(--text-xs);
   font-family: var(--font-mono);
   font-weight: var(--weight-medium);
   color: var(--text-primary);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  background: transparent;
+  border: none;
   text-align: right;
   -moz-appearance: textfield;
 }
 
-.onboarding__bucket-allocated::-webkit-inner-spin-button,
-.onboarding__bucket-allocated::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+/* Macro description + examples */
+.onboarding__macro-desc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin: 2px 0 var(--space-3);
+  line-height: 1.4;
 }
 
-.onboarding__bucket-allocated:focus {
+.onboarding__macro-eg {
+  color: var(--text-tertiary);
+}
+
+/* Template suggestion chips */
+.onboarding__template-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.onboarding__template-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  white-space: nowrap;
+}
+
+.onboarding__template-chip:hover {
   border-color: var(--accent-primary);
-  outline: none;
+  color: var(--accent-primary);
+}
+
+.onboarding__template-chip.is-active {
+  background: var(--accent-primary-dim);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Column headers above bucket list */
+.onboarding__bucket-col-headers {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 var(--space-3);
+  margin-bottom: var(--space-1);
+  font-size: 10px;
+  font-weight: var(--weight-medium);
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Recurring toggle button */
+.onboarding__bucket-recurring {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all var(--duration-fast);
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary);
+  opacity: 0.5;
+}
+
+.onboarding__bucket-recurring:hover {
+  background: var(--bg-elevated);
+  opacity: 1;
+}
+
+.onboarding__bucket-recurring.is-active {
+  color: var(--wants);
+  opacity: 1;
 }
