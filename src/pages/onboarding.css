@@ -199,6 +199,41 @@
 }
 
 /* ---- Step 3: Preset & Donut ---- */
+.onboarding__macro-defs {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-2);
+}
+
+.onboarding__macro-def {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.onboarding__macro-def > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: baseline;
+}
+
+.onboarding__carry-note {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  margin: 0;
+}
+
 .onboarding__preset-row {
   display: flex;
   gap: var(--space-2);
@@ -218,8 +253,21 @@
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  min-width: 80px;
+  min-width: 96px;
+  max-width: 140px;
   transition: all var(--duration-fast);
+}
+
+.onboarding__preset-hint {
+  font-size: 10px;
+  color: var(--text-tertiary);
+  text-align: center;
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+.onboarding__preset-chip.is-active .onboarding__preset-hint {
+  color: var(--text-secondary);
 }
 
 .onboarding__preset-chip:hover {
@@ -352,6 +400,17 @@
 }
 
 /* ---- Step 4: Bucket Setup ---- */
+.onboarding__bucket-tip {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  text-align: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+  margin: 0 0 var(--space-2);
+}
+
 .onboarding__bucket-sections {
   display: flex;
   flex-direction: column;

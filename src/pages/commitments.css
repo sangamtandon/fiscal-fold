@@ -368,3 +368,68 @@
   color: var(--warn);
   font-weight: var(--weight-medium);
 }
+
+/* ---- Mark-paid drawer ---- */
+.cm-mark-paid-drawer {
+  max-height: 70dvh;
+  overflow-y: auto;
+}
+
+.cm-mp-amount {
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+  text-align: center;
+  padding: var(--space-3) 0 var(--space-4);
+}
+
+.cm-mp-bucket-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.cm-mp-bucket {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.cm-mp-bucket:hover {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary-dim);
+}
+
+.cm-mp-bucket__emoji {
+  font-size: 22px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cm-mp-bucket__name {
+  flex: 1;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.cm-mp-bucket__rem {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+}
+
+.cm-mp-skip-btn {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}

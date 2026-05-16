@@ -17,22 +17,58 @@ Check off each item. If any item fails, fix it before merging.
 ## 👁️ Visual QA — Core Screens
 
 ### Onboarding (`/#/onboarding`)
-- [ ] App logo and title render correctly
-- [ ] "Get Started" and "Skip to demo dashboard" buttons are visible
+- [ ] Tagline is "Know exactly what's safe to spend — without a spreadsheet." (no "envelope budgeting" jargon)
+- [ ] Privacy line says "No account, no cloud sync." — no contradiction with sync language elsewhere
+- [ ] Primary CTA: "Set up my budget" / Secondary: "Try a sample dashboard first →"
 - [ ] Header and FAB are hidden during onboarding
-- [ ] Clicking "Skip to demo" seeds data and navigates to dashboard
+- [ ] **Step 2:** Salary date chips include 1, 5, 7, 10, 15, 20, 25, 28, 30, 31, and a "Last day" chip
+- [ ] **Step 3:** Macro definitions card visible above the preset chips with concrete examples
+- [ ] **Step 3:** Carry-forward note visible: "Unspent Wants & Future roll into next month's Future at payday."
+- [ ] **Step 3:** Preset chip labels are "Balanced / Save More / More Essentials / Custom ✏️" with one-line hints
+- [ ] **Step 4:** Subtitle defines a bucket as an envelope
+- [ ] **Step 4:** Pin-explanation tip visible
+- [ ] **Step 4:** Pool counter wording: "All assigned" / "₹X left to assign" / "₹X over budget" (no "unallocated")
 
 ### Dashboard (`/#/dashboard`)
-- [ ] Safe to Spend hero number renders (not NaN, not ₹0 with seeded data)
-- [ ] "X days left in cycle" text is correct
+- [ ] Safe to Spend card label reads "Wants budget — safe to spend"
+- [ ] Supporting hint mentions Needs & Future being set aside
+- [ ] "X day(s) left" pluralizes correctly
 - [ ] All three macro health bars (Needs, Wants, Future) render with correct percentages
 - [ ] Recent transactions list shows entries with emojis and amounts
-- [ ] Trade-off transactions show "from [bucket]" badge
-- [ ] Leak warning OR "All clear" card appears based on data
+- [ ] Trade-off transactions show "covered by [bucket]" badge (not "from [bucket]")
+- [ ] Leak warning shows concrete percent + days text (no "running hot" slang) and the action label says "log a spend"
+- [ ] Unallocated banners are clickable and route to Settings; copy uses "left to assign"
+- [ ] Reserved-commitment hint says "set aside for recurring bills"
+- [ ] Quick Buckets row, if present, has the "tap to log a spend" tagline
+
+### Transaction modal (FAB)
+- [ ] Top-right "Income →" link is visible and opens the income drawer
+- [ ] Empty buckets are tappable (not disabled) and route to trade-off
+- [ ] Trade-off alert uses "Cover," never "Borrow"
+- [ ] Trade-off alert includes "no payback / moves money permanently"
+- [ ] Donor rows show "Can cover ₹X" hint (no opaque "Partial" badge)
+- [ ] Confirm screen uses "Confirm Split" with a "no payback" footnote
+
+### Transaction History (`/#/transactions`)
+- [ ] Every row shows a × delete button (hover on desktop, visible on touch)
+- [ ] Deleting reverses the bucket spent / allocated change correctly
+
+### Commitments (`/#/commitments`)
+- [ ] Subtitle explains the set-aside mechanism + mark-paid behaviour
+- [ ] Tapping the ✓ Mark paid button opens the bucket picker drawer
+- [ ] Picking a bucket logs a `Commitment: <name>` transaction
+- [ ] "Mark paid without logging" escape hatch works
+
+### Payday (`/#/payday`)
+- [ ] CTA reads "Roll over savings & start next cycle →" (no "Sweep" jargon)
+- [ ] Carry-forward block explicitly mentions Needs reset behaviour
 
 ### Settings (`/#/settings`)
-- [ ] User profile info renders (name, salary, salary date)
-- [ ] Bucket count and commitment count are correct
+- [ ] User profile info renders (name, salary, salary date — supports "Last day")
+- [ ] Salary date editor offers 30, 31, and "Last day" chips
+- [ ] Backup section says "Download full backup (JSON file)" not "Export All Data (JSON)"
+- [ ] **Help** card defines Needs/Wants/Future, Buckets, Cycle, Quick Buckets, Commitments
+- [ ] **Danger Zone** is a visible card with red heading and red-outline reset button
 - [ ] "Back to Dashboard" button works
 
 ---

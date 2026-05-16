@@ -16,6 +16,8 @@ import {
   addCommitment,
   updateCommitment,
   removeCommitment,
+  addTransaction,
+  getBuckets,
   getState,
 } from '../data/store.js';
 import { formatCurrency } from '../utils/helpers.js';
@@ -103,7 +105,7 @@ function _render(container) {
         <div style="width:80px"></div>
       </div>
 
-      <p class="cm-subtitle">Recurring expenses reserved before you spend.</p>
+      <p class="cm-subtitle">Recurring bills set aside from your macro budgets before you start spending — so the dashboard never lies. Mark paid to record the expense to a bucket.</p>
 
       ${sorted.length === 0 ? `
         <div class="cm-empty">
@@ -138,9 +140,16 @@ function _render(container) {
       const id = btn.dataset.cmPaid;
       const c = getState().commitments.find(x => x.id === id);
       if (!c) return;
-      updateCommitment(id, { isPaid: !c.isPaid });
-      _render(container);
-      showToast(c.isPaid ? `${c.name} marked unpaid` : `${c.name} marked paid ✓`, 'success');
+      if (c.isPaid) {
+        updateCommitment(id, { isPaid: false });
+        _render(container);
+        showToast(`${c.name} marked unpaid`, 'success');
+        return;
+      }
+      // Marking paid: prompt for the bucket to record the expense against
+      // so paying a commitment actually debits the budget — otherwise the
+      // dashboard silently disagreed with reality.
+      _openMarkPaid(container, c);
     });
   });
 
@@ -187,7 +196,7 @@ function _renderRow(c) {
       <div class="cm-row__body">
         <div class="cm-row__top">
           <span class="cm-row__name">${c.name}</span>
-          ${!c.isActive ? `<span class="badge cm-row__status" style="opacity:.6">Paused</span>` : statusText ? `<span class="badge ${statusCls} cm-row__status">${statusText}</span>` : ''}
+          ${!c.isActive ? `<span class="badge cm-row__status" style="opacity:.6" title="Paused commitments don't reserve budget until you resume them.">Paused</span>` : statusText ? `<span class="badge ${statusCls} cm-row__status">${statusText}</span>` : ''}
         </div>
         <div class="cm-row__meta">
           <span class="text-mono" style="color:${_macroColor[c.macroType]};font-size:var(--text-xs);font-weight:600">${_macroLabel[c.macroType]}</span>
@@ -222,6 +231,85 @@ function _renderRow(c) {
       </div>
     </div>
   `;
+}
+
+// ---- Mark-paid drawer (records a transaction so the budget actually moves) ----
+
+function _openMarkPaid(pageContainer, commitment) {
+  const buckets = getBuckets(commitment.macroType);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'drawer-overlay is-open';
+
+  const drawer = document.createElement('div');
+  drawer.className = 'drawer cm-mark-paid-drawer is-open';
+  drawer.setAttribute('data-testid', 'cm-mark-paid-drawer');
+  drawer.addEventListener('click', e => e.stopPropagation());
+
+  const close = () => { overlay.remove(); drawer.remove(); };
+  overlay.addEventListener('click', close);
+
+  drawer.innerHTML = `
+    <div class="drawer__handle"></div>
+    <div class="cm-form">
+      <div class="cm-form__header">
+        <span class="cm-form__title">Mark "${commitment.name}" paid</span>
+        <button class="btn btn-ghost" data-close-mp>✕</button>
+      </div>
+      <p class="cm-mp-amount text-mono">${formatCurrency(commitment.amount)}</p>
+      ${buckets.length === 0 ? `
+        <p class="text-tertiary" style="font-size: var(--text-sm); text-align:center; padding: var(--space-4);">
+          No ${_macroLabel[commitment.macroType]} buckets exist yet. Mark paid without logging?
+        </p>
+        <button class="btn btn-primary btn-full" data-mp-skip data-testid="cm-mp-skip">Mark paid (no transaction)</button>
+      ` : `
+        <p class="cm-form__label">Which bucket should this come out of?</p>
+        <div class="cm-mp-bucket-list" data-testid="cm-mp-buckets">
+          ${buckets.map(b => {
+            const rem = Math.max(0, b.allocated - b.spent);
+            return `
+              <button class="cm-mp-bucket" data-mp-bucket="${b.id}">
+                <span class="cm-mp-bucket__emoji">${b.emoji}</span>
+                <span class="cm-mp-bucket__name">${b.name}</span>
+                <span class="cm-mp-bucket__rem text-mono">${formatCurrency(rem)}</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+        <button class="btn btn-ghost btn-full cm-mp-skip-btn" data-mp-skip data-testid="cm-mp-skip">
+          Mark paid without logging
+        </button>
+      `}
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.appendChild(drawer);
+
+  drawer.querySelector('[data-close-mp]').addEventListener('click', close);
+
+  drawer.querySelectorAll('[data-mp-bucket]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const bucketId = btn.dataset.mpBucket;
+      addTransaction({
+        bucketId,
+        amount: commitment.amount,
+        type: 'expense',
+        note: `Commitment: ${commitment.name}`,
+      });
+      updateCommitment(commitment.id, { isPaid: true });
+      close();
+      _render(pageContainer);
+      showToast(`${commitment.name} paid — logged to bucket ✓`, 'success');
+    });
+  });
+
+  drawer.querySelector('[data-mp-skip]')?.addEventListener('click', () => {
+    updateCommitment(commitment.id, { isPaid: true });
+    close();
+    _render(pageContainer);
+    showToast(`${commitment.name} marked paid`, 'success');
+  });
 }
 
 // ---- Add / Edit Form ----

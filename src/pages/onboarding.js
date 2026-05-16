@@ -139,7 +139,7 @@ function renderStep1(container) {
     <div class="onboarding__step-header">
       <div class="onboarding__icon">👋</div>
       <h2 class="onboarding__title">What should we call you?</h2>
-      <p class="onboarding__subtitle">We'll greet you every time you open the app.</p>
+      <p class="onboarding__subtitle">So your plan feels like yours, not a template. You can change this later.</p>
     </div>
     <div class="onboarding__field">
       <input
@@ -186,7 +186,7 @@ function renderStep2(container) {
     <div class="onboarding__step-header">
       <div class="onboarding__icon">💰</div>
       <h2 class="onboarding__title">Your monthly income</h2>
-      <p class="onboarding__subtitle">Enter your fixed monthly salary. We'll build your plan around this.</p>
+      <p class="onboarding__subtitle">Use your fixed take-home salary. Variable income? Use your minimum expected — log bonuses later.</p>
     </div>
 
     <div class="onboarding__salary-input-wrap">
@@ -205,11 +205,14 @@ function renderStep2(container) {
     <div class="onboarding__field mt-6">
       <label class="input-group__label">When do you get paid?</label>
       <div class="onboarding__date-grid" id="date-grid">
-        ${[1, 5, 7, 10, 15, 20, 25, 28].map(d => `
+        ${[1, 5, 7, 10, 15, 20, 25, 28, 30, 31].map(d => `
           <button class="onboarding__date-chip ${formData.salaryDate === d ? 'is-active' : ''}" data-date="${d}">
             ${d}${ordinalSuffix(d)}
           </button>
         `).join('')}
+        <button class="onboarding__date-chip ${formData.salaryDate === 99 ? 'is-active' : ''}" data-date="99" data-testid="payday-last">
+          Last day
+        </button>
       </div>
     </div>
 
@@ -220,7 +223,7 @@ function renderStep2(container) {
       </div>
       <div class="flex items-center justify-between mt-2">
         <span class="text-secondary" style="font-size: var(--text-sm);">Payday</span>
-        <span class="text-mono font-medium" style="font-size: var(--text-sm);" id="preview-date">${formData.salaryDate}${ordinalSuffix(formData.salaryDate)} of every month</span>
+        <span class="text-mono font-medium" style="font-size: var(--text-sm);" id="preview-date">${formatPayday(formData.salaryDate)}</span>
       </div>
     </div>
   `;
@@ -251,7 +254,7 @@ function renderStep2(container) {
       container.querySelectorAll('.onboarding__date-chip').forEach(c => c.classList.remove('is-active'));
       chip.classList.add('is-active');
       formData.salaryDate = parseInt(chip.dataset.date, 10);
-      previewDate.textContent = `${formData.salaryDate}${ordinalSuffix(formData.salaryDate)} of every month`;
+      previewDate.textContent = formatPayday(formData.salaryDate);
     });
   });
 
@@ -268,7 +271,32 @@ function renderStep3(container) {
     <div class="onboarding__step-header">
       <div class="onboarding__icon">⚖️</div>
       <h2 class="onboarding__title">Your budget split</h2>
-      <p class="onboarding__subtitle">Choose a strategy or customize your own ratio.</p>
+      <p class="onboarding__subtitle">Pick how your salary divides into three jars.</p>
+    </div>
+
+    <!-- Macro Definitions -->
+    <div class="onboarding__macro-defs" data-testid="macro-defs">
+      <div class="onboarding__macro-def">
+        <span class="onboarding__alloc-dot" style="background: var(--needs);"></span>
+        <div>
+          <span class="font-semibold" style="font-size: var(--text-sm);">Needs</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs);">— rent, groceries, bills, transport</span>
+        </div>
+      </div>
+      <div class="onboarding__macro-def">
+        <span class="onboarding__alloc-dot" style="background: var(--wants);"></span>
+        <div>
+          <span class="font-semibold" style="font-size: var(--text-sm);">Wants</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs);">— dining, shopping, subscriptions, fun</span>
+        </div>
+      </div>
+      <div class="onboarding__macro-def">
+        <span class="onboarding__alloc-dot" style="background: var(--future);"></span>
+        <div>
+          <span class="font-semibold" style="font-size: var(--text-sm);">Future</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs);">— savings, investments, emergency fund</span>
+        </div>
+      </div>
     </div>
 
     <!-- Preset Chips -->
@@ -277,11 +305,13 @@ function renderStep3(container) {
         <button class="onboarding__preset-chip ${formData.preset === key ? 'is-active' : ''}" data-preset="${key}">
           <span class="onboarding__preset-label">${presetLabel(key)}</span>
           <span class="onboarding__preset-ratio">${val.needs}/${val.wants}/${val.future}</span>
+          <span class="onboarding__preset-hint">${presetHint(key)}</span>
         </button>
       `).join('')}
       <button class="onboarding__preset-chip ${formData.preset === 'custom' ? 'is-active' : ''}" data-preset="custom">
-        <span class="onboarding__preset-label">Custom</span>
-        <span class="onboarding__preset-ratio">✏️</span>
+        <span class="onboarding__preset-label">Custom ✏️</span>
+        <span class="onboarding__preset-ratio">Your own</span>
+        <span class="onboarding__preset-hint">Set each slice yourself</span>
       </button>
     </div>
 
@@ -309,8 +339,13 @@ function renderStep3(container) {
         <span class="font-medium" style="font-size: var(--text-sm);">Future</span>
         <span class="text-mono font-semibold text-accent" id="slider-future-val">${formData.ratios.future}%</span>
       </div>
-      <p class="text-tertiary" style="font-size: var(--text-xs); text-align: center;">Future is auto-calculated from the remaining percentage.</p>
+      <p class="text-tertiary" style="font-size: var(--text-xs); text-align: center;">Future is the remainder once you've picked Needs and Wants.</p>
     </div>
+
+    <!-- Carry-forward callout -->
+    <p class="onboarding__carry-note" data-testid="carry-note">
+      💡 Unspent Wants & Future roll into next month's Future at payday.
+    </p>
   `;
 
   setNextEnabled(true);
@@ -406,6 +441,13 @@ function renderDonut() {
   const svg = document.getElementById('donut-chart');
   if (!svg) return;
 
+  // Read live CSS var values so the donut matches dashboard macro colors
+  // exactly — no drift if the design tokens change.
+  const css = getComputedStyle(document.documentElement);
+  const needsColor = (css.getPropertyValue('--needs') || '#818cf8').trim();
+  const wantsColor = (css.getPropertyValue('--wants') || '#34d399').trim();
+  const futureColor = (css.getPropertyValue('--future') || '#06b6d4').trim();
+
   const { needs, wants, future } = formData.ratios;
   const total = needs + wants + future;
   const radius = 80;
@@ -413,9 +455,9 @@ function renderDonut() {
   const circumference = 2 * Math.PI * radius;
 
   const segments = [
-    { pct: needs / total, color: '#818cf8' },
-    { pct: wants / total, color: '#34d399' },
-    { pct: future / total, color: '#06b6d4' },
+    { pct: needs / total, color: needsColor },
+    { pct: wants / total, color: wantsColor },
+    { pct: future / total, color: futureColor },
   ];
 
   let offset = 0;
@@ -459,8 +501,12 @@ function renderStep4(container) {
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
       <h2 class="onboarding__title">Name your buckets</h2>
-      <p class="onboarding__subtitle">Set a budget for each — the more intentional, the harder it is to overspend.</p>
+      <p class="onboarding__subtitle">A bucket is a spending category with its own budget — like an envelope for each expense type.</p>
     </div>
+
+    <p class="onboarding__bucket-tip" data-testid="bucket-tip">
+      📌 Pin up to 4 buckets for one-tap logging on the dashboard.
+    </p>
 
     <div class="onboarding__bucket-sections" id="bucket-sections">
       ${renderBucketSection('needs', 'Needs')}
@@ -483,10 +529,10 @@ function renderBucketSection(macroType, label) {
 
   let poolText, poolClass;
   if (unallocated === 0) {
-    poolText = '✓ Fully allocated';
+    poolText = '✓ All assigned';
     poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
   } else if (unallocated > 0) {
-    poolText = `${formatCurrency(unallocated)} unallocated`;
+    poolText = `${formatCurrency(unallocated)} left to assign`;
     poolClass = 'onboarding__pool-counter';
   } else {
     poolText = `${formatCurrency(-unallocated)} over budget`;
@@ -565,10 +611,10 @@ function updatePoolCounter(macroType) {
   const el = document.getElementById(`pool-counter-${macroType}`);
   if (!el) return;
   if (unallocated === 0) {
-    el.textContent = '✓ Fully allocated';
+    el.textContent = '✓ All assigned';
     el.className = 'onboarding__pool-counter onboarding__pool-counter--ok';
   } else if (unallocated > 0) {
-    el.textContent = `${formatCurrency(unallocated)} unallocated`;
+    el.textContent = `${formatCurrency(unallocated)} left to assign`;
     el.className = 'onboarding__pool-counter';
   } else {
     el.textContent = `${formatCurrency(-unallocated)} over budget`;
@@ -676,19 +722,23 @@ function finishOnboarding() {
   });
 
   // 2. Calculate cycle dates: start = today, end = the day before the next payday
-  // (clamped if salaryDate doesn't exist in that month). Salary is used as-is —
-  // no pro-rating, no surprises. The user gets what they typed.
+  // (clamped if salaryDate doesn't exist in that month, or === month-end when
+  // salaryDate is the 99 sentinel). Salary is used as-is — no pro-rating.
   const now = new Date();
-  const clampDay = (year, month, day) => Math.min(day, new Date(year, month + 1, 0).getDate());
+  const lastDayOfMonth = (year, month) => new Date(year, month + 1, 0).getDate();
+  const resolveDay = (year, month, day) => day === 99
+    ? lastDayOfMonth(year, month)
+    : Math.min(day, lastDayOfMonth(year, month));
   const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   // Find the next salaryDate from today
   let ey = now.getFullYear();
   let em = now.getMonth();
-  if (now.getDate() >= salaryDate) {
+  const todayResolvedPayday = resolveDay(ey, em, salaryDate);
+  if (now.getDate() >= todayResolvedPayday) {
     em = now.getMonth() + 1;
     if (em > 11) { em = 0; ey += 1; }
   }
-  const endDate = new Date(ey, em, clampDay(ey, em, salaryDate));
+  const endDate = new Date(ey, em, resolveDay(ey, em, salaryDate));
   endDate.setDate(endDate.getDate() - 1);
 
   const fmt = d => d.toISOString().split('T')[0];
@@ -738,14 +788,32 @@ function finishOnboarding() {
 function presetLabel(key) {
   const labels = {
     balanced: 'Balanced',
-    aggressive: 'Growth',
-    conservative: 'Safe Play',
+    aggressive: 'Save More',
+    conservative: 'More Essentials',
   };
   return labels[key] || key;
+}
+
+function presetHint(key) {
+  const hints = {
+    balanced: 'Even split — a safe starting point',
+    aggressive: 'Less Wants, bigger savings',
+    conservative: 'More room for must-pays',
+  };
+  return hints[key] || '';
 }
 
 function ordinalSuffix(n) {
   const s = ['th', 'st', 'nd', 'rd'];
   const v = n % 100;
   return (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+/**
+ * Format the payday display, treating 99 as the special "Last day of month" sentinel.
+ * Exported for tests + Settings reuse.
+ */
+export function formatPayday(n) {
+  if (n === 99) return 'Last day of every month';
+  return `${n}${ordinalSuffix(n)} of every month`;
 }
