@@ -593,7 +593,7 @@ function renderPoolRow(macroType) {
 
   let poolText, poolClass;
   if (buckets.length === 0) {
-    poolText = `${formatCurrency(macroAmount)} to assign`;
+    poolText = `${formatCurrency(macroAmount)} unassigned`;
     poolClass = 'onboarding__pool-counter';
   } else if (unallocated === 0) {
     poolText = '✓ All assigned';
