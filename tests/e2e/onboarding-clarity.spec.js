@@ -48,6 +48,6 @@ test('Step 4 uses "bucket" terminology and shows pin/recurring legend after sele
   // Select a chip — legend should appear with dashboard and monthly hints
   await page.locator('.onboarding__template-chip').first().click();
   await expect(page.locator('.onboarding__bucket-legend').first()).toBeVisible();
-  await expect(page.locator('.onboarding__bucket-legend').first()).toContainText(/dashboard/i);
+  await expect(page.locator('.onboarding__bucket-legend').first()).toContainText(/quick access/i);
   await expect(page.locator('.onboarding__bucket-legend').first()).toContainText(/monthly/i);
 });

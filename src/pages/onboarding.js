@@ -599,7 +599,7 @@ function renderPoolRow(macroType) {
     poolText = '✓ All assigned';
     poolClass = 'onboarding__pool-counter onboarding__pool-counter--ok';
   } else if (unallocated > 0) {
-    poolText = `${formatCurrency(unallocated)} left to assign`;
+    poolText = `${formatCurrency(unallocated)} unassigned`;
     poolClass = 'onboarding__pool-counter';
   } else {
     poolText = `${formatCurrency(-unallocated)} over — <button class="onboarding__adjust-split-link" data-action="adjust-split">adjust split?</button>`;
@@ -607,7 +607,7 @@ function renderPoolRow(macroType) {
   }
 
   const legend = buckets.length > 0
-    ? `<span class="onboarding__bucket-legend">📌 pin to dashboard &nbsp;·&nbsp; 🔄 monthly</span>`
+    ? `<span class="onboarding__bucket-legend">📌 quick access &nbsp;·&nbsp; 🔄 monthly</span>`
     : '';
 
   return `${legend}<span class="${poolClass}">${poolText}</span>`;
