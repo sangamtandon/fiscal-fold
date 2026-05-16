@@ -306,8 +306,8 @@ function registerRoutes() {
             <div class="flex items-center gap-3">
               <span style="font-size: 28px;">🎉</span>
               <div style="flex: 1; min-width: 0;">
-                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">Payday! Your cycle has ended.</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">Sweep your savings and start a fresh cycle.</p>
+                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">It's payday!</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">Sweep your savings to start fresh.</p>
               </div>
               <span style="color: var(--accent-primary); font-size: var(--text-base);">→</span>
             </div>
@@ -321,7 +321,7 @@ function registerRoutes() {
             <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount" data-testid="safe-to-spend">₹0</p>
           </div>
           <p class="text-tertiary mt-2" style="font-size: var(--text-xs); letter-spacing: 0.04em;">from your Wants budget</p>
-          <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">${daysLeft} days left in cycle</p>
+          <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} to payday</p>
         </div>
 
         <!-- Quick Buckets Row -->
@@ -400,7 +400,7 @@ function registerRoutes() {
               <span style="font-size: 24px;">✅</span>
               <div>
                 <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">All clear</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">All buckets are on pace this cycle. Keep it up!</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">All buckets are on pace this pay period. Keep it up!</p>
               </div>
             </div>
           </div>

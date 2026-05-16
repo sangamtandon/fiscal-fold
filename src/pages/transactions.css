@@ -37,6 +37,34 @@
   width: 100%;
 }
 
+/* View mode tabs (Current / History) — segmented control */
+.txn-view-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-full);
+}
+
+.txn-view-tab {
+  flex: 1;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-full);
+  border: none;
+  background: none;
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.txn-view-tab.is-active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
 /* Filter tabs */
 .txn-filter-tabs {
   display: flex;
@@ -159,6 +187,73 @@
   padding: 1px 6px;
   border-radius: var(--radius-full);
 }
+
+/* Monthly history sections */
+.txn-month-section {
+  margin-bottom: var(--space-6);
+}
+
+.txn-month-header {
+  padding: var(--space-3) 0 var(--space-2);
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: var(--space-3);
+}
+
+.txn-month-header__top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.txn-month-label-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.txn-month-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.txn-month-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent-primary);
+  background: rgba(52, 211, 153, 0.12);
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-medium);
+}
+
+.txn-month-total {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.txn-month-macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.txn-month-macro {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+}
+
+.txn-month-macro--needs { border-left: 2px solid var(--needs); }
+.txn-month-macro--wants { border-left: 2px solid var(--wants); }
+.txn-month-macro--future { border-left: 2px solid var(--future); }
 
 /* Empty state */
 .txn-empty {
