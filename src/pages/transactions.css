@@ -264,3 +264,39 @@
   padding: var(--space-12) var(--space-4);
   text-align: center;
 }
+
+/* ---- Delete button on transaction row ---- */
+.txn-row__delete {
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--danger, #ef4444);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.txn-row:hover .txn-row__delete,
+.txn-row:focus-within .txn-row__delete {
+  opacity: 1;
+}
+
+.txn-row__delete:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Always-visible on touch devices */
+@media (hover: none) {
+  .txn-row__delete {
+    opacity: 1;
+  }
+}

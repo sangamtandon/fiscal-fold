@@ -131,7 +131,7 @@ function _renderAmount(container) {
       <div class="txn-header">
         <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
         <span class="txn-header__title">${_targetBucket ? bucketLabel : 'Log Expense'}</span>
-        <div style="width:40px"></div>
+        <button class="btn btn-ghost txn-income-link" id="txn-income-link" data-testid="txn-income-link">Income →</button>
       </div>
 
       <div class="txn-amount-display">
@@ -162,6 +162,12 @@ function _renderAmount(container) {
   `;
 
   container.querySelector('#txn-close').addEventListener('click', _closeModal);
+
+  // Income shortcut — keeps income logging accessible from the same FAB.
+  container.querySelector('#txn-income-link')?.addEventListener('click', () => {
+    _closeModal();
+    import('./income-modal.js').then(m => m.openIncomeModal());
+  });
 
   container.querySelectorAll('.txn-quick-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -230,17 +236,21 @@ function _renderBucket(container) {
     const rem = Math.max(0, b.allocated - b.spent);
     const isEmpty = rem === 0;
     const isLow = !isEmpty && rem < _amount;
+    const shortBy = isLow ? _amount - rem : 0;
     return `
       <button
         class="txn-bucket-row${isEmpty ? ' txn-bucket-row--empty' : ''}${isLow ? ' txn-bucket-row--low' : ''}"
         data-id="${b.id}"
-        ${isEmpty ? 'disabled' : ''}
+        title="${isEmpty ? 'No budget left — tap another bucket and we’ll offer to cover from this one.' : ''}"
       >
         <span class="txn-bucket-row__emoji">${b.emoji}</span>
-        <span class="txn-bucket-row__name">${b.name}</span>
+        <div class="txn-bucket-row__text">
+          <span class="txn-bucket-row__name">${b.name}</span>
+          ${isEmpty ? '<span class="txn-bucket-row__hint">No budget left this cycle</span>' : ''}
+        </div>
         <div class="txn-bucket-row__right">
           <span class="txn-bucket-row__amount${isLow ? ' txn-bucket-row__amount--low' : ''}">${formatCurrency(rem)}</span>
-          ${isLow ? '<span class="badge badge--amber" style="font-size:9px;padding:1px 5px;">Low</span>' : ''}
+          ${isLow ? `<span class="badge badge--amber" style="font-size:9px;padding:1px 5px;">Short ${formatCurrency(shortBy)}</span>` : ''}
         </div>
       </button>
     `;
@@ -254,7 +264,7 @@ function _renderBucket(container) {
         <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
       </div>
 
-      <p class="txn-subtitle">Which bucket is this from?</p>
+      <p class="txn-subtitle">Charge this to which bucket?</p>
 
       <div class="txn-bucket-list">
         ${pinned.length > 0 ? `
@@ -283,7 +293,9 @@ function _renderBucket(container) {
   });
   container.querySelector('#txn-close').addEventListener('click', _closeModal);
 
-  container.querySelectorAll('.txn-bucket-row:not([disabled])').forEach(row => {
+  // Allow tapping an empty bucket too — the trade-off flow can cover the
+  // whole amount from another bucket. Disabling silently was confusing.
+  container.querySelectorAll('.txn-bucket-row').forEach(row => {
     row.addEventListener('click', () => {
       _targetBucket = getBucketById(row.dataset.id) || null;
       if (_targetBucket) _decideAfterBucket();
@@ -375,7 +387,7 @@ function _renderNote(container) {
       addTransaction({ bucketId: _targetBucket.id, amount: _amount, note: _note, type: 'expense' });
       if (!navigator.onLine) {
         offlineEnqueue({ bucketId: _targetBucket.id, amount: _amount, note: _note });
-        showToast('Saved locally — will sync when online');
+        showToast('Saved locally — will record when you’re back online');
       } else {
         showToast(`Logged ${formatCurrency(_amount)} to ${_targetBucket.name}`, 'success');
       }
@@ -411,24 +423,30 @@ function _renderTradeOff(container) {
           <p class="txn-tradeoff-alert__title">${_targetBucket.name} is short</p>
           <p class="txn-tradeoff-alert__desc">
             Has ${formatCurrency(rem)}, needs ${formatCurrency(_amount)}.
-            Borrow ${formatCurrency(deficit)} from another bucket?
+            Cover the missing ${formatCurrency(deficit)} from another bucket?
+            <span class="txn-tradeoff-alert__note">This moves money permanently — there's no payback.</span>
           </p>
         </div>
       </div>
 
       ${donors.length > 0 ? `
-        <p class="txn-subtitle">Choose a bucket to borrow from:</p>
+        <p class="txn-subtitle">Cover the shortfall from:</p>
         <div class="txn-bucket-list">
           ${donors.map(b => {
             const bRem = Math.max(0, b.allocated - b.spent);
             const canCover = bRem >= deficit;
+            const coverableLabel = canCover
+              ? `Can cover ${formatCurrency(deficit)}`
+              : `Only ${formatCurrency(bRem)} available`;
             return `
               <button class="txn-bucket-row${!canCover ? ' txn-bucket-row--low' : ''}" data-donor="${b.id}">
                 <span class="txn-bucket-row__emoji">${b.emoji}</span>
-                <span class="txn-bucket-row__name">${b.name}</span>
+                <div class="txn-bucket-row__text">
+                  <span class="txn-bucket-row__name">${b.name}</span>
+                  <span class="txn-bucket-row__hint">${coverableLabel}</span>
+                </div>
                 <div class="txn-bucket-row__right">
                   <span class="txn-bucket-row__amount${!canCover ? ' txn-bucket-row__amount--low' : ''}">${formatCurrency(bRem)}</span>
-                  ${!canCover ? '<span class="badge badge--amber" style="font-size:9px">Partial</span>' : ''}
                 </div>
               </button>
             `;
@@ -493,18 +511,19 @@ function _renderTradeOffConfirm(container) {
       <div class="txn-split-card">
         <div class="txn-split-row">
           <span>${_targetBucket.emoji} ${_targetBucket.name}</span>
-          <span class="text-mono">covers ${formatCurrency(targetRem)}</span>
+          <span class="text-mono">pays ${formatCurrency(targetRem)}</span>
         </div>
         <div class="txn-split-plus">+</div>
         <div class="txn-split-row txn-split-row--borrow">
           <span>${_borrowBucket.emoji} ${_borrowBucket.name}</span>
-          <span class="text-mono text-warn">borrows ${formatCurrency(borrowAmount)}</span>
+          <span class="text-mono text-warn">covers ${formatCurrency(borrowAmount)}</span>
         </div>
         <div class="txn-split-total">
           <span>Total</span>
           <span class="text-mono font-bold">${formatCurrency(_amount)}</span>
         </div>
       </div>
+      <p class="txn-split-note">${_borrowBucket.name}'s budget drops by ${formatCurrency(borrowAmount)}. No payback.</p>
 
       <button class="txn-note-toggle" id="txn-note-toggle">
         <span class="txn-note-toggle__icon">＋</span>
@@ -522,7 +541,7 @@ function _renderTradeOffConfirm(container) {
       </div>
 
       <button class="btn btn-primary btn-full txn-confirm-btn" id="txn-confirm" style="margin-top:var(--space-6)">
-        <span class="txn-confirm-btn__text">Confirm Trade-Off</span>
+        <span class="txn-confirm-btn__text">Confirm Split</span>
         <span class="txn-confirm-btn__check" aria-hidden="true">✓</span>
       </button>
     </div>
@@ -559,9 +578,9 @@ function _renderTradeOffConfirm(container) {
       });
       if (!navigator.onLine) {
         offlineEnqueue({ bucketId: _targetBucket.id, amount: _amount, borrowFromId: _borrowBucket.id, note: _note });
-        showToast('Saved locally — will sync when online');
+        showToast('Saved locally — will record when you’re back online');
       } else {
-        showToast(`Logged with trade-off from ${_borrowBucket.name}`, 'success');
+        showToast(`Logged — ${_borrowBucket.name} covered ${formatCurrency(borrowAmount)}`, 'success');
       }
       _closeModal();
       rerender();

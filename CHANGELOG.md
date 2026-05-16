@@ -8,6 +8,48 @@ Versioning follows sprint tags: `v0.{sprint}.0`. Post-MVP work lives under **[Un
 
 ## [Unreleased] — Post-MVP
 
+### UX clarity pass (P0 → P2 from new-user friction audit)
+
+#### Added
+- **Income shortcut on the FAB transaction modal** (`src/pages/transaction-modal.js`) — a top-right "Income →" link opens the income drawer directly, so income logging is no longer buried in Settings.
+- **Macro definitions in Step 3 of onboarding** (`src/pages/onboarding.{js,css}`) — a `data-testid="macro-defs"` card defines Needs / Wants / Future with concrete examples (rent, dining, savings) *before* the user is asked to allocate.
+- **Carry-forward note in Step 3** (`src/pages/onboarding.js`) — "Unspent Wants & Future roll into next month's Future at payday" is surfaced during onboarding instead of being a surprise on the first payday.
+- **Bucket metaphor + pin explanation in Step 4** (`src/pages/onboarding.js`) — the subtitle now defines "a bucket is a spending category with its own budget — like an envelope," and a tip explains what 📌 actually does.
+- **"Last day of month" payday option** (`src/pages/onboarding.js`, `src/pages/settings.js`) — Step 2 and Settings now offer 29/30/31 plus a "Last day" sentinel (stored as `salaryDate: 99`). End-of-month earners are no longer forced to pick the wrong date.
+- **Help section in Settings** (`src/pages/settings.{js,css}`) — `data-testid="settings-help"` defines Needs/Wants/Future, Buckets, Cycle, Quick Buckets, and Commitments. There's finally a place to re-read what the app means by these terms.
+- **Visible Danger Zone** (`src/pages/settings.{js,css}`) — Reset is no longer a near-invisible tertiary link; it has a proper heading, intro, and red-outline button.
+- **Delete-transaction affordance** (`src/pages/transactions.{js,css}`, `src/data/store.js`) — every row has a × button; `removeTransaction()` reverses the bucket impact symmetrically (expense, refund, income, trade-off).
+- **Mark-paid bucket picker** (`src/pages/commitments.{js,css}`) — marking a commitment paid opens a drawer to choose the bucket and logs a real transaction, so the dashboard stops disagreeing with reality. A "Mark paid without logging" escape hatch is still available.
+
+#### Changed
+- **Landing page copy** (`src/main.js`) — "Smart envelope budgeting" replaced with "Know exactly what's safe to spend — without a spreadsheet." Primary CTA is now "Set up my budget" instead of "Get Started." The privacy footer says "No account, no cloud sync. Your data lives only on this device." — resolving the earlier contradiction with the "sync when online" offline-queue toast.
+- **Safe to Spend hero** (`src/main.js`) — label is now "Wants budget — safe to spend" and the supporting `data-testid="safe-to-spend-hint"` line explicitly says Needs & Future are set aside. No more giant number with the scope hidden in tiny tertiary text.
+- **Trade-off language** (`src/pages/transaction-modal.{js,css}`) — "Borrow / borrows" replaced with "Cover / covers." The alert now spells out "this moves money permanently — there's no payback." Donor rows show a per-row "Can cover ₹X" hint instead of an opaque "Partial" badge.
+- **Empty buckets remain tappable** (`src/pages/transaction-modal.{js,css}`) — instead of being silently disabled, they route into the trade-off flow with a "No budget left this cycle" hint.
+- **Leak warning** (`src/main.js`) — "running hot" / "Tap to re-balance" replaced with a concrete "[Bucket] — X% spent with N days left. Tap to log a spend here or adjust the budget."
+- **Unallocated banners on the dashboard** (`src/main.js`) — clickable, route to Settings, and say "left to assign" / "tap Settings to add it to a bucket" instead of the jargon "unallocated."
+- **Reserved-commitment hint** (`src/main.js`) — now reads "set aside for recurring bills" with a tooltip pointing to Settings → Commitments.
+- **Payday CTA** (`src/pages/payday.js`) — "Sweep & Start New Cycle →" replaced with "Roll over savings & start next cycle →." The carry-forward block now explicitly states what happens to unspent Needs ("Needs resets every cycle regardless").
+- **Preset chip labels** (`src/pages/onboarding.js`) — "Growth" / "Safe Play" → "Save More" / "More Essentials," each with a one-line hint. "Custom" chip now actually says "Custom ✏️" instead of just an icon.
+- **Pool counter wording** (`src/pages/onboarding.js`, `src/pages/settings.js`) — "unallocated" replaced with "left to assign," "Fully allocated" replaced with "All assigned."
+- **Step 1 onboarding subtitle** (`src/pages/onboarding.js`) — clarifies "you can change this later."
+- **Step 2 onboarding subtitle** (`src/pages/onboarding.js`) — acknowledges variable income: "Use your fixed take-home salary. Variable income? Use your minimum expected — log bonuses later."
+- **Offline-queue toast** (`src/pages/transaction-modal.js`) — "will sync when online" replaced with "will record when you're back online" to keep messaging consistent with the local-only privacy promise.
+- **Onboarding donut colors** (`src/pages/onboarding.js`) — now read live CSS variables (`--needs`/`--wants`/`--future`) instead of hardcoded hex so they match the dashboard exactly.
+- **PWA install banner timing** (`src/main.js`) — defers until *after* onboarding is complete AND at least one transaction has been logged. No more first-load nag.
+
+#### Added (tests + docs)
+- **Unit tests** for `removeTransaction()` covering expense, trade-off, refund, and income reversal (`tests/unit/store.mutators.spec.js`).
+- **E2E specs** for every P0 / P1 fix:
+  - `tests/e2e/landing-copy.spec.js`
+  - `tests/e2e/onboarding-clarity.spec.js`
+  - `tests/e2e/onboarding-salary-date.spec.js`
+  - `tests/e2e/dashboard-clarity.spec.js`
+  - `tests/e2e/transaction-cover-language.spec.js`
+  - `tests/e2e/transaction-delete.spec.js`
+  - `tests/e2e/commitments-mark-paid.spec.js`
+  - `tests/e2e/settings-clarity.spec.js`
+
 ### Added
 - **Light mode** (`src/utils/theme.js`, `src/style.css`, `src/pages/settings.{js,css}`) — persistent light/dark toggle in Settings. Theme is stored in `localStorage` under `theme` and applied via `data-theme="light"` on `<html>`.
 - **Reset all data** (`src/pages/settings.js`) — two-step confirmation flow in Settings that clears state and returns to onboarding.

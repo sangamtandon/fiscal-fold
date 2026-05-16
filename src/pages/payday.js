@@ -91,11 +91,11 @@ export function renderPaydayPage(container) {
         </div>
       </div>
 
-      <!-- Sweep Preview -->
+      <!-- Carry-Forward Preview -->
       ${sweepBuckets.length > 0 ? `
         <div class="pd-section">
           <p class="pd-section__title">Carrying Forward → Future</p>
-          <p class="pd-section__hint">Unspent Wants & Future roll into next month's Future allocation.</p>
+          <p class="pd-section__hint">Unspent Wants &amp; Future roll into next month's Future allocation. Unspent Needs resets — Needs budgets are fresh each cycle.</p>
           <div class="pd-sweep-list">
             ${sweepBuckets.map(b => `
               <div class="pd-sweep-row">
@@ -113,7 +113,7 @@ export function renderPaydayPage(container) {
       ` : `
         <div class="pd-section">
           <p class="pd-section__title">Carrying Forward → Future</p>
-          <p class="pd-section__hint text-tertiary">All budgets were fully spent this month — nothing to carry forward.</p>
+          <p class="pd-section__hint text-tertiary">All Wants &amp; Future were spent this cycle — nothing rolls over. (Needs resets every cycle regardless.)</p>
         </div>
       `}
 
@@ -128,7 +128,7 @@ export function renderPaydayPage(container) {
       </div>
 
       <button class="btn btn-primary btn-full pd-cta" id="pd-confirm" data-testid="pd-confirm">
-        Sweep & Start Fresh →
+        Roll over savings &amp; start fresh →
       </button>
     </div>
   `;

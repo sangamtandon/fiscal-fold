@@ -25,6 +25,7 @@ import { getTheme, setTheme } from '../utils/theme.js';
 import { navigate } from '../router.js';
 import { exportTransactionsCSV, exportAllDataJSON } from '../utils/export.js';
 import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO, PRESETS } from '../data/models.js';
+import { formatPayday } from './onboarding.js';
 
 /**
  * @param {HTMLElement} container
@@ -62,7 +63,7 @@ function _render(container) {
         <div class="settings-field" id="field-salaryDate">
           <span class="settings-field__label">Salary Date</span>
           <div class="settings-field__right">
-            <span class="settings-field__value" id="val-salaryDate">${user ? `${user.salaryDate}${_ordinal(user.salaryDate)} of month` : '—'}</span>
+            <span class="settings-field__value" id="val-salaryDate">${user ? _formatSalaryDateDisplay(user.salaryDate) : '—'}</span>
             <button class="btn-text settings-edit-btn" data-edit="salaryDate">Edit</button>
           </div>
         </div>
@@ -116,30 +117,45 @@ function _render(container) {
 
       <!-- Export -->
       <div class="card settings-section">
-        <h2 class="settings-section__heading">Export Data</h2>
+        <h2 class="settings-section__heading">Backup &amp; Export</h2>
         <button class="settings-nav-row" id="btn-export-csv">
           <span>📊</span>
-          <span class="settings-nav-row__label">Export Transactions (CSV)</span>
+          <span class="settings-nav-row__label">Download transactions (CSV)</span>
           <span class="text-accent" style="font-size:var(--text-base);">↓</span>
         </button>
         <button class="settings-nav-row" id="btn-export-json">
           <span>💾</span>
-          <span class="settings-nav-row__label">Export All Data (JSON)</span>
+          <span class="settings-nav-row__label">Download full backup (JSON file)</span>
           <span class="text-accent" style="font-size:var(--text-base);">↓</span>
         </button>
       </div>
 
-      <!-- Danger Zone -->
-      <div class="settings-reset-wrap">
-        <button class="settings-reset-link" id="btn-reset-data">Reset all data</button>
-        <div class="settings-danger-zone__confirm" id="reset-confirm" hidden>
-          <p class="settings-danger-zone__warn">⚠️ This cannot be undone. All your financial data will be erased.</p>
-          <div class="settings-danger-zone__actions">
-            <button class="btn btn-ghost btn-sm" id="btn-reset-cancel">Cancel</button>
-            <button class="btn settings-danger-zone__btn-confirm btn-sm" id="btn-reset-confirm">Yes, delete everything</button>
-          </div>
+      <!-- Help -->
+      <div class="card settings-section" data-testid="settings-help">
+        <h2 class="settings-section__heading">How it works</h2>
+        <div class="settings-help-list">
+          <p><strong>Needs / Wants / Future</strong> — your salary splits into 3 jars: must-pays, fun money, and savings.</p>
+          <p><strong>Buckets</strong> — each jar contains specific spending categories (Groceries, Dining, etc.) with their own budgets.</p>
+          <p><strong>Cycle</strong> — the budget period between paydays. Unspent Wants &amp; Future roll into next month's Future.</p>
+          <p><strong>Quick Buckets</strong> — pinned buckets appear on the dashboard for one-tap logging.</p>
+          <p><strong>Commitments</strong> — recurring bills set aside before you spend, so the dashboard never lies.</p>
         </div>
       </div>
+
+      <!-- Danger Zone -->
+      <div class="settings-section settings-danger-zone" data-testid="settings-danger-zone">
+        <h2 class="settings-section__heading settings-danger-zone__heading">Danger Zone</h2>
+        <p class="settings-danger-zone__intro">Deleting your data is permanent. There is no cloud backup.</p>
+        <div class="settings-reset-wrap">
+          <button class="settings-reset-link" id="btn-reset-data">Reset all data</button>
+          <div class="settings-danger-zone__confirm" id="reset-confirm" hidden>
+            <p class="settings-danger-zone__warn">⚠️ This cannot be undone. All your financial data will be erased.</p>
+            <div class="settings-danger-zone__actions">
+              <button class="btn btn-ghost btn-sm" id="btn-reset-cancel">Cancel</button>
+              <button class="btn settings-danger-zone__btn-confirm btn-sm" id="btn-reset-confirm">Yes, delete everything</button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <button class="btn btn-ghost w-full" id="btn-back" style="margin-top: var(--space-2);">
@@ -181,7 +197,7 @@ function _renderBucketGroup(macroType, label) {
           style="display:flex; align-items:center; gap: var(--space-2); padding: var(--space-2) var(--space-3); margin: var(--space-2) 0; background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md);">
           <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
           <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
-          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? `unallocated in ${label} — edit a bucket to assign it` : `over-allocated in ${label} — trim a bucket`}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? `left to assign in ${label} — edit a bucket to add it` : `over-allocated in ${label} — trim a bucket`}</span>
         </div>
       ` : ''}
       ${buckets.map(b => `
@@ -226,11 +242,11 @@ function _wireEvents(container) {
 
   container.querySelector('#btn-export-csv').addEventListener('click', () => {
     exportTransactionsCSV();
-    showToast('Transactions exported as CSV ✓');
+    showToast('Transactions downloaded ✓');
   });
   container.querySelector('#btn-export-json').addEventListener('click', () => {
     exportAllDataJSON();
-    showToast('All data exported as JSON ✓');
+    showToast('Backup downloaded ✓');
   });
 
   const btnReset = container.querySelector('#btn-reset-data');
@@ -389,9 +405,10 @@ function _openProfileEdit(container, field) {
     const current = user?.salaryDate || 1;
     rightEl.innerHTML = `
       <div class="settings-date-chips" id="edit-date-chips">
-        ${[1, 5, 7, 10, 15, 20, 25, 28].map(d => `
+        ${[1, 5, 7, 10, 15, 20, 25, 28, 30, 31].map(d => `
           <button class="onboarding__date-chip${d === current ? ' is-active' : ''}" data-date="${d}">${d}${_ordinal(d)}</button>
         `).join('')}
+        <button class="onboarding__date-chip${current === 99 ? ' is-active' : ''}" data-date="99" data-testid="payday-last-settings">Last day</button>
       </div>
       <button class="btn btn-primary btn-sm" id="save-salary-date">Save</button>
       <button class="btn btn-ghost btn-sm" id="cancel-salary-date">✕</button>
@@ -406,13 +423,18 @@ function _openProfileEdit(container, field) {
     });
     container.querySelector('#save-salary-date').addEventListener('click', () => {
       setUser({ salaryDate: selectedDate });
-      _restoreProfileField(container, field, `${selectedDate}${_ordinal(selectedDate)} of month`);
+      _restoreProfileField(container, field, _formatSalaryDateDisplay(selectedDate));
       showToast('Salary date updated ✓');
     });
     container.querySelector('#cancel-salary-date').addEventListener('click', () => {
-      _restoreProfileField(container, field, `${current}${_ordinal(current)} of month`);
+      _restoreProfileField(container, field, _formatSalaryDateDisplay(current));
     });
   }
+}
+
+function _formatSalaryDateDisplay(n) {
+  if (n === 99) return 'Last day of month';
+  return `${n}${_ordinal(n)} of month`;
 }
 
 function _restoreProfileField(container, field, displayValue) {
@@ -438,7 +460,7 @@ function _showRatiosRecalcPrompt(container) {
   el.id = 'ratios-recalc-prompt';
   el.className = 'settings-recalc-prompt';
   el.innerHTML = `
-    <span class="settings-recalc-prompt__note">New split applies from your next payday.</span>
+    <span class="settings-recalc-prompt__note">New split applies from your next payday. Recalculating now resizes this pay period's bucket budgets — your transactions are kept.</span>
     <button class="btn btn-ghost btn-sm" id="btn-recalc-ratios-now">Recalculate current pay period →</button>
   `;
   fieldEl.after(el);
@@ -474,7 +496,7 @@ function _showSalaryRecalcPrompt(container, newSalary) {
   el.id = 'salary-recalc-prompt';
   el.className = 'settings-recalc-prompt';
   el.innerHTML = `
-    <span class="settings-recalc-prompt__note">Changes apply from your next payday.</span>
+    <span class="settings-recalc-prompt__note">Changes apply from your next payday. Recalculating now resizes this pay period's bucket budgets — your transactions are kept.</span>
     <button class="btn btn-ghost btn-sm" id="btn-recalc-now">Recalculate current pay period →</button>
   `;
   fieldEl.after(el);

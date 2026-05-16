@@ -249,6 +249,71 @@ describe('runSweep', () => {
   });
 });
 
+describe('removeTransaction', () => {
+  it('is a no-op for an unknown id', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    expect(() => store.removeTransaction('does-not-exist')).not.toThrow();
+  });
+
+  it('reverses an expense — bucket.spent restored, transaction gone', async () => {
+    const { store, buckets } = await bootstrapStore(freshStore);
+    const wants = buckets.find(b => b.macroType === 'wants');
+    const txn = store.addTransaction({ bucketId: wants.id, amount: 1500 });
+    expect(store.getBucketById(wants.id).spent).toBe(1500);
+
+    store.removeTransaction(txn.id);
+    expect(store.getBucketById(wants.id).spent).toBe(0);
+    expect(store.getTransactions().find(t => t.id === txn.id)).toBeUndefined();
+  });
+
+  it('reverses a trade-off — both target and source spent restored', async () => {
+    const { store, buckets } = await bootstrapStore(freshStore);
+    const target = buckets.find(b => b.name === 'Dining'); // 15000 alloc
+    const source = buckets.find(b => b.name === 'Shopping'); // 10000 alloc
+
+    store.addTransaction({ bucketId: target.id, amount: 14000 });
+    const txn = store.addTradeOffTransaction({
+      bucketId: target.id,
+      amount: 3000,
+      borrowFromId: source.id,
+      borrowAmount: 2000,
+    });
+    expect(store.getBucketById(target.id).spent).toBe(14000 + 1000);
+    expect(store.getBucketById(source.id).spent).toBe(2000);
+
+    store.removeTransaction(txn.id);
+    expect(store.getBucketById(target.id).spent).toBe(14000);
+    expect(store.getBucketById(source.id).spent).toBe(0);
+  });
+
+  it('reverses a refund — adding back to spent', async () => {
+    const { store, buckets } = await bootstrapStore(freshStore);
+    const wants = buckets.find(b => b.macroType === 'wants');
+    store.addTransaction({ bucketId: wants.id, amount: 1000 });
+    const refund = store.addTransaction({ bucketId: wants.id, amount: 400, type: 'refund' });
+    expect(store.getBucketById(wants.id).spent).toBe(600);
+
+    store.removeTransaction(refund.id);
+    expect(store.getBucketById(wants.id).spent).toBe(1000);
+  });
+
+  it('reverses income — bucket.allocated drops back, cycle.allocations follows', async () => {
+    const { store, buckets, cycle } = await bootstrapStore(freshStore);
+    const wants = buckets.find(b => b.macroType === 'wants');
+    const allocBefore = store.getBucketById(wants.id).allocated;
+    const cycleWantsBefore = store.getCurrentCycle().allocations.wants;
+
+    store.addIncome(2000, wants.id, 'Bonus');
+    const incomeTxn = store.getTransactions().find(t => t.type === 'income');
+    expect(store.getBucketById(wants.id).allocated).toBe(allocBefore + 2000);
+    expect(store.getCurrentCycle().allocations.wants).toBe(cycleWantsBefore + 2000);
+
+    store.removeTransaction(incomeTxn.id);
+    expect(store.getBucketById(wants.id).allocated).toBe(allocBefore);
+    expect(store.getCurrentCycle().allocations.wants).toBe(cycleWantsBefore);
+  });
+});
+
 describe('commitments lifecycle', () => {
   it('addCommitment creates an active, unpaid commitment', async () => {
     const { store } = await bootstrapStore(freshStore);

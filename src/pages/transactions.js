@@ -12,9 +12,11 @@ import {
   getTransactions,
   getAllTransactions,
   getBucketById,
+  removeTransaction,
 } from '../data/store.js';
 import { formatCurrency, timeAgo } from '../utils/helpers.js';
 import { groupByMonth } from '../utils/txn-grouping.js';
+import { showToast } from '../utils/toast.js';
 import { navigate } from '../router.js';
 
 const MACRO_FILTERS = ['all', 'needs', 'wants', 'future'];
@@ -182,12 +184,12 @@ function _renderTxnRow(t) {
   const isIncome = t.type === 'income' || t.type === 'refund';
 
   return `
-    <div class="txn-row">
+    <div class="txn-row" data-txn-id="${t.id}">
       <span class="txn-row__emoji">${bucket?.emoji || '📝'}</span>
       <div class="txn-row__meta">
         <div class="txn-row__top">
           <span class="txn-row__name">${bucket?.name || 'Unknown'}</span>
-          ${borrowedBucket ? `<span class="badge badge--amber" style="font-size:10px;">from ${borrowedBucket.name}</span>` : ''}
+          ${borrowedBucket ? `<span class="badge badge--amber" style="font-size:10px;">covered by ${borrowedBucket.name}</span>` : ''}
           ${t.type === 'income' ? `<span class="badge badge--green" style="font-size:10px;">income</span>` : ''}
           ${t.type === 'refund' ? `<span class="badge badge--green" style="font-size:10px;">refund</span>` : ''}
         </div>
@@ -198,6 +200,12 @@ function _renderTxnRow(t) {
       <span class="txn-row__amount${isIncome ? ' txn-row__amount--income' : ''}">
         ${isIncome ? '+' : '−'}${formatCurrency(t.amount)}
       </span>
+      <button
+        class="txn-row__delete btn-icon"
+        data-delete-txn="${t.id}"
+        aria-label="Delete transaction"
+        title="Delete this transaction"
+      >×</button>
     </div>
   `;
 }
@@ -231,6 +239,7 @@ function _refreshList(container) {
   container.querySelector('#txn-list-container').innerHTML = _renderBody(sourceTxns);
 }
 
+
 function _wireEvents(container) {
   container.querySelector('#txn-btn-back').addEventListener('click', () => navigate('/dashboard'));
 
@@ -261,6 +270,20 @@ function _wireEvents(container) {
     if (!tab) return;
     _activeFilter = tab.dataset.filter;
     container.querySelectorAll('.txn-filter-tab').forEach(t => t.classList.toggle('is-active', t.dataset.filter === _activeFilter));
+    _refreshList(container);
+  });
+
+  // Delete transaction (event-delegated so it survives re-renders inside #txn-list-container)
+  container.querySelector('#txn-list-container').addEventListener('click', e => {
+    const btn = e.target.closest('[data-delete-txn]');
+    if (!btn) return;
+    e.stopPropagation();
+    const id = btn.dataset.deleteTxn;
+    const txn = getAllTransactions().find(t => t.id === id);
+    if (!txn) return;
+    if (!confirm('Delete this transaction? The bucket budget will be restored.')) return;
+    removeTransaction(id);
+    showToast('Transaction deleted');
     _refreshList(container);
   });
 }

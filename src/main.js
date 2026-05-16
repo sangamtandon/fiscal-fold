@@ -51,10 +51,30 @@ let _deferredInstallPrompt = null;
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
   _deferredInstallPrompt = e;
-  if (!localStorage.getItem('pwa-install-dismissed')) {
+  // Defer install prompt until the user has actually used the app —
+  // onboarding done AND at least one real transaction logged. Showing
+  // it on first load buries the user before they've seen any value.
+  if (
+    !localStorage.getItem('pwa-install-dismissed') &&
+    isOnboardingComplete() &&
+    getTransactions({ limit: 1 }).length > 0
+  ) {
     _renderInstallBanner();
   }
 });
+
+/**
+ * Re-evaluate whether the install banner should appear. Called after
+ * onboarding completion and after the first transaction so the deferred
+ * prompt actually surfaces once the user is invested.
+ */
+function _maybeShowInstallBanner() {
+  if (!_deferredInstallPrompt) return;
+  if (localStorage.getItem('pwa-install-dismissed')) return;
+  if (!isOnboardingComplete()) return;
+  if (getTransactions({ limit: 1 }).length === 0) return;
+  _renderInstallBanner();
+}
 
 window.addEventListener('appinstalled', () => {
   _deferredInstallPrompt = null;
@@ -110,7 +130,7 @@ function renderAppShell() {
     <header class="app-header" id="app-header">
       <div class="app-header__greeting">
         <span class="app-header__name" id="header-greeting">Fiscal Fold</span>
-        <span class="app-header__subtitle" id="header-subtitle">Smart Envelope Budgeting</span>
+        <span class="app-header__subtitle" id="header-subtitle">Your finances, your rules.</span>
       </div>
       <div class="app-header__actions">
         <span class="offline-badge" id="offline-badge" hidden>Offline</span>
@@ -223,17 +243,17 @@ function registerRoutes() {
         </div>
         <div>
           <h1 style="font-size: var(--text-2xl); font-weight: var(--weight-bold); margin-bottom: var(--space-2);">Fiscal Fold</h1>
-          <p class="text-secondary" style="font-size: var(--text-base); max-width: 280px; margin: 0 auto;">Smart envelope budgeting.<br/>Know exactly what's safe to spend.</p>
+          <p class="text-secondary" style="font-size: var(--text-base); max-width: 280px; margin: 0 auto;" data-testid="landing-tagline">Know exactly what's safe to spend — without a spreadsheet.</p>
         </div>
         <div class="flex flex-col gap-3 w-full" style="max-width: 300px;">
           <button class="btn btn-primary btn-lg btn-full" id="btn-start-onboarding">
-            Get Started
+            Set up my budget
           </button>
           <button class="btn btn-ghost" id="btn-skip-to-demo" data-testid="btn-skip-demo">
-            Skip to demo dashboard →
+            Try a sample dashboard first →
           </button>
         </div>
-        <p class="text-tertiary" style="font-size: var(--text-xs); margin-top: var(--space-4);">No account needed. Your data stays on your device.</p>
+        <p class="text-tertiary" style="font-size: var(--text-xs); margin-top: var(--space-4);" data-testid="landing-privacy">No account, no cloud sync. Your data lives only on this device.</p>
       </div>
     `;
 
@@ -307,7 +327,7 @@ function registerRoutes() {
               <span style="font-size: 28px;">🎉</span>
               <div style="flex: 1; min-width: 0;">
                 <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">It's payday!</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">Sweep your savings to start fresh.</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">Roll over your savings to start fresh.</p>
               </div>
               <span style="color: var(--accent-primary); font-size: var(--text-base);">→</span>
             </div>
@@ -315,13 +335,12 @@ function registerRoutes() {
         ` : ''}
 
         <!-- Safe to Spend Hero -->
-        <div class="card card--accent text-center" style="padding: var(--space-8) var(--space-5);">
-          <p class="text-secondary" style="font-size: var(--text-sm); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">Safe to Spend</p>
+        <div class="card card--accent text-center safe-to-spend-card" style="padding: var(--space-7) var(--space-5);">
+          <p class="text-secondary safe-to-spend-card__label" style="font-size: var(--text-sm); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">Wants budget — safe to spend</p>
           <div class="hero-amount-wrap" id="hero-amount-wrap">
             <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount" data-testid="safe-to-spend">₹0</p>
           </div>
-          <p class="text-tertiary mt-2" style="font-size: var(--text-xs); letter-spacing: 0.04em;">from your Wants budget</p>
-          <p class="text-tertiary mt-2" style="font-size: var(--text-sm);">${daysLeft} ${daysLeft === 1 ? 'day' : 'days'} to payday</p>
+          <p class="text-tertiary mt-2 safe-to-spend-card__hint" style="font-size: var(--text-xs); line-height: 1.4; max-width: 280px; margin-left: auto; margin-right: auto;" data-testid="safe-to-spend-hint">Needs &amp; Future are set aside — this is your guilt-free Wants money for the next ${daysLeft} day${daysLeft === 1 ? '' : 's'} to payday.</p>
         </div>
 
         <!-- Quick Buckets Row -->
@@ -329,6 +348,7 @@ function registerRoutes() {
           <div>
             <div class="section-header" style="margin-bottom: var(--space-2);">
               <span class="section-header__title">Quick Buckets</span>
+              <span class="text-tertiary" style="font-size: var(--text-xs); margin-left: var(--space-2);">— tap to log a spend</span>
             </div>
             <div class="quick-buckets">
               ${quickBuckets.map(b => `
@@ -378,7 +398,7 @@ function registerRoutes() {
                     t.note
                   );
                 }).join('')
-              : '<p class="text-tertiary text-center" style="padding: var(--space-6); font-size: var(--text-sm);">No transactions yet. Tap + to log your first!</p>'
+              : '<p class="text-tertiary text-center" data-testid="txn-empty-state" style="padding: var(--space-6); font-size: var(--text-sm);">No transactions yet. Tap the green ＋ button below to log your first.</p>'
             }
           </div>
         </div>
@@ -389,8 +409,8 @@ function registerRoutes() {
             <div class="flex items-center gap-3">
               <span style="font-size: 24px;">⚡</span>
               <div style="flex: 1; min-width: 0;">
-                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${b.name} is running hot</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">${percent(b.spent, b.allocated)}% spent with ${daysLeft} days left. Tap to re-balance →</p>
+                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${b.name} — ${percent(b.spent, b.allocated)}% spent with ${daysLeft} day${daysLeft === 1 ? '' : 's'} left</p>
+                <p class="text-tertiary" style="font-size: var(--text-xs);">Tap to log a spend here or adjust the budget.</p>
               </div>
             </div>
           </div>
@@ -418,10 +438,9 @@ function registerRoutes() {
       });
     });
 
-    // Show install banner if prompt is available
-    if (_deferredInstallPrompt && !localStorage.getItem('pwa-install-dismissed')) {
-      _renderInstallBanner();
-    }
+    // Show install banner only once the user has earned the prompt:
+    // onboarding complete AND ≥1 transaction. Gated to avoid first-load nag.
+    _maybeShowInstallBanner();
 
     // Wire quick-bucket chips → open modal pre-targeted
     container.querySelectorAll('.quick-bucket[data-bucket-id]').forEach(chip => {
@@ -477,9 +496,11 @@ function registerRoutes() {
     const macroBarsContainer = document.getElementById('macro-bars-container');
     if (macroBarsContainer) {
       macroBarsContainer.addEventListener('click', (e) => {
-        // Clicks on the informational unallocated pill don't toggle the card
-        if (e.target.closest('.macro-card__unallocated')) {
+        // Unallocated banner: shortcut to Settings — don't toggle the card too.
+        const unallocBanner = e.target.closest('.macro-card__unallocated');
+        if (unallocBanner) {
           e.stopPropagation();
+          navigate('/settings');
           return;
         }
         const card = e.target.closest('.macro-card');
@@ -564,17 +585,20 @@ function renderMacroBar(label, summary, type, reserved = 0) {
       </div>
       ${unallocated !== 0 ? `
         <div class="macro-card__unallocated"
-          style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md);">
+          role="button"
+          tabindex="0"
+          data-macro-jump-settings="1"
+          style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer;">
           <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
           <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
-          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'unallocated — assign it by editing a bucket in Settings' : 'over-allocated — trim a bucket in Settings'}</span>
+          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'left to assign — tap Settings to add it to a bucket' : 'over-allocated — tap Settings to trim a bucket'}</span>
         </div>
       ` : ''}
       ${reserved > 0 ? `
-        <div class="cm-reserved-hint">
+        <div class="cm-reserved-hint" title="Recurring bills set aside before you spend. Manage in Settings → Commitments.">
           <span>🔒</span>
           <span class="cm-reserved-hint__amount">${formatCurrency(reserved)}</span>
-          <span>reserved (unpaid commitments)</span>
+          <span>set aside for recurring bills</span>
         </div>
       ` : ''}
 

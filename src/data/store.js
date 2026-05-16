@@ -458,6 +458,43 @@ export function addTradeOffTransaction({ bucketId, amount, borrowFromId, borrowA
 }
 
 /**
+ * Remove a transaction and restore its impact on the affected bucket(s).
+ * Reverses expense, refund, income, and trade-off transactions symmetrically
+ * to the way they were applied — no orphaned spent/allocated drift.
+ * @param {string} id
+ */
+export function removeTransaction(id) {
+  const idx = _state.transactions.findIndex(t => t.id === id);
+  if (idx === -1) return;
+  const txn = _state.transactions[idx];
+  const bucket = _state.buckets.find(b => b.id === txn.bucketId);
+
+  if (bucket) {
+    if (txn.type === 'expense') {
+      const borrowed = txn.borrowedAmount ?? 0;
+      bucket.spent = Math.max(0, bucket.spent - (txn.amount - borrowed));
+      if (txn.borrowedFrom) {
+        const source = _state.buckets.find(b => b.id === txn.borrowedFrom);
+        if (source) source.spent = Math.max(0, source.spent - borrowed);
+      }
+    } else if (txn.type === 'refund') {
+      bucket.spent += txn.amount;
+    } else if (txn.type === 'income') {
+      bucket.allocated = Math.max(0, bucket.allocated - txn.amount);
+      const cycle = _state.cycles.find(c => c.id === txn.cycleId);
+      if (cycle && cycle.allocations?.[bucket.macroType] !== undefined) {
+        cycle.allocations[bucket.macroType] = Math.max(0, cycle.allocations[bucket.macroType] - txn.amount);
+      }
+    }
+  }
+
+  _state.transactions.splice(idx, 1);
+  save();
+  notify('transactions');
+  notify('buckets');
+}
+
+/**
  * Add a recurring commitment.
  * @param {object} params
  * @param {string} params.name

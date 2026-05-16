@@ -52,8 +52,14 @@ fiscal-fold/
 │   │   └── export.js           # CSV / JSON export
 │   └── assets/
 │       └── hero.png            # Onboarding hero image
-└── docs/
-    └── IMPLEMENTATION_PLAN.md  # Original sprint plan (historical)
+├── docs/
+│   ├── IMPLEMENTATION_PLAN.md  # Original sprint plan (historical)
+│   └── UX_GLOSSARY.md          # User-facing terminology + exact in-app copy
+└── tests/
+    ├── e2e/                    # Playwright specs — onboarding, dashboard, trade-off, mark-paid, etc.
+    ├── unit/                   # Vitest unit specs — store, helpers, precision
+    ├── integration/            # Vitest integration specs — lifecycle flows
+    └── helpers/                # Shared builders / fresh-store factory
 ```
 
 ---
@@ -131,7 +137,8 @@ All state flows through `src/data/store.js`. No component accesses `localStorage
 | `updateBucket(id, updates)` | Partial bucket update |
 | `removeBucket(id)` | Delete bucket |
 | `addTransaction({ bucketId, amount, note?, type? })` | Log expense/refund/income |
-| `addTradeOffTransaction({ bucketId, amount, borrowFromId, borrowAmount, note? })` | Trade-off transaction |
+| `addTradeOffTransaction({ bucketId, amount, borrowFromId, borrowAmount, note? })` | Trade-off transaction (UI calls this "Cover from another bucket" — never "borrow," since funds are not paid back) |
+| `removeTransaction(id)` | Reverse a transaction and restore its impact on the affected bucket(s). Handles expense, refund, income, and trade-off symmetrically. |
 | `addCommitment({ name, emoji, amount, dueDate, macroType })` | Recurring expense |
 | `updateCommitment(id, updates)` | Edit commitment |
 | `removeCommitment(id)` | Delete commitment |
@@ -157,9 +164,23 @@ All types are defined as JSDoc typedefs in `src/data/models.js`:
 | `AppState` | Root state shape combining all models |
 
 ### Presets
-- **Balanced:** 50/30/20 (Needs/Wants/Future)
-- **Aggressive Growth:** 40/20/40
-- **Conservative:** 60/25/15
+
+The preset identifiers in `models.js` are `balanced`, `aggressive`, `conservative`. UI labels are deliberately different — they describe the *outcome*, not the financial-jargon name:
+
+| Internal key | UI label | Ratios (needs/wants/future) | UI hint |
+|---|---|---|---|
+| `balanced` | **Balanced** | 50/30/20 | Even split — a safe starting point |
+| `aggressive` | **Save More** | 40/20/40 | Less Wants, bigger savings |
+| `conservative` | **More Essentials** | 60/25/15 | More room for must-pays |
+| `custom` | **Custom ✏️** | user-defined | Set each slice yourself |
+
+### Salary date sentinel
+
+`salaryDate` is an integer 1-31 or the sentinel `99` meaning "last day of month." Cycle math resolves 99 (or any out-of-range day) to `new Date(year, month + 1, 0).getDate()`.
+
+### Glossary
+
+For all user-facing terminology (Needs/Wants/Future, Bucket, Quick Bucket, Cycle, Commitment, Trade-off/Cover, Safe to Spend, etc.), see [`docs/UX_GLOSSARY.md`](docs/UX_GLOSSARY.md).
 
 ---
 

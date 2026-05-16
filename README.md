@@ -1,17 +1,34 @@
 # Fiscal Fold 📂
 
-> A zero-guilt personal finance PWA using envelope budgeting and the 50/30/20 rule.
+> Know exactly what's safe to spend — without a spreadsheet.
 
-Fiscal Fold is a lightning-fast, local-first web application built to help you manage your finances without the stress. Designed specifically with salaried Indian professionals in mind, it brings the trusted envelope budgeting system into the digital age, heavily focused on the popular 50/30/20 budgeting rule.
+Fiscal Fold is a lightning-fast, local-first personal finance PWA. It splits your salary into three jars — **Needs** (must-pays), **Wants** (fun money), and **Future** (savings) — then breaks each jar into named buckets you can pin to your dashboard for one-tap logging.
+
+## Core concepts
+
+| Term | What it means |
+|------|---------------|
+| **Needs / Wants / Future** | The three jars your salary splits into. Default 50/30/20, customisable. |
+| **Bucket** | A spending category inside a jar — like an envelope for groceries, dining, or your emergency fund. |
+| **Quick Bucket** | A pinned bucket that appears on the dashboard for one-tap spend logging (max 4). |
+| **Cycle** | The budget period between paydays. Unspent **Wants** & **Future** roll into next cycle's **Future**; **Needs** resets fresh every cycle. |
+| **Commitment** | A recurring bill (rent, EMI, subscription) set aside from the macro budget before you spend, so the dashboard never lies. |
+| **Trade-off / Cover** | When a bucket is short, you can permanently cover the shortfall from another bucket — no payback, just an explicit reallocation. |
+| **Safe to Spend** | Your **Wants** budget remaining for this cycle. Needs & Future are protected — this is your guilt-free spend. |
 
 ## ✨ Features
 
-- **Envelope Budgeting:** Distribute your salary into Micro-Buckets to track where every Rupee goes.
-- **50/30/20 Rule Built-in:** Automatically categorize your expenses into Needs (50%), Wants (30%), and Future/Savings (20%).
-- **Local-First & Private:** All your financial data stays completely private, stored safely in your device's `localStorage`. No accounts, no cloud sync, no tracking.
-- **"Safe to Spend" Focus:** Know exactly how much guilt-free money you have left for your "Wants" without doing any math.
-- **Progressive Web App (PWA):** Installable on mobile and desktop devices. Lightning fast and works offline.
-- **Dark Mode First:** A premium, distraction-free aesthetic with warm ambers and positive greens.
+- **Three-jar budgeting** with editable ratios and four preset strategies (Balanced, Save More, More Essentials, Custom).
+- **Named buckets** with emojis, allocations, pinning, and a clear "left to assign" counter so nothing gets lost.
+- **Tap-to-log expenses** from a floating action button, with a one-tap shortcut to log income from the same modal.
+- **Cover-from-another-bucket** flow when you go over budget — no hidden math, no "borrow" language pretending it'll be paid back.
+- **Local-first & private:** No account, no cloud sync. Data lives only in `localStorage` on your device. Export anytime as CSV or full JSON backup.
+- **Edit / delete transactions** from the history page — mistakes reverse cleanly (the bucket budget is restored).
+- **Commitments** with a "Mark paid" flow that lets you record the expense against a specific bucket.
+- **Payday ritual** that rolls unspent Wants & Future into next cycle's savings.
+- **Progressive Web App (PWA)** — installable, works offline, and the install prompt only fires after you've actually used the app.
+- **Dark mode first**, with a Settings toggle for light mode.
+- **In-app Help section** in Settings — every term above is defined where you can revisit it.
 
 ## 🛠️ Technology Stack
 
@@ -74,6 +91,11 @@ The optimized files will be generated in the `dist` directory.
 - [`CHANGELOG.md`](CHANGELOG.md) — version history (sprint releases + post-MVP work)
 - [`QUALITY_GATE.md`](QUALITY_GATE.md) — pre-merge regression checklist
 - [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — original sprint plan (historical)
+- [`docs/UX_GLOSSARY.md`](docs/UX_GLOSSARY.md) — every user-facing term, with the exact copy used in-app
+
+## 🧪 Testing
+- `npm test` — unit + integration suite (Vitest, ~100 tests covering store mutators, selectors, helpers, and lifecycle)
+- `npm run test:e2e` — Playwright suite covering onboarding, dashboard clarity, trade-off language, transaction delete, commitments mark-paid, settings, and payday rituals
 
 ## 📦 Status
 MVP complete — Sprints 1–12 shipped. See `CHANGELOG.md` for ongoing work.
