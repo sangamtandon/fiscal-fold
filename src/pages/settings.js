@@ -19,13 +19,13 @@ import {
   getCurrentCycle,
   updateCycleAllocations,
 } from '../data/store.js';
-import { formatCurrency, formatNumber } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, ordinalSuffix, formatPayday } from '../utils/helpers.js';
+import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { showToast } from '../utils/toast.js';
 import { getTheme, setTheme } from '../utils/theme.js';
 import { navigate } from '../router.js';
 import { exportTransactionsCSV, exportAllDataJSON } from '../utils/export.js';
 import { EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO, PRESETS } from '../data/models.js';
-import { formatPayday } from './onboarding.js';
 
 /**
  * @param {HTMLElement} container
@@ -404,22 +404,18 @@ function _openProfileEdit(container, field) {
   } else if (field === 'salaryDate') {
     const current = user?.salaryDate || 1;
     rightEl.innerHTML = `
-      <div class="settings-date-chips" id="edit-date-chips">
-        ${[1, 5, 7, 10, 15, 20, 25, 28, 30, 31].map(d => `
-          <button class="onboarding__date-chip${d === current ? ' is-active' : ''}" data-date="${d}">${d}${_ordinal(d)}</button>
-        `).join('')}
-        <button class="onboarding__date-chip${current === 99 ? ' is-active' : ''}" data-date="99" data-testid="payday-last-settings">Last day</button>
-      </div>
+      ${renderDayPicker({
+        days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31],
+        value: current,
+        lastDay: true,
+        lastDayTestId: 'payday-last-settings',
+      })}
       <button class="btn btn-primary btn-sm" id="save-salary-date">Save</button>
       <button class="btn btn-ghost btn-sm" id="cancel-salary-date">✕</button>
     `;
     let selectedDate = current;
-    rightEl.querySelectorAll('.onboarding__date-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        rightEl.querySelectorAll('.onboarding__date-chip').forEach(c => c.classList.remove('is-active'));
-        chip.classList.add('is-active');
-        selectedDate = parseInt(chip.dataset.date, 10);
-      });
+    bindDayPicker(rightEl, { days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31], lastDay: true }, v => {
+      selectedDate = v;
     });
     container.querySelector('#save-salary-date').addEventListener('click', () => {
       setUser({ salaryDate: selectedDate });
@@ -434,7 +430,7 @@ function _openProfileEdit(container, field) {
 
 function _formatSalaryDateDisplay(n) {
   if (n === 99) return 'Last day of month';
-  return `${n}${_ordinal(n)} of month`;
+  return `${n}${ordinalSuffix(n)} of month`;
 }
 
 function _restoreProfileField(container, field, displayValue) {
@@ -670,8 +666,3 @@ function _pickEmojiPrompt(current) {
   return EMOJI_PALETTE[next];
 }
 
-function _ordinal(n) {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
-}

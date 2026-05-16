@@ -165,39 +165,6 @@
   max-width: 220px;
 }
 
-/* Date Grid */
-.onboarding__date-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-2);
-  margin-top: var(--space-3);
-}
-
-.onboarding__date-chip {
-  padding: var(--space-3) var(--space-2);
-  border-radius: var(--radius-md);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-medium);
-  cursor: pointer;
-  transition: all var(--duration-fast);
-  text-align: center;
-}
-
-.onboarding__date-chip:hover {
-  border-color: var(--border-hover);
-  background: var(--bg-card-hover);
-}
-
-.onboarding__date-chip.is-active {
-  background: var(--accent-primary-dim);
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-  font-weight: var(--weight-bold);
-}
-
 /* ---- Step 3: Preset & Donut ---- */
 .onboarding__macro-defs {
   display: flex;

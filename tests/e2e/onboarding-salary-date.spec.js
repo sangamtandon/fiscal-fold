@@ -10,8 +10,8 @@ test('Step 2 offers 29/30/31 and "Last day" chips beyond the original 1-28 set',
   await page.locator('#btn-next').click();
 
   // 30th and 31st chips render
-  await expect(page.locator('.onboarding__date-chip[data-date="30"]')).toBeVisible();
-  await expect(page.locator('.onboarding__date-chip[data-date="31"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="30"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="31"]')).toBeVisible();
 
   // "Last day" sentinel chip exists with the dedicated testid
   const lastDay = page.getByTestId('payday-last');

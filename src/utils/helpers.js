@@ -132,3 +132,25 @@ export function debounce(fn, ms = 300) {
     timer = setTimeout(() => fn(...args), ms);
   };
 }
+
+/**
+ * Return the ordinal suffix for a day-of-month integer (1→"st", 2→"nd", 3→"rd", else "th").
+ * @param {number} n  1–31
+ * @returns {string}
+ */
+export function ordinalSuffix(n) {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
+}
+
+/**
+ * Format a payday day-of-month for display.
+ * Treats 99 as the sentinel for "last day of month".
+ * @param {number} n  1–31 or 99
+ * @returns {string}
+ */
+export function formatPayday(n) {
+  if (n === 99) return 'Last day of every month';
+  return `${n}${ordinalSuffix(n)} of every month`;
+}

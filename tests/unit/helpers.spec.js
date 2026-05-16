@@ -10,6 +10,8 @@ import {
   daysElapsed,
   debounce,
   timeAgo,
+  ordinalSuffix,
+  formatPayday,
 } from '../../src/utils/helpers.js';
 
 describe('formatCurrency', () => {
@@ -170,6 +172,30 @@ describe('debounce', () => {
     vi.advanceTimersByTime(300);
     expect(spy).toHaveBeenCalledTimes(1);
     expect(spy).toHaveBeenCalledWith('c');
+  });
+});
+
+describe('ordinalSuffix', () => {
+  it.each([
+    [1, 'st'], [2, 'nd'], [3, 'rd'], [4, 'th'],
+    [11, 'th'], [12, 'th'], [13, 'th'],
+    [21, 'st'], [22, 'nd'], [23, 'rd'], [31, 'st'],
+  ])('ordinalSuffix(%i) === %s', (n, expected) => {
+    expect(ordinalSuffix(n)).toBe(expected);
+  });
+});
+
+describe('formatPayday', () => {
+  it('formats a normal day', () => {
+    expect(formatPayday(15)).toBe('15th of every month');
+  });
+
+  it('formats 1st correctly', () => {
+    expect(formatPayday(1)).toBe('1st of every month');
+  });
+
+  it('formats sentinel 99 as Last day', () => {
+    expect(formatPayday(99)).toBe('Last day of every month');
   });
 });
 

@@ -20,7 +20,8 @@ import {
   getBuckets,
   getState,
 } from '../data/store.js';
-import { formatCurrency } from '../utils/helpers.js';
+import { formatCurrency, ordinalSuffix } from '../utils/helpers.js';
+import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { showToast } from '../utils/toast.js';
 import { EMOJI_PALETTE } from '../data/models.js';
 
@@ -200,7 +201,7 @@ function _renderRow(c) {
         </div>
         <div class="cm-row__meta">
           <span class="text-mono" style="color:${_macroColor[c.macroType]};font-size:var(--text-xs);font-weight:600">${_macroLabel[c.macroType]}</span>
-          <span class="text-tertiary" style="font-size:var(--text-xs)">· ${c.dueDate}${_ord(c.dueDate)} of month</span>
+          <span class="text-tertiary" style="font-size:var(--text-xs)">· ${c.dueDate}${ordinalSuffix(c.dueDate)} of month</span>
         </div>
       </div>
 
@@ -413,26 +414,12 @@ function _renderForm(existing, pageContainer) {
       <!-- Due date -->
       <div class="cm-form__section">
         <p class="cm-form__label">Due Date (day of month)</p>
-        <div class="cm-chip-group" id="cf-due">
-          ${[1, 5, 7, 10, 15, 20, 25, 28].map(d => `
-            <button
-              class="cm-chip${state.dueDate === d ? ' is-selected' : ''}"
-              data-due="${d}"
-            >${d}${_ord(d)}</button>
-          `).join('')}
-        </div>
-        <div class="cm-custom-due" style="margin-top:var(--space-2)">
-          <input
-            type="number"
-            class="input-field"
-            id="cf-due-custom"
-            placeholder="Custom day (1–31)"
-            min="1"
-            max="31"
-            style="font-size:var(--text-sm)"
-            value="${[1,5,7,10,15,20,25,28].includes(state.dueDate) ? '' : state.dueDate}"
-          />
-        </div>
+        ${renderDayPicker({
+          days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31],
+          value: state.dueDate,
+          customInput: true,
+          inputId: 'cf-due-custom',
+        })}
       </div>
 
       <button class="btn btn-primary btn-full" id="cf-save" style="margin-top:var(--space-2)">
@@ -467,23 +454,9 @@ function _renderForm(existing, pageContainer) {
     });
   });
 
-  // Due date chips
-  _formDrawer.querySelectorAll('[data-due]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      _formDrawer.querySelectorAll('[data-due]').forEach(b => b.classList.remove('is-selected'));
-      btn.classList.add('is-selected');
-      state.dueDate = parseInt(btn.dataset.due);
-      _formDrawer.querySelector('#cf-due-custom').value = '';
-    });
-  });
-
-  // Custom due date
-  _formDrawer.querySelector('#cf-due-custom').addEventListener('input', e => {
-    const v = parseInt(e.target.value);
-    if (v >= 1 && v <= 31) {
-      _formDrawer.querySelectorAll('[data-due]').forEach(b => b.classList.remove('is-selected'));
-      state.dueDate = v;
-    }
+  // Due date chips + custom input
+  bindDayPicker(_formDrawer, { days: [1, 5, 7, 10, 15, 20, 25, 28, 30, 31], customInput: true, inputId: 'cf-due-custom' }, v => {
+    state.dueDate = v;
   });
 
   // Save
@@ -516,13 +489,6 @@ function _renderForm(existing, pageContainer) {
     _closeForm();
     _render(pageContainer);
   });
-}
-
-// ---- Ordinal suffix helper ----
-function _ord(n) {
-  const s = ['th', 'st', 'nd', 'rd'];
-  const v = n % 100;
-  return s[(v - 20) % 10] || s[v] || s[0];
 }
 
 // ---- Dashboard helpers (used by main.js) ----

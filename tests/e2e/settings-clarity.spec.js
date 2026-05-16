@@ -41,6 +41,6 @@ test('Settings exposes the new salary-date chips (Last day)', async ({ page }) =
 
   await page.locator('[data-edit="salaryDate"]').click();
   await expect(page.getByTestId('payday-last-settings')).toBeVisible();
-  await expect(page.locator('.onboarding__date-chip[data-date="30"]')).toBeVisible();
-  await expect(page.locator('.onboarding__date-chip[data-date="31"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="30"]')).toBeVisible();
+  await expect(page.locator('.day-picker__chip[data-day="31"]')).toBeVisible();
 });
