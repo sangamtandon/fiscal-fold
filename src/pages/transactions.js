@@ -2,22 +2,30 @@
  * Fiscal Fold — Transaction History Page (Sprint 10)
  *
  * Route: /transactions
- * Shows all transactions for the current cycle with search and macro filter.
+ * Two view modes:
+ *   - Current: transactions in the active pay period (cycle-scoped)
+ *   - History: every transaction grouped by calendar month (cross-cycle)
  */
 
 import './transactions.css';
 import {
   getTransactions,
+  getAllTransactions,
   getBucketById,
 } from '../data/store.js';
 import { formatCurrency, timeAgo } from '../utils/helpers.js';
+import { groupByMonth } from '../utils/txn-grouping.js';
 import { navigate } from '../router.js';
 
 const MACRO_FILTERS = ['all', 'needs', 'wants', 'future'];
 const MACRO_LABELS = { all: 'All', needs: 'Needs', wants: 'Wants', future: 'Future' };
 
+const VIEW_MODES = ['current', 'history'];
+const VIEW_LABELS = { current: 'Current', history: 'History' };
+
 let _activeFilter = 'all';
 let _searchQuery = '';
+let _viewMode = 'current';
 
 /**
  * @param {HTMLElement} container
@@ -25,11 +33,12 @@ let _searchQuery = '';
 export function renderTransactionsPage(container) {
   _activeFilter = 'all';
   _searchQuery = '';
+  _viewMode = 'current';
   _render(container);
 }
 
 function _render(container) {
-  const allTxns = getTransactions();
+  const sourceTxns = _viewMode === 'history' ? getAllTransactions() : getTransactions();
 
   container.innerHTML = `
     <div class="txn-history-page">
@@ -37,7 +46,16 @@ function _render(container) {
         <button class="btn-icon" id="txn-btn-back" title="Back" style="padding: var(--space-1);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <h1 class="txn-history-page__title">Transaction History</h1>
+        <h1 class="txn-history-page__title">Transactions</h1>
+      </div>
+
+      <!-- View mode tabs: Current pay period vs full History -->
+      <div class="txn-view-tabs" id="txn-view-tabs" role="tablist">
+        ${VIEW_MODES.map(m => `
+          <button class="txn-view-tab${m === _viewMode ? ' is-active' : ''}" data-view="${m}" data-testid="txn-view-tab-${m}" role="tab" aria-selected="${m === _viewMode}">
+            ${VIEW_LABELS[m]}
+          </button>
+        `).join('')}
       </div>
 
       <!-- Search -->
@@ -63,16 +81,16 @@ function _render(container) {
 
       <!-- Transaction list -->
       <div id="txn-list-container">
-        ${_renderList(allTxns)}
+        ${_renderBody(sourceTxns)}
       </div>
     </div>
   `;
 
-  _wireEvents(container, allTxns);
+  _wireEvents(container);
 }
 
-function _renderList(allTxns) {
-  const filtered = _applyFilters(allTxns);
+function _renderBody(sourceTxns) {
+  const filtered = _applyFilters(sourceTxns);
 
   if (filtered.length === 0) {
     return `
@@ -83,7 +101,10 @@ function _renderList(allTxns) {
     `;
   }
 
-  // Group by date
+  return _viewMode === 'history' ? _renderMonthGroups(filtered) : _renderDayGroups(filtered);
+}
+
+function _renderDayGroups(filtered) {
   const groups = new Map();
   filtered.forEach(t => {
     const dateKey = new Date(t.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -103,6 +124,56 @@ function _renderList(allTxns) {
   });
 
   return html;
+}
+
+function _renderMonthGroups(filtered) {
+  const groups = groupByMonth(filtered, getBucketById);
+
+  let html = `<div class="txn-list-summary text-tertiary" style="font-size:var(--text-xs); margin-bottom:var(--space-2);">${filtered.length} transaction${filtered.length !== 1 ? 's' : ''} across ${groups.length} month${groups.length !== 1 ? 's' : ''}</div>`;
+
+  groups.forEach(({ label, isCurrent, txns, totals }) => {
+    const dayGroups = new Map();
+    txns.forEach(t => {
+      const dateKey = new Date(t.timestamp).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      if (!dayGroups.has(dateKey)) dayGroups.set(dateKey, []);
+      dayGroups.get(dateKey).push(t);
+    });
+
+    const macroPills = _renderMacroPills(totals.macros);
+
+    html += `
+      <section class="txn-month-section" data-testid="txn-month-section" data-month-key="${label}">
+        <header class="txn-month-header">
+          <div class="txn-month-header__top">
+            <div class="txn-month-label-wrap">
+              <span class="txn-month-label">${label}</span>
+              ${isCurrent ? `<span class="txn-month-badge">in progress</span>` : ''}
+            </div>
+            <span class="txn-month-total text-mono">${formatCurrency(totals.netSpent)}</span>
+          </div>
+          ${macroPills ? `<div class="txn-month-macros">${macroPills}</div>` : ''}
+        </header>
+        <div class="txn-month-body">
+          ${[...dayGroups.entries()].map(([dateKey, dayTxns]) => `
+            <div class="txn-date-group">
+              <div class="txn-date-label">${dateKey}</div>
+              ${dayTxns.map(t => _renderTxnRow(t)).join('')}
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `;
+  });
+
+  return html;
+}
+
+function _renderMacroPills(macros) {
+  const parts = [];
+  if (macros.needs > 0) parts.push(`<span class="txn-month-macro txn-month-macro--needs">Needs ${formatCurrency(macros.needs)}</span>`);
+  if (macros.wants > 0) parts.push(`<span class="txn-month-macro txn-month-macro--wants">Wants ${formatCurrency(macros.wants)}</span>`);
+  if (macros.future > 0) parts.push(`<span class="txn-month-macro txn-month-macro--future">Future ${formatCurrency(macros.future)}</span>`);
+  return parts.join('');
 }
 
 function _renderTxnRow(t) {
@@ -155,14 +226,33 @@ function _applyFilters(txns) {
   return result;
 }
 
-function _wireEvents(container, allTxns) {
+function _refreshList(container) {
+  const sourceTxns = _viewMode === 'history' ? getAllTransactions() : getTransactions();
+  container.querySelector('#txn-list-container').innerHTML = _renderBody(sourceTxns);
+}
+
+function _wireEvents(container) {
   container.querySelector('#txn-btn-back').addEventListener('click', () => navigate('/dashboard'));
 
+  // View mode tabs (Current / History)
+  container.querySelector('#txn-view-tabs').addEventListener('click', e => {
+    const tab = e.target.closest('[data-view]');
+    if (!tab) return;
+    const next = tab.dataset.view;
+    if (next === _viewMode) return;
+    _viewMode = next;
+    container.querySelectorAll('.txn-view-tab').forEach(t => {
+      const isActive = t.dataset.view === _viewMode;
+      t.classList.toggle('is-active', isActive);
+      t.setAttribute('aria-selected', String(isActive));
+    });
+    _refreshList(container);
+  });
+
   // Search
-  const searchInput = container.querySelector('#txn-search');
-  searchInput.addEventListener('input', e => {
+  container.querySelector('#txn-search').addEventListener('input', e => {
     _searchQuery = e.target.value;
-    container.querySelector('#txn-list-container').innerHTML = _renderList(allTxns);
+    _refreshList(container);
   });
 
   // Macro filter tabs
@@ -171,6 +261,6 @@ function _wireEvents(container, allTxns) {
     if (!tab) return;
     _activeFilter = tab.dataset.filter;
     container.querySelectorAll('.txn-filter-tab').forEach(t => t.classList.toggle('is-active', t.dataset.filter === _activeFilter));
-    container.querySelector('#txn-list-container').innerHTML = _renderList(allTxns);
+    _refreshList(container);
   });
 }

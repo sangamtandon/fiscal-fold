@@ -128,7 +128,7 @@ export function renderPaydayPage(container) {
       </div>
 
       <button class="btn btn-primary btn-full pd-cta" id="pd-confirm" data-testid="pd-confirm">
-        Sweep & Start New Cycle →
+        Sweep & Start Fresh →
       </button>
     </div>
   `;
@@ -224,11 +224,11 @@ function _startNewCycle(container, cycle, user) {
 
     import('../router.js').then(({ navigate }) => {
       navigate('/dashboard');
-      showToast('New cycle started! 🎉', 'success');
+      showToast('New pay period started! 🎉', 'success');
     });
   } catch (e) {
     if (btn) btn.disabled = false;
-    showToast('Failed to start new cycle — please try again');
+    showToast('Failed to start new pay period — please try again');
     console.error('_startNewCycle failed:', e);
   }
 }

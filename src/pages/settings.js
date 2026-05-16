@@ -438,8 +438,8 @@ function _showRatiosRecalcPrompt(container) {
   el.id = 'ratios-recalc-prompt';
   el.className = 'settings-recalc-prompt';
   el.innerHTML = `
-    <span class="settings-recalc-prompt__note">New split applies from your next payday cycle.</span>
-    <button class="btn btn-ghost btn-sm" id="btn-recalc-ratios-now">Recalculate current cycle →</button>
+    <span class="settings-recalc-prompt__note">New split applies from your next payday.</span>
+    <button class="btn btn-ghost btn-sm" id="btn-recalc-ratios-now">Recalculate current pay period →</button>
   `;
   fieldEl.after(el);
 
@@ -447,7 +447,7 @@ function _showRatiosRecalcPrompt(container) {
     _recalculateAllocationsFromRatios();
     el.remove();
     _refreshBucketsPanel(container);
-    showToast('Current cycle recalculated ✓');
+    showToast('Current pay period recalculated ✓');
   });
 }
 
@@ -474,15 +474,15 @@ function _showSalaryRecalcPrompt(container, newSalary) {
   el.id = 'salary-recalc-prompt';
   el.className = 'settings-recalc-prompt';
   el.innerHTML = `
-    <span class="settings-recalc-prompt__note">Changes apply from your next payday cycle.</span>
-    <button class="btn btn-ghost btn-sm" id="btn-recalc-now">Recalculate current cycle →</button>
+    <span class="settings-recalc-prompt__note">Changes apply from your next payday.</span>
+    <button class="btn btn-ghost btn-sm" id="btn-recalc-now">Recalculate current pay period →</button>
   `;
   fieldEl.after(el);
 
   el.querySelector('#btn-recalc-now').addEventListener('click', () => {
     _recalculateBucketAllocations(newSalary);
     el.remove();
-    showToast('Current cycle recalculated ✓');
+    showToast('Current pay period recalculated ✓');
   });
 }
 
