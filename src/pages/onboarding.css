@@ -422,6 +422,26 @@
   border-bottom: 1px solid var(--border);
 }
 
+.onboarding__macro-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.onboarding__macro-label {
+  font-size: var(--text-base);
+  font-weight: var(--weight-semibold);
+  color: var(--text-primary);
+}
+
+.onboarding__macro-amount {
+  font-size: var(--text-sm);
+  font-family: var(--font-mono);
+  font-weight: var(--weight-medium);
+  color: var(--text-secondary);
+}
+
 .onboarding__bucket-section:last-child {
   border-bottom: none;
 }

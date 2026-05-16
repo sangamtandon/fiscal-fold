@@ -489,23 +489,10 @@ function renderDonut() {
 // STEP 4 — Emotional Anchors (Micro-Bucket Setup)
 // ===================================================================
 function renderStep4(container) {
-  // Pre-fill allocated defaults from even split (only if not yet set)
-  ['needs', 'wants', 'future'].forEach(macroType => {
-    const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
-    const bkts = formData.buckets[macroType];
-    const perBucket = bkts.length > 0 ? Math.floor(macroAmount / bkts.length) : 0;
-    const rem = macroAmount - perBucket * bkts.length;
-    bkts.forEach((b, i) => {
-      if (b.allocated === undefined) {
-        b.allocated = perBucket + (i === 0 ? rem : 0);
-      }
-    });
-  });
-
   container.innerHTML = `
     <div class="onboarding__step-header">
       <div class="onboarding__icon">🪣</div>
-      <h2 class="onboarding__title">Set up your categories</h2>
+      <h2 class="onboarding__title">Set up your buckets</h2>
       <p class="onboarding__subtitle">Pick what you spend on and set a monthly budget for each.</p>
     </div>
 
@@ -538,12 +525,12 @@ function renderBucketSection(macroType, label) {
 
   return `
     <div class="onboarding__bucket-section" data-macro="${macroType}">
-      <div class="flex items-center justify-between mb-1">
+      <div class="onboarding__macro-header">
         <div class="flex items-center gap-2">
           <div class="onboarding__alloc-dot" style="background: ${colors[macroType]};"></div>
-          <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
+          <span class="onboarding__macro-label">${label}</span>
         </div>
-        <span class="text-mono text-secondary" style="font-size: var(--text-xs);">${formatCurrency(macroAmount)}</span>
+        <span class="onboarding__macro-amount">${formatCurrency(macroAmount)}</span>
       </div>
       <div class="onboarding__template-chips">${templateChips}</div>
       <div class="onboarding__pool-row" id="pool-row-${macroType}">${renderPoolRow(macroType)}</div>
@@ -620,7 +607,7 @@ function renderPoolRow(macroType) {
   }
 
   const legend = buckets.length > 0
-    ? `<span class="onboarding__bucket-legend">📌 pin &nbsp;·&nbsp; 🔄 monthly</span>`
+    ? `<span class="onboarding__bucket-legend">📌 pin to dashboard &nbsp;·&nbsp; 🔄 monthly</span>`
     : '';
 
   return `${legend}<span class="${poolClass}">${poolText}</span>`;
@@ -640,17 +627,6 @@ function updatePoolCounter(macroType) {
   const el = document.getElementById(`pool-row-${macroType}`);
   if (!el) return;
   el.innerHTML = renderPoolRow(macroType);
-}
-
-function recalcAllocations(macroType) {
-  const macroAmount = Math.round(formData.salary * formData.ratios[macroType] / 100);
-  const bkts = formData.buckets[macroType];
-  if (bkts.length === 0) return;
-  const perBucket = Math.floor(macroAmount / bkts.length);
-  const rem = macroAmount - perBucket * bkts.length;
-  bkts.forEach((b, i) => {
-    b.allocated = perBucket + (i === 0 ? rem : 0);
-  });
 }
 
 function wireUpBucketEvents(container) {
@@ -697,17 +673,17 @@ function wireUpBucketEvents(container) {
         // Toggle off — remove the bucket
         formData.buckets[macro].splice(existingIdx, 1);
       } else {
-        // Toggle on — add the bucket
+        // Toggle on — add the bucket with blank amount (user fills it in)
         const wantsPinned = formData.buckets.wants.filter(b => b.isPinned).length;
         formData.buckets[macro].push({
           id: uid(),
           name,
           emoji,
+          allocated: 0,
           isPinned: macro === 'wants' && wantsPinned < 2,
           isRecurring: false,
         });
       }
-      recalcAllocations(macro);
       refreshBucketSections(container);
     }
 
@@ -735,7 +711,6 @@ function wireUpBucketEvents(container) {
       const id = removeBtn.dataset.id;
       const macro = removeBtn.dataset.macro;
       formData.buckets[macro] = formData.buckets[macro].filter(b => b.id !== id);
-      recalcAllocations(macro);
       refreshBucketSections(container);
     }
 
@@ -747,10 +722,10 @@ function wireUpBucketEvents(container) {
           id: uid(),
           name: '',
           emoji: randomEmoji,
+          allocated: 0,
           isPinned: false,
           isRecurring: false,
         });
-        recalcAllocations(macro);
         refreshBucketSections(container);
         // Focus the new input
         requestAnimationFrame(() => {
