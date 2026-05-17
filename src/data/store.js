@@ -158,7 +158,7 @@ export function getTransactions({ limit, bucketId } = {}) {
   const cycleId = _state.currentCycleId;
   let txns = _state.transactions.filter(t => t.cycleId === cycleId);
   if (bucketId) txns = txns.filter(t => t.bucketId === bucketId);
-  txns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  txns.sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
   if (limit) txns = txns.slice(0, limit);
   return txns;
 }
@@ -744,7 +744,7 @@ export function addIncome(amount, targetBucketId, note = '') {
  * @returns {import('./models.js').Transaction[]}
  */
 export function getAllTransactions() {
-  return [..._state.transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return [..._state.transactions].sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
 }
 
 // ---- Lifecycle ----
