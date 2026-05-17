@@ -14,7 +14,7 @@ import {
   getBucketById,
   removeTransaction,
 } from '../data/store.js';
-import { formatCurrency, timeAgo } from '../utils/helpers.js';
+import { formatCurrency, timeAgo, debounce } from '../utils/helpers.js';
 import { groupByMonth } from '../utils/txn-grouping.js';
 import { showToast } from '../utils/toast.js';
 import { navigate } from '../router.js';
@@ -258,11 +258,11 @@ function _wireEvents(container) {
     _refreshList(container);
   });
 
-  // Search
-  container.querySelector('#txn-search').addEventListener('input', e => {
+  // Search — debounced to avoid a full DOM re-render on every keystroke
+  container.querySelector('#txn-search').addEventListener('input', debounce(e => {
     _searchQuery = e.target.value;
     _refreshList(container);
-  });
+  }, 200));
 
   // Macro filter tabs
   container.querySelector('#txn-filter-tabs').addEventListener('click', e => {
