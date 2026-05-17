@@ -40,7 +40,7 @@ Fiscal Fold is built with a focus on simplicity, speed, and zero dependency chur
 - **State Management:** Custom reactive pub/sub store
 - **Typography:** Inter + JetBrains Mono
 
-For more detailed technical insights, read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). If you are an AI coding agent contributing to this project, start with [`AGENTS.md`](AGENTS.md).
+If you are an AI coding agent or human contributor working on this project, start with [`AGENTS.md`](AGENTS.md) — it covers conventions, intentional decisions, and the per-phase agent workflow.
 
 ## 🚀 Getting Started
 
@@ -88,27 +88,15 @@ The optimized files will be generated in the `dist` directory.
 
 ## 📚 Documentation
 
-**Project entry points (root):**
-- [`AGENTS.md`](AGENTS.md) — single source of truth for AI agents (conventions, hard rules, agent workflow)
-- [`CHANGELOG.md`](CHANGELOG.md) — version history (sprint releases + post-MVP work)
-
-**Deep references (`docs/`):**
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — stack, file map, store API, design decisions
-- [`docs/QUALITY_GATE.md`](docs/QUALITY_GATE.md) — 50+ item pre-merge regression checklist (per screen)
-- [`docs/CURRENT_SPRINT.md`](docs/CURRENT_SPRINT.md) — current status and AI handoff notes
-- [`docs/TECH_DEBT.md`](docs/TECH_DEBT.md) — backlog of issues and optimisations
+- [`AGENTS.md`](AGENTS.md) — single source of truth for AI agents and contributors (conventions, intentional decisions, hard rules, agent workflow)
 - [`docs/UX_GLOSSARY.md`](docs/UX_GLOSSARY.md) — every user-facing term, with the exact copy used in-app
-- [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — original sprint plan (historical)
+- `.agents/` — per-phase agent briefs (planner, implementer, tester, reviewer, documenter, release-manager); see `AGENTS.md` for which to open when
 
-**Per-phase agent briefs (`.agents/`):**
-- `planner.md`, `implementer.md`, `tester.md`, `reviewer.md`, `documenter.md`, `release-manager.md` — see `AGENTS.md` for which to open when.
+The project is in active prototype phase. There is no separate architecture doc, changelog, regression checklist, or backlog file — the code is the architecture, the git log is the changelog, and the tests are the regression net.
 
 ## 🧪 Testing
-- `npm test` — unit + integration suite (Vitest, ~100 tests covering store mutators, selectors, helpers, and lifecycle)
-- `npm run test:e2e` — Playwright suite covering onboarding, dashboard clarity, trade-off language, transaction delete, commitments mark-paid, settings, and payday rituals
-
-## 📦 Status
-MVP complete — Sprints 1–12 shipped. See `CHANGELOG.md` for ongoing work.
+- `npm test` — unit + integration suite (Vitest, covers store mutators, selectors, helpers, and lifecycle)
+- `npm run test:e2e` — Playwright suite covering onboarding, dashboard, transaction flows, commitments, settings, and payday rituals
 
 ## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check [`docs/QUALITY_GATE.md`](docs/QUALITY_GATE.md) and run through the regression checklist before requesting review.
+Contributions are welcome! Please read [`AGENTS.md`](AGENTS.md) first, then submit a PR with `npm test` and `npm run test:e2e` green.

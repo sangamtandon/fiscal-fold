@@ -1,90 +1,53 @@
 # Role: Release Manager
 
-> Open `AGENTS.md` first for project context. Use this file when cutting a
-> release.
+> Open `AGENTS.md` first for project context. The project is in active
+> prototype phase and has no formal release cadence — this role exists for
+> the eventual transition to versioned releases. Until the user explicitly
+> requests a tagged release, this brief does not apply.
 
-## Mission
+## When this role applies
 
-Prepare a clean, tagged release: green CI, accurate notes, a service-worker
-cache-bust that won't strand existing users, and the right version label for
-the project's current scheme.
-
-## Versioning scheme (current state)
-
-Per `CHANGELOG.md`:
-
-> *Format follows Keep a Changelog. Versioning follows sprint tags:
-> `v0.{sprint}.0`. Post-MVP work lives under **[Unreleased]** until a new
-> tagging scheme is decided.*
-
-So:
-
-- **The MVP shipped as `v0.1.0` … `v0.12.0` (one tag per sprint).**
-- **Sprints 1–12 are complete and merged.** Post-MVP PRs accumulate under
-  `## [Unreleased] — Post-MVP` in `CHANGELOG.md`.
-- **`package.json` is still on `0.0.0`** — the project has been tagging via
-  git tags, not via the `version` field. Do not bump `package.json` without
-  user direction; the tagging scheme decision is pending.
-
-If the user has chosen a new scheme (semver, calver, or a continuation of
-`v0.{n}.0`), follow that. If not, **ask before tagging** — do not invent a
-scheme.
+Only when the user says something like *"cut a release"*, *"tag v0.x"*, or
+*"prepare a release for closed beta"*. There is no automatic trigger.
 
 ## Pre-flight
 
-1. **CI green:** the latest commit on `main` shows
-   `.github/workflows/test.yml` passing (build + unit + coverage + e2e).
+1. **CI green** on the latest commit of the release branch
+   (`.github/workflows/test.yml` passing — build + unit + coverage + e2e).
 2. **No unreviewed PRs** about to be merged into the release.
-3. **Working tree clean** locally; you are on `main` and up to date with
-   `origin/main`.
-4. **Confirm the tag name with the user** if any ambiguity remains.
+3. **Working tree clean** locally and up to date with `origin`.
+4. **Confirm the tag scheme with the user.** `package.json` is on `0.0.0`
+   and there is no `CHANGELOG.md`. The previous sprint-tag scheme
+   (`v0.{sprint}.0`) is no longer in use. Do not invent a scheme — ask.
 
-## Steps
+## Steps (after the user confirms a scheme)
 
-1. **Decide the tag** with the user. For sprint-style: `v0.<sprint>.0`. For
-   semver: bump `package.json` `version` accordingly (`patch` for bug fix,
-   `minor` for new user-visible feature, `major` for any breaking
-   localStorage schema change).
-2. **Update `CHANGELOG.md`:**
-   - Promote `## [Unreleased] — Post-MVP` (or a sprint heading) to a dated
-     versioned heading, e.g. `## [v0.13.0] — 2026-05-17`.
-   - Keep the existing `Added` / `Changed` / `Fixed` / `Removed` /
-     `UX clarity pass` grouping consistent with previous entries.
-   - Leave a new empty `## [Unreleased]` at the top.
-3. **Verify the PWA cache plan:**
-   - Confirm the cache-bust hash in `vite.config.js` (custom plugin) will
-     fire for `public/sw.js` and the build output so installed PWAs pick up
-     the new build.
-   - If the localStorage schema changed, double-check the migration path
-     in `src/data/store.js` and that it is mentioned in the changelog entry.
-4. **Sync handoff docs:**
-   - `docs/CURRENT_SPRINT.md` — reflect post-release state and what's next.
-   - `docs/TECH_DEBT.md` — strike items resolved in this release.
-   - `README.md` — feature list, if anything new shipped.
-5. **Tag and push:**
-   - Commit changelog + (if applicable) version bump as
-     `chore: release <tag>`.
-   - Create the git tag: `git tag <tag>` (annotated:
-     `git tag -a <tag> -m "<tag>"`).
-   - Push: `git push origin main && git push origin <tag>`.
-6. **Publish release notes** (GitHub release on the tag) mirroring the new
-   `CHANGELOG.md` section.
+1. **Verify the PWA cache plan:** the cache-bust hash in `vite.config.js`
+   (custom plugin) will fire for `public/sw.js` and the build output so
+   installed PWAs pick up the new build.
+2. **If the localStorage schema changed in this release,** double-check
+   the migration path in `src/data/store.js` and call it out in the
+   release notes.
+3. **Tag the commit:** `git tag -a <tag> -m "<tag>"` then
+   `git push origin <tag>`.
+4. **Write GitHub release notes from `git log`** between the previous tag
+   (if any) and this one. Group by `feat:` / `fix:` / `refactor:` /
+   `chore:` prefixes from commit messages.
+5. **If `package.json` `version` should change,** bump it in a
+   `chore: bump version to <x>` commit after confirming with the user.
 
 ## Hard rules
 
-- Never release with failing tests, even "flaky" — fix them or file a
-  tracked `docs/TECH_DEBT.md` entry and get explicit user sign-off first.
+- Never tag with failing tests.
 - Never release on top of unreviewed code.
-- Never tag without a corresponding `CHANGELOG.md` entry under that tag.
-- Any change to the localStorage schema requires explicit user sign-off
-  before release, regardless of tag scheme.
-- Do not bump `package.json` `version` away from `0.0.0` unilaterally —
-  that signals a switch in versioning convention. Confirm with the user.
+- Any localStorage schema change requires explicit user sign-off before
+  release.
+- Do not create or restore `CHANGELOG.md` — release notes live on the
+  GitHub release for the tag.
 
 ## Definition of done
 
-- The agreed tag exists on the release commit and is pushed to `origin`.
-- `CHANGELOG.md` has a dated section matching the tag, with a fresh
-  `## [Unreleased]` above it.
-- `docs/CURRENT_SPRINT.md` reflects the post-release state.
-- GitHub release published with the same content as the changelog section.
+- Tag exists on the release commit and is pushed to `origin`.
+- GitHub release published with release notes derived from `git log`.
+- If `package.json` `version` was bumped, the bump commit is on the
+  release branch.

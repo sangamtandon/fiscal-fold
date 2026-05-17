@@ -12,6 +12,10 @@ a single-user, offline-capable app with **no backend** — all state lives in
 `localStorage`. Currency is INR (lakhs / crores formatting). Mobile-first from
 375 px.
 
+**Phase:** active prototype. Things change fast — code and `AGENTS.md` are the
+sources of truth; there are no architecture / changelog / regression-checklist
+documents to consult.
+
 ## Tech stack
 
 - **Build:** Vite 5 (vanilla ES modules)
@@ -62,12 +66,7 @@ tests/
   e2e/                 Playwright — onboarding, dashboard, persistence, payday, etc.
   helpers/             freshStore factory, builders
 docs/
-  ARCHITECTURE.md      full stack, file map, store API, design decisions
-  QUALITY_GATE.md      50+ item per-screen regression checklist
-  CURRENT_SPRINT.md    current status + AI handoff notes
-  TECH_DEBT.md         backlog of issues and optimisations
   UX_GLOSSARY.md       every user-facing string — copy MUST match
-  IMPLEMENTATION_PLAN.md  historical sprint plan
 ```
 
 ## Product glossary (must use these terms verbatim)
@@ -106,7 +105,7 @@ These are settled. Do not relitigate them without explicit user approval.
   `subscribe(key, callback)`.
 - **Models:** add or extend JSDoc typedefs in `src/data/models.js` before
   changing state shape. Any schema change requires a migration in
-  `src/data/store.js` and a `CHANGELOG.md` note.
+  `src/data/store.js` and a note in the commit message.
 - **Pages:** a new route = a new `src/pages/<slug>.js` + `src/pages/<slug>.css`
   registered in `src/router.js`. CSS classes are prefixed with the page slug
   (`.onboarding__`, `.txn-`, `.cm-`, `.pd-`, `.settings-`, etc.) because Vite
@@ -129,6 +128,8 @@ These are settled. Do not relitigate them without explicit user approval.
 
 ## Testing rules
 
+- Tests are the regression net. There is no per-screen QA checklist — if a
+  behaviour matters, write a test for it.
 - Every new store mutator gets a unit test in `tests/unit/`.
 - Every new user-visible flow gets a Playwright spec in `tests/e2e/`.
 - Coverage thresholds in `vitest.config.js` must not be lowered to make a
@@ -144,30 +145,31 @@ These are settled. Do not relitigate them without explicit user approval.
 | Write production code               | `.agents/implementer.md`      |
 | Add / update tests                  | `.agents/tester.md`           |
 | Pre-merge review                    | `.agents/reviewer.md`         |
-| Update docs after a change          | `.agents/documenter.md`       |
+| Update copy or conventions          | `.agents/documenter.md`       |
 | Cut a release                       | `.agents/release-manager.md`  |
 
-A full feature usually flows planner → implementer → tester → documenter →
-reviewer → release-manager. Each role file lists its inputs, outputs, hard
-constraints, and stop conditions.
+A full feature usually flows planner → implementer → tester → reviewer. Use a
+fresh chat per role where possible — especially for review — so the reviewer
+has no memory of how the code got written.
 
 ## Commit & PR conventions
 
 - Short imperative subject prefixed by type (`feat:`, `fix:`, `docs:`,
   `chore:`, `refactor:`, `test:`).
-- Reference the sprint or `docs/TECH_DEBT.md` item when relevant.
 - Never commit `dist/`, `.env*`, or `node_modules/`.
 - One logical change per PR; keep diffs reviewable.
-- PR description: what changed, why, screenshots for UI, and the
-  `docs/QUALITY_GATE.md` items walked through.
+- PR description: what changed, why, screenshots for UI, and any
+  localStorage migration steps if the schema moved.
 
 ## Hard don'ts (in addition to "Intentional decisions")
 
 - No Tailwind, SCSS, or any CSS preprocessor — vanilla CSS only.
 - No new framework or VDOM layer.
 - No breaking the localStorage schema without a written migration step and a
-  `CHANGELOG.md` note.
+  note in the commit message / PR description.
 - Never lower coverage thresholds to make a build pass.
 - Never leave `console.log` / `debugger` in committed code.
-- Never delete documentation files in `docs/` without explicit user approval —
-  AGENTS.md is a router to detail, not a replacement for it.
+- Never silently delete `AGENTS.md`, `.agents/*`, or `docs/UX_GLOSSARY.md` —
+  these are the surviving load-bearing docs. Other historical docs were
+  intentionally removed; do not recreate `ARCHITECTURE.md`, `CHANGELOG.md`,
+  `QUALITY_GATE.md`, or `TECH_DEBT.md` unless the user explicitly asks.

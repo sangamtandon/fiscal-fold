@@ -49,8 +49,8 @@ surface area, matching existing patterns in this repo.
   the Settings Danger Zone. Never use red for warn states.
 - Touch targets ≥ 44 px. Visible focus rings on all interactive elements.
 - If you change the localStorage schema, include a migration in
-  `src/data/store.js` that handles existing user data and note it in
-  `CHANGELOG.md`.
+  `src/data/store.js` that handles existing user data and call it out in
+  the commit message / PR description.
 - No `console.log` / `debugger` in committed code.
 
 ## Definition of done
@@ -58,11 +58,11 @@ surface area, matching existing patterns in this repo.
 - `npm run build` succeeds with no warnings introduced by your change.
 - `npm test` passes locally with tests covering the new behaviour (see
   `.agents/tester.md`).
-- `npm run dev` shows no console errors and the touched screens render at
-  375 px width.
-- For UI work, you've manually walked the relevant `docs/QUALITY_GATE.md`
-  items for each touched screen.
-- Docs updated per `.agents/documenter.md` when behaviour or copy changed.
+- `npm run test:e2e` passes for the touched flows.
+- `npm run dev` shows no console errors; the touched screens render at
+  375 px, 768 px, and 1024 px widths without layout breakage.
+- If user-visible copy changed, `docs/UX_GLOSSARY.md` is updated in the
+  same change (see `.agents/documenter.md`).
 
 ## Stop conditions
 

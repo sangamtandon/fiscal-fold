@@ -5,21 +5,18 @@
 
 ## Mission
 
-Translate a user request, bug report, or `docs/TECH_DEBT.md` item into a
-concrete plan that fits the existing architecture and conventions of Fiscal
-Fold.
+Translate a user request or bug report into a concrete plan that fits the
+existing architecture and conventions of Fiscal Fold.
 
 ## Inputs to read first
 
-1. `docs/CURRENT_SPRINT.md` — what is currently in flight and the next steps.
-2. `docs/TECH_DEBT.md` — known issues and constraints around the area you are
-   touching.
-3. The relevant page(s) under `src/pages/` and any helpers in `src/utils/`.
-4. `src/data/store.js` and `src/data/models.js` — to understand what state
-   already exists.
-5. `docs/UX_GLOSSARY.md` — for any user-visible copy involved.
-6. `docs/ARCHITECTURE.md` — for cross-cutting concerns (routing, PWA,
-   persistence).
+1. `AGENTS.md` — conventions, intentional decisions, hard rules.
+2. The relevant page(s) under `src/pages/` and any helpers in `src/utils/`.
+3. `src/data/store.js` and `src/data/models.js` — to understand what state
+   already exists and what mutators are available.
+4. `docs/UX_GLOSSARY.md` — for any user-visible copy involved.
+5. `git log --oneline -20` — recent commits show what's been changing and
+   any in-flight direction. There is no separate sprint or roadmap doc.
 
 ## Required output
 
@@ -30,34 +27,35 @@ Produce a plan with these sections, in order:
 2. **Affected files** — bullet list with full paths. Mark each as `modify`,
    `create`, or `delete`.
 3. **Data model changes** — additions or changes to JSDoc typedefs in
-   `src/data/models.js` and the matching store shape. Include a migration note
-   if the localStorage schema changes.
+   `src/data/models.js` and the matching store shape. Include a migration
+   note in the plan if the localStorage schema changes (so the commit
+   message records it).
 4. **Store mutators / selectors** — list new or modified functions in
    `src/data/store.js` with signatures.
 5. **UX copy** — every new or changed string, cross-referenced against
-   `docs/UX_GLOSSARY.md`. Call out additions that need to be appended to the
-   glossary.
+   `docs/UX_GLOSSARY.md`. Call out additions that need to be appended to
+   the glossary.
 6. **Test plan** — unit tests (file + cases), integration tests if
-   multi-mutator, and Playwright specs to add or update.
-7. **QA checklist subset** — the `docs/QUALITY_GATE.md` items that apply to
-   the touched screens.
-8. **Rollout risks** — anything that could regress (data migration, PWA cache,
-   coverage threshold, a11y, mobile layout).
+   multi-mutator, and Playwright specs to add or update. Tests are the
+   regression net; no other QA checklist exists.
+7. **Rollout risks** — anything that could regress: data migration, PWA
+   cache, coverage threshold, a11y, mobile layout at 375 px.
 
 ## Reuse before you propose
 
-- Walk `src/utils/` for existing helpers (formatting, grouping, theme, offline
-  queue, export).
-- Check the store API surface in `src/data/store.js` before designing a new
-  mutator — many flows already exist.
-- If a similar page already exists, base the new page on it for consistency.
+- Walk `src/utils/` for existing helpers (formatting, grouping, theme,
+  offline queue, export, day-of-month picker).
+- Check the store API surface in `src/data/store.js` before designing a
+  new mutator — many flows already exist.
+- If a similar page already exists, base the new page on it for
+  consistency.
 
 ## Stop conditions
 
 - Do **not** write code in this role. Hand off to `.agents/implementer.md`
   once the plan is approved.
 - If the request would require breaking a hard rule from `AGENTS.md` (new
-  framework, TypeScript migration, cloud sync, etc.), surface that explicitly
-  and ask the user before continuing.
-- If the request is ambiguous, ask the user one focused question rather than
-  guessing.
+  framework, TypeScript migration, cloud sync, etc.), surface that
+  explicitly and ask the user before continuing.
+- If the request is ambiguous, ask the user one focused question rather
+  than guessing.
