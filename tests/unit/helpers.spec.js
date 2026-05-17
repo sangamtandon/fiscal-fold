@@ -12,6 +12,7 @@ import {
   timeAgo,
   ordinalSuffix,
   formatPayday,
+  distributeProportionally,
 } from '../../src/utils/helpers.js';
 
 describe('formatCurrency', () => {
@@ -192,6 +193,41 @@ describe('formatPayday', () => {
 
   it('formats 1st correctly', () => {
     expect(formatPayday(1)).toBe('1st of every month');
+  });
+});
+
+describe('distributeProportionally', () => {
+  it('returns [] for empty weights', () => {
+    expect(distributeProportionally([], 100)).toEqual([]);
+  });
+
+  it('returns integer allocations whose sum equals the total', () => {
+    const result = distributeProportionally([1, 1, 1], 100);
+    expect(result.reduce((s, v) => s + v, 0)).toBe(100);
+    expect(result.every(Number.isInteger)).toBe(true);
+  });
+
+  it('gives the rounding correction to the largest fractional remainder, not always the last bucket', () => {
+    // weights [1, 1, 1] over total=10 → exact 3.33 / 3.33 / 3.33
+    // floor → [3, 3, 3], remainder 1 → first bucket (tie broken by position)
+    const result = distributeProportionally([1, 1, 1], 10);
+    expect(result).toEqual([4, 3, 3]);
+  });
+
+  it('distributes multiple remainders to the buckets with the largest fractional parts', () => {
+    // exact 33.33 / 50.00 / 16.67 → floor 33/50/16, remainder 1 → goes to 16.67 (largest frac)
+    const result = distributeProportionally([2, 3, 1], 100);
+    expect(result.reduce((s, v) => s + v, 0)).toBe(100);
+    expect(result[2]).toBe(17);
+  });
+
+  it('handles zero weights by splitting equally', () => {
+    const result = distributeProportionally([0, 0, 0], 9);
+    expect(result.reduce((s, v) => s + v, 0)).toBe(9);
+  });
+
+  it('returns zeros when total is 0', () => {
+    expect(distributeProportionally([1, 2, 3], 0)).toEqual([0, 0, 0]);
   });
 });
 

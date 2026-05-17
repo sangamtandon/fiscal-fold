@@ -19,7 +19,7 @@ import {
   getCurrentCycle,
   updateCycleAllocations,
 } from '../data/store.js';
-import { formatCurrency, formatNumber, ordinalSuffix, formatPayday } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, ordinalSuffix, formatPayday, distributeProportionally } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { showToast } from '../utils/toast.js';
 import { getTheme, setTheme } from '../utils/theme.js';
@@ -508,16 +508,11 @@ function _recalculateBucketAllocations(newSalary) {
   for (const [macro, newTotal] of [['needs', newNeeds], ['wants', newWants], ['future', newFuture]]) {
     const buckets = getBuckets(macro);
     if (!buckets.length) continue;
-    const oldTotal = buckets.reduce((s, b) => s + b.allocated, 0);
-    let distributed = 0;
-    buckets.forEach((b, i) => {
-      const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / buckets.length;
-      const newAlloc = i === buckets.length - 1
-        ? newTotal - distributed
-        : Math.round(newTotal * proportion);
-      distributed += newAlloc;
-      updateBucket(b.id, { allocated: newAlloc });
-    });
+    const allocations = distributeProportionally(
+      buckets.map(b => b.allocated),
+      newTotal,
+    );
+    buckets.forEach((b, i) => updateBucket(b.id, { allocated: allocations[i] }));
   }
 }
 

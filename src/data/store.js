@@ -6,7 +6,7 @@
  * Designed to be swapped to a BaaS backend in later sprints without refactoring consumers.
  */
 
-import { uid } from '../utils/helpers.js';
+import { uid, distributeProportionally } from '../utils/helpers.js';
 import { PRESETS } from './models.js';
 
 // ---- Storage Key ----
@@ -654,26 +654,20 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
       return;
     }
 
-    const oldTotal = macroBuckets.reduce((s, b) => s + b.allocated, 0);
-    const newBuckets = macroBuckets.map((b, i) => {
-      const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / macroBuckets.length;
-      return {
-        id: uid(),
-        cycleId: newCycleId,
-        macroType,
-        name: b.name,
-        emoji: b.emoji,
-        allocated: Math.round(newTotal * proportion),
-        spent: 0,
-        isPinned: b.isPinned,
-        sortOrder: b.sortOrder,
-        createdAt: new Date().toISOString(),
-      };
-    });
-
-    // Largest-remainder correction: distribute any rounding shortfall to the last bucket
-    const roundedSum = newBuckets.reduce((s, b) => s + b.allocated, 0);
-    if (newBuckets.length > 0) newBuckets[newBuckets.length - 1].allocated += newTotal - roundedSum;
+    const weights = macroBuckets.map(b => b.allocated);
+    const allocations = distributeProportionally(weights, newTotal);
+    const newBuckets = macroBuckets.map((b, i) => ({
+      id: uid(),
+      cycleId: newCycleId,
+      macroType,
+      name: b.name,
+      emoji: b.emoji,
+      allocated: allocations[i],
+      spent: 0,
+      isPinned: b.isPinned,
+      sortOrder: b.sortOrder,
+      createdAt: new Date().toISOString(),
+    }));
 
     newBuckets.forEach(b => _state.buckets.push(b));
   });

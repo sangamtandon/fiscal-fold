@@ -169,7 +169,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-008] Largest-remainder rounding correction always given to the last bucket
+### ✅ [DEBT-008] Largest-remainder rounding — fixed (shared `distributeProportionally` helper)
 - **File:** `src/data/store.js` (lines 634–652), `src/pages/settings.js` (lines 508–521)
 - **Category:** Refactor
 - **Severity:** Medium

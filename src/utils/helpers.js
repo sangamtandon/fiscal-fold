@@ -145,6 +145,29 @@ export function ordinalSuffix(n) {
 }
 
 /**
+ * Distribute `total` across buckets proportionally using the largest-remainder
+ * method, so the sum is exact and the ±1 rounding shortfall isn't always
+ * absorbed by the last bucket (which over many cycles accumulates drift).
+ * @param {number[]} weights  Relative proportions; need not sum to anything specific.
+ * @param {number} total      Integer total to distribute.
+ * @returns {number[]}        Integer allocations whose sum equals `total`.
+ */
+export function distributeProportionally(weights, total) {
+  if (weights.length === 0) return [];
+  const sumW = weights.reduce((s, w) => s + w, 0);
+  const exact = sumW > 0
+    ? weights.map(w => (w / sumW) * total)
+    : weights.map(() => total / weights.length);
+  const floored = exact.map(Math.floor);
+  const remainder = Math.round(total - floored.reduce((s, v) => s + v, 0));
+  const fractionals = exact
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let k = 0; k < remainder; k++) floored[fractionals[k % fractionals.length].i]++;
+  return floored;
+}
+
+/**
  * Format a payday day-of-month for display.
  * Treats 99 as the sentinel for "last day of month".
  * @param {number} n  1–31 or 99
