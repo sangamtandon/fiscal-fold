@@ -310,7 +310,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-016] `_pickEmojiPrompt` in settings.js cycles to next palette emoji instead of opening a picker
+### ✅ [DEBT-016] `_pickEmojiPrompt` — fixed (replaced with anchored grid popup picker)
 - **File:** `src/pages/settings.js` (lines 658–662)
 - **Category:** Refactor
 - **Severity:** Low

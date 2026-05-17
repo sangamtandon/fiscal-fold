@@ -553,9 +553,12 @@ function _openBucketEditInline(container, bucketId, macro) {
   `;
 
   let selectedEmoji = bucket.emoji;
-  rowEl.querySelector(`#emoji-picker-target-${bucketId}`).addEventListener('click', () => {
-    selectedEmoji = _pickEmojiPrompt(selectedEmoji);
-    rowEl.querySelector(`#emoji-picker-target-${bucketId}`).textContent = selectedEmoji;
+  const emojiTarget = rowEl.querySelector(`#emoji-picker-target-${bucketId}`);
+  emojiTarget.addEventListener('click', () => {
+    _openEmojiPicker(emojiTarget, selectedEmoji, picked => {
+      selectedEmoji = picked;
+      emojiTarget.textContent = picked;
+    });
   });
 
   // Format alloc input live
@@ -614,9 +617,12 @@ function _openAddBucketInline(container, macro) {
 
   const form = group.querySelector('.settings-add-bucket-form');
 
-  form.querySelector(`#add-emoji-${macro}`).addEventListener('click', () => {
-    chosenEmoji = _pickEmojiPrompt(chosenEmoji);
-    form.querySelector(`#add-emoji-${macro}`).textContent = chosenEmoji;
+  const addEmojiEl = form.querySelector(`#add-emoji-${macro}`);
+  addEmojiEl.addEventListener('click', () => {
+    _openEmojiPicker(addEmojiEl, chosenEmoji, picked => {
+      chosenEmoji = picked;
+      addEmojiEl.textContent = picked;
+    });
   });
 
   // Format alloc input
@@ -650,9 +656,54 @@ function _refreshBucketsPanel(container) {
 
 // ---- Helpers ----
 
-function _pickEmojiPrompt(current) {
-  const idx = EMOJI_PALETTE.indexOf(current);
-  const next = (idx + 1) % EMOJI_PALETTE.length;
-  return EMOJI_PALETTE[next];
+/**
+ * Open an inline emoji-grid popup anchored to `anchor`. The popup closes on
+ * selection, outside click, or Escape. Replaces the old "cycle to next palette
+ * emoji on click" behaviour so users can pick a specific emoji in one tap.
+ * @param {HTMLElement} anchor
+ * @param {string} current
+ * @param {(picked: string) => void} onSelect
+ */
+function _openEmojiPicker(anchor, current, onSelect) {
+  document.querySelector('.settings-emoji-popup')?.remove();
+
+  const popup = document.createElement('div');
+  popup.className = 'settings-emoji-popup';
+  popup.innerHTML = EMOJI_PALETTE.map(e =>
+    `<button class="settings-emoji-popup__btn${e === current ? ' is-selected' : ''}" data-emoji="${e}" type="button">${e}</button>`
+  ).join('');
+
+  document.body.appendChild(popup);
+
+  const rect = anchor.getBoundingClientRect();
+  const top = rect.bottom + window.scrollY + 4;
+  const left = Math.max(8, Math.min(rect.left + window.scrollX, window.innerWidth - 240));
+  popup.style.top = `${top}px`;
+  popup.style.left = `${left}px`;
+
+  const close = () => {
+    popup.remove();
+    document.removeEventListener('click', onOutside, true);
+    document.removeEventListener('keydown', onEsc);
+  };
+  const onOutside = e => {
+    if (popup.contains(e.target) || e.target === anchor) return;
+    close();
+  };
+  const onEsc = e => { if (e.key === 'Escape') close(); };
+
+  popup.addEventListener('click', e => {
+    const btn = e.target.closest('[data-emoji]');
+    if (!btn) return;
+    onSelect(btn.dataset.emoji);
+    close();
+  });
+
+  // Defer wiring outside-click so the originating click that opened the popup
+  // doesn't immediately close it.
+  setTimeout(() => {
+    document.addEventListener('click', onOutside, true);
+    document.addEventListener('keydown', onEsc);
+  }, 0);
 }
 
