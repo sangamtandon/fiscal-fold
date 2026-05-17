@@ -294,7 +294,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-015] `src/main.js` is a 659-line god file — dashboard route, app shell, PWA logic all co-located
+### ✅ [DEBT-015] `src/main.js` god file — fixed (dashboard extracted to `src/pages/dashboard.js`, main.js trimmed to ~320 lines)
 - **File:** `src/main.js` (lines 277–641)
 - **Category:** Structural
 - **Severity:** Medium

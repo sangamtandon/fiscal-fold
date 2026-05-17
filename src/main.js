@@ -10,23 +10,15 @@ import './pages/commitments.css';
 import { route, navigate, initRouter, currentRoute } from './router.js';
 import { renderOnboarding } from './pages/onboarding.js';
 import { openTransactionModal } from './pages/transaction-modal.js';
-import { renderCommitmentsPage, renderCommitmentDueRow, getDueSoonCommitments } from './pages/commitments.js';
+import { renderCommitmentsPage } from './pages/commitments.js';
+import { renderDashboardPage } from './pages/dashboard.js';
 import { flush as flushOfflineQueue } from './utils/offlineQueue.js';
 import {
   getUser,
   isOnboardingComplete,
-  getCurrentCycle,
-  getBuckets,
-  getBucketById,
-  getQuickBuckets,
   getTransactions,
-  getSafeToSpend,
-  getMacroSummary,
-  getMacroReserved,
-  isCycleExpired,
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
-import { formatCurrency, timeAgo, percent, daysRemaining, cycleDayCount, escapeHtml } from './utils/helpers.js';
 import { showToast } from './utils/toast.js';
 
 // ---- Theme ----
@@ -274,248 +266,15 @@ function registerRoutes() {
     renderOnboarding(container);
   });
 
-  // Dashboard — now reads from the store
+  // Dashboard — delegates to src/pages/dashboard.js
   route('/dashboard', (container) => {
     updateShellVisibility();
     updateHeaderGreeting();
-
-    const cycle = getCurrentCycle();
-    const user = getUser();
-
-    // If no data, redirect to onboarding
-    if (!cycle || !user) {
-      navigate('/onboarding');
-      return;
-    }
-
-    const safeToSpend = getSafeToSpend();
-    const daysLeft = daysRemaining(cycle.endDate);
-    const cycleExpired = isCycleExpired();
-    const needsSummary = getMacroSummary('needs');
-    const wantsSummary = getMacroSummary('wants');
-    const futureSummary = getMacroSummary('future');
-    const needsReserved = getMacroReserved('needs');
-    const wantsReserved = getMacroReserved('wants');
-    const futureReserved = getMacroReserved('future');
-    const recentTxns = getTransactions({ limit: 5 });
-    const quickBuckets = getQuickBuckets();
-    const dueSoon = getDueSoonCommitments();
-
-    // Build leak warnings — suppressed on an expired cycle, where bucket
-    // pace is irrelevant and the payday banner is already shown above.
-    const leaks = [];
-    if (!cycleExpired) {
-      const buckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
-      const totalCycleDays = cycleDayCount(cycle.startDate, cycle.endDate);
-      const elapsed = totalCycleDays - daysLeft;
-      const timePercent = totalCycleDays > 0 ? (elapsed / totalCycleDays) * 100 : 0;
-
-      buckets.forEach(b => {
-        if (b.allocated > 0) {
-          const spentPct = (b.spent / b.allocated) * 100;
-          if (spentPct >= 80 && timePercent < 50) {
-            leaks.push(b);
-          }
-        } else if (b.spent > 0) {
-          leaks.push(b);
-        }
-      });
-    }
-
-    container.innerHTML = `
-      <div class="flex flex-col gap-6">
-        <!-- Payday Banner — shown when cycle has expired -->
-        ${cycleExpired ? `
-          <div class="card payday-banner" id="payday-banner" data-testid="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
-            <div class="flex items-center gap-3">
-              <span style="font-size: 28px;">🎉</span>
-              <div style="flex: 1; min-width: 0;">
-                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">It's payday!</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">Roll over your savings to start fresh.</p>
-              </div>
-              <span style="color: var(--accent-primary); font-size: var(--text-base);">→</span>
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- Safe to Spend Hero -->
-        <div class="card card--accent text-center safe-to-spend-card" style="padding: var(--space-7) var(--space-5);">
-          <p class="text-secondary safe-to-spend-card__label" style="font-size: var(--text-sm); margin-bottom: var(--space-2); text-transform: uppercase; letter-spacing: 0.1em;">Wants budget — safe to spend</p>
-          <div class="hero-amount-wrap" id="hero-amount-wrap">
-            <p class="text-mono" style="font-size: var(--text-hero); font-weight: var(--weight-black); background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.1;" id="hero-amount" data-testid="safe-to-spend">₹0</p>
-          </div>
-          <p class="text-tertiary mt-2 safe-to-spend-card__hint" style="font-size: var(--text-xs); line-height: 1.4; max-width: 280px; margin-left: auto; margin-right: auto;" data-testid="safe-to-spend-hint">Needs &amp; Future are set aside — this is your guilt-free Wants money for the next ${daysLeft} day${daysLeft === 1 ? '' : 's'} to payday.</p>
-        </div>
-
-        <!-- Quick Buckets Row -->
-        ${quickBuckets.length > 0 ? `
-          <div>
-            <div class="section-header" style="margin-bottom: var(--space-2);">
-              <span class="section-header__title">Quick Buckets</span>
-              <span class="text-tertiary" style="font-size: var(--text-xs); margin-left: var(--space-2);">— tap to log a spend</span>
-            </div>
-            <div class="quick-buckets">
-              ${quickBuckets.map(b => `
-                <div class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}">
-                  <div class="quick-bucket__emoji">${escapeHtml(b.emoji)}</div>
-                  <span class="quick-bucket__name">${escapeHtml(b.name)}</span>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        ` : ''}
-
-        <!-- Macro Health Bars -->
-        <div class="flex flex-col gap-4" id="macro-bars-container">
-          ${renderMacroBar('Needs', needsSummary, 'needs', needsReserved)}
-          ${renderMacroBar('Wants', wantsSummary, 'wants', wantsReserved)}
-          ${renderMacroBar('Future', futureSummary, 'future', futureReserved)}
-        </div>
-
-        <!-- Commitments Due Soon -->
-        ${dueSoon.length > 0 ? `
-          <div class="card" style="padding: var(--space-4);">
-            <div class="section-header" style="margin-bottom: var(--space-3);">
-              <span class="section-header__title">Due Soon</span>
-              <button class="btn btn-ghost" style="font-size: var(--text-xs);" onclick="window.location.hash='#/commitments'">Manage →</button>
-            </div>
-            ${dueSoon.map(c => renderCommitmentDueRow(c)).join('')}
-          </div>
-        ` : ''}
-
-        <!-- Recent Transactions -->
-        <div>
-          <div class="section-header">
-            <span class="section-header__title">Recent Transactions</span>
-            <button class="btn btn-ghost" style="font-size: var(--text-xs);" id="btn-see-all-txns">See all</button>
-          </div>
-          <div class="flex flex-col gap-2">
-            ${recentTxns.length > 0 
-              ? recentTxns.map(t => {
-                  const bucket = getBucketById(t.bucketId);
-                  return renderTransaction(
-                    bucket?.emoji || '📝',
-                    bucket?.name || 'Unknown',
-                    t.amount,
-                    timeAgo(t.timestamp),
-                    t.borrowedFrom ? getBucketById(t.borrowedFrom)?.name : null,
-                    t.note,
-                    t.type,
-                  );
-                }).join('')
-              : '<p class="text-tertiary text-center" data-testid="txn-empty-state" style="padding: var(--space-6); font-size: var(--text-sm);">No transactions yet. Tap the green ＋ button below to log your first.</p>'
-            }
-          </div>
-        </div>
-
-        <!-- Leak Warnings (hidden on expired cycle — see leak gate above) -->
-        ${cycleExpired ? '' : (leaks.length > 0 ? leaks.map(b => `
-          <div class="card leak-warning-card" data-leak-bucket-id="${escapeHtml(b.id)}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
-            <div class="flex items-center gap-3">
-              <span style="font-size: 24px;">⚡</span>
-              <div style="flex: 1; min-width: 0;">
-                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${escapeHtml(b.name)} — ${percent(b.spent, b.allocated)}% spent with ${daysLeft} day${daysLeft === 1 ? '' : 's'} left</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">Tap to log a spend here or adjust the budget.</p>
-              </div>
-            </div>
-          </div>
-        `).join('') : `
-          <div class="card insight-all-clear" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.06), transparent);">
-            <div class="flex items-center gap-3">
-              <span style="font-size: 24px;">✅</span>
-              <div>
-                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">All clear</p>
-                <p class="text-tertiary" style="font-size: var(--text-xs);">All buckets are on pace this pay period. Keep it up!</p>
-              </div>
-            </div>
-          </div>
-        `)}
-      </div>
-    `;
-
-    // Wire "See all" → transaction history
-    container.querySelector('#btn-see-all-txns')?.addEventListener('click', () => navigate('/transactions'));
-
-    // Animate health bars from 0 → target width (transition fires because style changes after paint)
-    requestAnimationFrame(() => {
-      container.querySelectorAll('[data-width]').forEach(el => {
-        el.style.width = `${el.dataset.width}%`;
-      });
+    return renderDashboardPage(container, {
+      // Show install banner only once the user has earned the prompt —
+      // gated on onboarding + ≥1 transaction inside _maybeShowInstallBanner.
+      onRenderComplete: _maybeShowInstallBanner,
     });
-
-    // Show install banner only once the user has earned the prompt:
-    // onboarding complete AND ≥1 transaction. Gated to avoid first-load nag.
-    _maybeShowInstallBanner();
-
-    // Wire quick-bucket chips → open modal pre-targeted
-    container.querySelectorAll('.quick-bucket[data-bucket-id]').forEach(chip => {
-      chip.addEventListener('click', () => {
-        openTransactionModal(chip.dataset.bucketId);
-      });
-    });
-
-    // Wire payday banner → navigate to payday ritual
-    if (cycleExpired) {
-      container.querySelector('#payday-banner')?.addEventListener('click', () => {
-        navigate('/payday');
-      });
-    }
-
-    // Wire leak warning cards → open modal pre-targeted to the hot bucket
-    container.querySelectorAll('.leak-warning-card[data-leak-bucket-id]').forEach(card => {
-      card.addEventListener('click', () => {
-        openTransactionModal(card.dataset.leakBucketId);
-      });
-    });
-
-    // Safe To Spend count-up animation
-    const heroAmount = document.getElementById('hero-amount');
-    const heroWrap = document.getElementById('hero-amount-wrap');
-    let timer;
-
-    if (heroAmount && heroWrap) {
-      // Quick count up effect
-      const duration = 600; // ms
-      const frames = 30;
-      const interval = duration / frames;
-      let currentFrame = 0;
-
-      heroWrap.classList.add('is-animating');
-      timer = setInterval(() => {
-        currentFrame++;
-        const progress = currentFrame / frames;
-        // easeOutQuart
-        const ease = 1 - Math.pow(1 - progress, 4);
-        const currentAmount = Math.round(safeToSpend * ease);
-        heroAmount.textContent = formatCurrency(currentAmount);
-
-        if (currentFrame >= frames) {
-          clearInterval(timer);
-          heroAmount.textContent = formatCurrency(safeToSpend);
-          setTimeout(() => heroWrap.classList.remove('is-animating'), 200);
-        }
-      }, interval);
-    }
-
-    // Attach expand/collapse listeners for Macro Bars
-    const macroBarsContainer = document.getElementById('macro-bars-container');
-    if (macroBarsContainer) {
-      macroBarsContainer.addEventListener('click', (e) => {
-        // Unallocated banner: shortcut to Settings — don't toggle the card too.
-        const unallocBanner = e.target.closest('.macro-card__unallocated');
-        if (unallocBanner) {
-          e.stopPropagation();
-          navigate('/settings');
-          return;
-        }
-        const card = e.target.closest('.macro-card');
-        if (card) {
-          card.classList.toggle('is-expanded');
-        }
-      });
-    }
-
-    return () => { if (timer) clearInterval(timer); };
   });
 
   // Settings
@@ -544,105 +303,6 @@ function registerRoutes() {
     const { renderPaydayPage } = await import('./pages/payday.js');
     renderPaydayPage(container);
   });
-}
-
-// ---- Helper Renderers ----
-
-/**
- * @param {string} label
- * @param {{ allocated: number, spent: number, remaining: number, percent: number, cycleAllocation: number, unallocated: number }} summary
- * @param {string} type
- * @param {number} [reserved=0]
- */
-function renderMacroBar(label, summary, type, reserved = 0) {
-  const remainingPct = 100 - summary.percent;
-  const isOverspent = summary.percent > 100;
-  const isFresh = summary.spent === 0 && summary.allocated > 0;
-  const unallocated = summary.unallocated ?? 0;
-  let fillClass = `health-bar__fill--${type}`;
-
-  if (isFresh) {
-    fillClass = 'health-bar__fill--fresh';
-  } else if (remainingPct <= 0) {
-    fillClass = 'health-bar__fill--depleted';
-  } else if (remainingPct <= 20 && type === 'wants') {
-    fillClass = 'health-bar__fill--warn';
-  }
-
-  const buckets = getBuckets(type);
-
-  return `
-    <div class="card macro-card" style="padding: var(--space-4);">
-      <div class="macro-card__header">
-        <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
-        <div class="flex items-center gap-2">
-          ${isOverspent ? `<span class="badge badge--amber" style="font-size: var(--text-xs);">Overspent by ${summary.percent - 100}%</span>` : ''}
-          <span class="text-mono text-secondary" style="font-size: var(--text-sm);">${formatCurrency(summary.remaining)}</span>
-          <svg class="macro-card__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
-        </div>
-      </div>
-      <div class="health-bar health-bar--lg" role="progressbar" aria-valuenow="${Math.max(0, remainingPct)}" aria-valuemin="0" aria-valuemax="100" aria-label="${label} budget: ${Math.max(0, remainingPct)}% remaining">
-        <div class="${fillClass} health-bar__fill" style="width:0" data-width="${Math.max(0, remainingPct)}"></div>
-      </div>
-      <div class="flex justify-between mt-2">
-        <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
-        <span class="text-tertiary" style="font-size: var(--text-xs);">${isFresh ? 'Nothing tracked yet' : `${Math.max(0, remainingPct)}% remaining`}</span>
-      </div>
-      ${unallocated !== 0 ? `
-        <div class="macro-card__unallocated"
-          role="button"
-          tabindex="0"
-          data-macro-jump-settings="1"
-          style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer;">
-          <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
-          <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
-          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'left to assign — tap Settings to add it to a bucket' : 'over-allocated — tap Settings to trim a bucket'}</span>
-        </div>
-      ` : ''}
-      ${reserved > 0 ? `
-        <div class="cm-reserved-hint" title="Recurring bills set aside before you spend. Manage in Settings → Commitments.">
-          <span>🔒</span>
-          <span class="cm-reserved-hint__amount">${formatCurrency(reserved)}</span>
-          <span>set aside for recurring bills</span>
-        </div>
-      ` : ''}
-
-      <div class="macro-card__buckets">
-        <div class="macro-card__buckets-inner">
-          ${buckets.length > 0 ? buckets.map(b => {
-            const bRemainingPct = b.allocated > 0 ? Math.max(0, 100 - (b.spent / b.allocated) * 100) : 0;
-            return `
-              <div class="micro-bucket-row">
-                <div class="micro-bucket-row__emoji">${escapeHtml(b.emoji)}</div>
-                <div class="micro-bucket-row__name">${escapeHtml(b.name)}</div>
-                <div class="micro-bucket-row__amount">${formatCurrency(Math.max(0, b.allocated - b.spent))}</div>
-                <div class="micro-bucket-row__progress">
-                  <div class="micro-bucket-row__fill ${fillClass}" style="width:0" data-width="${bRemainingPct}"></div>
-                </div>
-              </div>
-            `;
-          }).join('') : `<p class="text-tertiary text-center" style="font-size: var(--text-xs); padding: var(--space-2);">No buckets configured.</p>`}
-        </div>
-      </div>
-    </div>
-  `;
-}
-
-function renderTransaction(emoji, name, amount, time, borrowedFromName, note, type = 'expense') {
-  const isIncome = type === 'income' || type === 'refund';
-  return `
-    <div class="card" style="padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: var(--space-3);">
-      <span style="font-size: 22px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border-radius: var(--radius-md); flex-shrink: 0;">${escapeHtml(emoji)}</span>
-      <div style="flex: 1; min-width: 0;">
-        <div class="flex items-center gap-2">
-          <p class="font-medium" style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</p>
-          ${note ? `<span class="text-tertiary" style="font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">• ${escapeHtml(note)}</span>` : ''}
-        </div>
-        <p class="text-tertiary" style="font-size: var(--text-xs);">${escapeHtml(time)}${borrowedFromName ? ` · <span class="badge badge--amber" style="font-size: 10px; padding: 1px 6px;">from ${escapeHtml(borrowedFromName)}</span>` : ''}</p>
-      </div>
-      <span class="text-mono font-semibold" style="font-size: var(--text-sm); flex-shrink: 0; ${isIncome ? 'color: var(--accent-primary);' : ''}">${isIncome ? '+' : '−'}${formatCurrency(amount)}</span>
-    </div>
-  `;
 }
 
 // ---- Boot ----
