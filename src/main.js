@@ -300,23 +300,26 @@ function registerRoutes() {
     const quickBuckets = getQuickBuckets();
     const dueSoon = getDueSoonCommitments();
 
-    // Build leak warnings
+    // Build leak warnings — suppressed on an expired cycle, where bucket
+    // pace is irrelevant and the payday banner is already shown above.
     const leaks = [];
-    const buckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
-    const totalCycleDays = cycleDayCount(cycle.startDate, cycle.endDate);
-    const elapsed = totalCycleDays - daysLeft;
-    const timePercent = totalCycleDays > 0 ? (elapsed / totalCycleDays) * 100 : 0;
+    if (!cycleExpired) {
+      const buckets = [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')];
+      const totalCycleDays = cycleDayCount(cycle.startDate, cycle.endDate);
+      const elapsed = totalCycleDays - daysLeft;
+      const timePercent = totalCycleDays > 0 ? (elapsed / totalCycleDays) * 100 : 0;
 
-    buckets.forEach(b => {
-      if (b.allocated > 0) {
-        const spentPct = (b.spent / b.allocated) * 100;
-        if (spentPct >= 80 && timePercent < 50) {
+      buckets.forEach(b => {
+        if (b.allocated > 0) {
+          const spentPct = (b.spent / b.allocated) * 100;
+          if (spentPct >= 80 && timePercent < 50) {
+            leaks.push(b);
+          }
+        } else if (b.spent > 0) {
           leaks.push(b);
         }
-      } else if (b.spent > 0) {
-        leaks.push(b);
-      }
-    });
+      });
+    }
 
     container.innerHTML = `
       <div class="flex flex-col gap-6">
@@ -404,8 +407,8 @@ function registerRoutes() {
           </div>
         </div>
 
-        <!-- Leak Warnings -->
-        ${leaks.length > 0 ? leaks.map(b => `
+        <!-- Leak Warnings (hidden on expired cycle — see leak gate above) -->
+        ${cycleExpired ? '' : (leaks.length > 0 ? leaks.map(b => `
           <div class="card leak-warning-card" data-leak-bucket-id="${b.id}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
             <div class="flex items-center gap-3">
               <span style="font-size: 24px;">⚡</span>
@@ -425,7 +428,7 @@ function registerRoutes() {
               </div>
             </div>
           </div>
-        `}
+        `)}
       </div>
     `;
 

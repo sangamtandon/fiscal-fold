@@ -200,7 +200,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-010] Leak warnings still render when cycle is expired (misleading on payday screen)
+### ✅ [DEBT-010] Leak warnings still render when cycle is expired — fixed (gated behind !cycleExpired)
 - **File:** `src/main.js` (lines 304–319, 407–427)
 - **Category:** Refactor
 - **Severity:** Medium
