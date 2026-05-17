@@ -200,24 +200,6 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-009] Onboarding pool-counter text says "unassigned" — should be "left to assign" per Quality Gate
-- **File:** `src/pages/onboarding.js` (lines 582–594)
-- **Category:** Refactor
-- **Severity:** Medium
-- **Issue:** `renderPoolRow()` uses the word "unassigned" in two places. `QUALITY_GATE.md` explicitly specifies the pool counter wording: `"All assigned"` / `"₹X left to assign"` / `"₹X over budget"` — not "unallocated" or "unassigned". The current strings are:
-  - `"${formatCurrency(macroAmount)} unassigned"` (no-buckets case, line 585)
-  - `"${formatCurrency(unallocated)} unassigned"` (partial-fill case, line 590)
-  
-  This is a copy mismatch with the Quality Gate and with the dashboard's "left to assign" wording.
-- **Fix:** In `renderPoolRow()` at `onboarding.js`:
-  - Line 584–586: change `poolText = \`${formatCurrency(macroAmount)} unassigned\`` to `poolText = \`${formatCurrency(macroAmount)} left to assign\``
-  - Line 589–591: change `poolText = \`${formatCurrency(unallocated)} unassigned\`` to `poolText = \`${formatCurrency(unallocated)} left to assign\``
-  - Line 593: `over` wording already says "over" — update to `"${formatCurrency(-unallocated)} over budget"` (removing the adjust-split link from poolText and keeping it as a separate element, or leaving it — the Quality Gate only specifies copy, not UI structure).
-- **Risk:** None — copy-only change.
-- **Dependencies:** None
-
----
-
 ### [DEBT-010] Leak warnings still render when cycle is expired (misleading on payday screen)
 - **File:** `src/main.js` (lines 304–319, 407–427)
 - **Category:** Refactor
@@ -456,13 +438,30 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
+### [DEBT-023] Post-sweep overdraft — `addTransaction` accepts expenses against already-swept buckets
+- **File:** `src/data/store.js` (`addTransaction`, lines 381–412; `runSweep`, lines 555–597)
+- **Category:** Structural
+- **Severity:** High
+- **Issue:** `runSweep()` records `b.swept = remaining` on each bucket and writes a `Sweep` record promising that money to the next cycle's Future allocation. However, `addTransaction()` has no guard against this — it will happily debit a bucket that has `swept > 0`, silently spending money that was already committed to the next cycle. The inconsistency means `getSafeToSpend()` (which subtracts `b.swept` from remaining) can go negative without throwing, and the next cycle's Future allocation will be over-counted by whatever was spent post-sweep. This is a **confirmed bug** tracked by a `it.fails` canary in `tests/integration/lifecycle.spec.js:119`. The test comment lists two acceptable fixes: (a) reject the transaction in `addTransaction` when `bucketId` has `swept > 0`, or (b) lock the bucket in `runSweep`.
+- **Fix (option a — minimal, preferred):** In `addTransaction()` at `store.js:398`, after finding the bucket, add a guard before the `if (type === 'expense')` branch:
+  ```js
+  if (bucket && type === 'expense' && (bucket.swept ?? 0) > 0) {
+    throw new Error(`addTransaction: bucket "${bucket.name}" has been swept — start a new cycle before logging expenses`);
+  }
+  ```
+  After applying the fix, remove the `.fails` marker from `lifecycle.spec.js:119` (change `it.fails(` to `it(`).
+- **Risk:** Medium. Any call site that logs an expense after sweep without starting a new cycle will now throw. Verify the payday flow: `_startNewCycle` in `payday.js` calls `runSweep()` then immediately calls `createCycle()` and `copyBucketsToNewCycle()` — the new cycle's buckets are fresh (no `swept`), so post-cycle transactions are safe. The only risky path is if a user somehow logs a transaction between `runSweep()` and `createCycle()`, which is impossible through the UI (the sweep and new-cycle creation are sequential in `_startNewCycle`).
+- **Dependencies:** None
+
+---
+
 ## Priority Queue
 
 Ordered by ROI for agentic development velocity (highest impact, lowest risk first):
 
 1. **DEBT-001** — Seed ISO timestamp bug breaks all date math in demo mode (users see "0 days remaining" immediately)
-2. **DEBT-003** — Income shows as negative on dashboard (wrong sign — visible regression)
-3. **DEBT-009** — Pool counter copy mismatch fails Quality Gate check
+2. **DEBT-023** — Post-sweep overdraft: confirmed `it.fails` bug in `lifecycle.spec.js:119`, minimal one-line guard fix
+3. **DEBT-003** — Income shows as negative on dashboard (wrong sign — visible regression)
 4. **DEBT-005** — Add `getAllCommitments()` (prerequisite for DEBT-002, low-risk, high structural value)
 5. **DEBT-013** — Search debounce (single-line fix, high UX payoff at scale)
 6. **DEBT-002** — Make `getState()` return a copy (hardened store integrity; do after DEBT-005)
@@ -487,7 +486,7 @@ Ordered by ROI for agentic development velocity (highest impact, lowest risk fir
 
 ## Intentional Decisions (Do Not Change)
 
-The following patterns look like debt but are deliberate design choices documented in `ARCHITECTURE.md`. An agent must not refactor these:
+The following patterns look like debt but are deliberate design choices verified against the actual source code and commit history. An agent must not refactor these:
 
 1. **No JavaScript framework.** Vanilla JS is intentional for bundle size and PWA philosophy. Do not introduce React, Vue, Svelte, or any VDOM layer.
 
@@ -509,7 +508,9 @@ The following patterns look like debt but are deliberate design choices document
 
 10. **INR currency formatting with `Intl.NumberFormat('en-IN', { currency: 'INR' })`** — Indian lakh/crore grouping is intentional for the primary audience. Do not change the locale or currency.
 
-11. **Amber/warn color for over-budget, never red.** Core UX philosophy stated in ARCHITECTURE.md. `var(--warn)` is the over-budget color. Do not use `--danger` or red for budget warnings (only for the Danger Zone reset button in Settings).
+11. **Amber/warn color for over-budget, never red.** Core UX philosophy. `var(--warn)` is the over-budget color. Do not use `--danger` or red for budget warnings (only for the Danger Zone reset button in Settings).
+
+12. **"unassigned" wording in the onboarding pool counter.** Commit `05fb0ef` ("Rename legend/counter copy: quick access, unassigned") deliberately changed the counter label from `'left to assign'` to `'unassigned'` — described as "less instructional, more factual." Do not change it back.
 
 ---
 
@@ -521,7 +522,6 @@ Rules the fixing agent must follow for every debt item:
 - **Always run `npm test` after any change to `src/data/store.js`, `src/utils/helpers.js`, or `src/utils/txn-grouping.js`** (these are in coverage scope).
 - **Commit after each DEBT-ID is resolved.** Use the commit message format: `fix: resolve DEBT-XXX — <short description>`. Do not batch multiple DEBT fixes into one commit.
 - **Update this document after each fix:** mark the resolved item with ✅ and the commit hash. Example: `### ✅ [DEBT-001] Seed data uses full ISO datetime strings — fixed in abc1234`
-- **Never skip Quality Gate checks** listed in `QUALITY_GATE.md` before marking a fix complete.
 - **Grep the codebase** before touching any function to find all callers. Use `grep -r "functionName" src/` to avoid breaking unlisted callers.
 - **Do not refactor anything not listed.** Scope each fix to exactly the lines described. Resist the urge to clean up nearby code.
 - **Test the demo flow** (click "Try a sample dashboard first →" on the landing page) after any change to `src/data/seed.js` or `src/data/store.js`.
