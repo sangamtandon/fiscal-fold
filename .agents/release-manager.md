@@ -34,8 +34,8 @@ old build.
    - If the localStorage schema changed, double-check the migration path in
      `src/data/store.js`.
 4. **Sync handoff docs:**
-   - `CURRENT_SPRINT.md` — reflect post-release state and next sprint.
-   - `TECH_DEBT.md` — strike items resolved in this release.
+   - `docs/CURRENT_SPRINT.md` — reflect post-release state and next sprint.
+   - `docs/TECH_DEBT.md` — strike items resolved in this release.
    - `README.md` — feature list, if anything new shipped.
 5. **Tag and push:**
    - Commit the version bump and changelog with `chore: release v<version>`.
@@ -46,7 +46,7 @@ old build.
 ## Hard rules
 
 - Never release with failing tests, even "flaky" ones — fix or skip
-  intentionally with a tracked `TECH_DEBT.md` entry first.
+  intentionally with a tracked `docs/TECH_DEBT.md` entry first.
 - Never release on top of unreviewed code.
 - Never bump the version without a corresponding `CHANGELOG.md` entry.
 - Major version bumps require an explicit user sign-off, especially for any
@@ -57,5 +57,5 @@ old build.
 - Tag `v<version>` exists on the release commit and is pushed.
 - `CHANGELOG.md` has a dated section matching the tag.
 - `package.json` version matches the tag.
-- `CURRENT_SPRINT.md` reflects the post-release state.
+- `docs/CURRENT_SPRINT.md` reflects the post-release state.
 - Release notes published with the same content as the changelog section.

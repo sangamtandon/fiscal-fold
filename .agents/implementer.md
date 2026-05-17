@@ -38,16 +38,20 @@ surface area, matching existing patterns in this repo.
 ## Hard constraints
 
 - No new runtime dependencies without explicit user approval.
-- No TypeScript, no framework, no CSS preprocessor (see `AGENTS.md` hard
-  rules).
+- No TypeScript, no framework, no CSS preprocessor (see `AGENTS.md`
+  "Intentional decisions" and "Hard don'ts").
 - UX copy verbatim from `docs/UX_GLOSSARY.md`. New copy is added to the
   glossary in the same change.
-- Warnings are warm amber, never red. Touch targets ≥ 44 px. Visible focus
-  rings.
+- **HTML injection:** any user-controlled string (bucket name, note,
+  description) interpolated into `innerHTML` MUST go through
+  `escapeHtml(str)` from `src/utils/helpers.js`. No exceptions.
+- Use `var(--warn)` for warnings (amber); `var(--danger)` is reserved for
+  the Settings Danger Zone. Never use red for warn states.
+- Touch targets ≥ 44 px. Visible focus rings on all interactive elements.
 - If you change the localStorage schema, include a migration in
   `src/data/store.js` that handles existing user data and note it in
   `CHANGELOG.md`.
-- No `console.log` in committed code.
+- No `console.log` / `debugger` in committed code.
 
 ## Definition of done
 
@@ -56,8 +60,8 @@ surface area, matching existing patterns in this repo.
   `.agents/tester.md`).
 - `npm run dev` shows no console errors and the touched screens render at
   375 px width.
-- For UI work, you've manually walked the relevant `QUALITY_GATE.md` items
-  for each touched screen.
+- For UI work, you've manually walked the relevant `docs/QUALITY_GATE.md`
+  items for each touched screen.
 - Docs updated per `.agents/documenter.md` when behaviour or copy changed.
 
 ## Stop conditions

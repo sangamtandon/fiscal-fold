@@ -11,16 +11,16 @@ counterpart in this repo — your job is to keep them in sync.
 
 ## Files to update, per change type
 
-| Change type                             | Update                                                                 |
-| --------------------------------------- | ---------------------------------------------------------------------- |
-| New user-visible feature                | `README.md` (features), `CHANGELOG.md`, `CURRENT_SPRINT.md`            |
-| New or changed user-facing copy         | `docs/UX_GLOSSARY.md`                                                  |
-| Architectural change (store, router,    | `ARCHITECTURE.md` — file map, store API, design decisions sections     |
-| PWA, build pipeline)                    |                                                                        |
-| Resolved tech debt                      | Strike or move the item in `TECH_DEBT.md`                              |
-| New regression risk or QA case          | Add to the relevant screen section in `QUALITY_GATE.md`                |
-| Release                                 | `CHANGELOG.md` new dated heading; `CURRENT_SPRINT.md` post-release state |
-| New repo-level convention               | `AGENTS.md` and, if role-specific, the matching `.agents/<role>.md`    |
+| Change type                             | Update                                                                          |
+| --------------------------------------- | ------------------------------------------------------------------------------- |
+| New user-visible feature                | `README.md` (features), `CHANGELOG.md`, `docs/CURRENT_SPRINT.md`                |
+| New or changed user-facing copy         | `docs/UX_GLOSSARY.md`                                                           |
+| Architectural change (store, router,    | `docs/ARCHITECTURE.md` — file map, store API, design decisions sections         |
+| PWA, build pipeline)                    |                                                                                 |
+| Resolved tech debt                      | Strike or move the item in `docs/TECH_DEBT.md`                                  |
+| New regression risk or QA case          | Add to the relevant screen section in `docs/QUALITY_GATE.md`                    |
+| Release                                 | `CHANGELOG.md` new dated heading; `docs/CURRENT_SPRINT.md` post-release state   |
+| New repo-level convention               | `AGENTS.md` and, if role-specific, the matching `.agents/<role>.md`             |
 
 ## Style
 
@@ -28,7 +28,7 @@ counterpart in this repo — your job is to keep them in sync.
   user-impact framed where applicable.
 - Date `CHANGELOG.md` entries and group them under sprint or release headings
   consistent with existing format.
-- Reference PRs, sprints, or `TECH_DEBT.md` IDs where useful for traceability.
+- Reference PRs, sprints, or `docs/TECH_DEBT.md` IDs where useful for traceability.
 - Keep `docs/UX_GLOSSARY.md` exact — the strings there must match what ships
   in the UI, character-for-character.
 
@@ -38,7 +38,7 @@ counterpart in this repo — your job is to keep them in sync.
   doc per the table above.
 - New UX copy is in `docs/UX_GLOSSARY.md` before the PR is reviewed (the
   reviewer will check).
-- `CURRENT_SPRINT.md` reflects the post-merge state, not the pre-merge state.
+- `docs/CURRENT_SPRINT.md` reflects the post-merge state, not the pre-merge state.
 
 ## Stop conditions
 

@@ -180,7 +180,7 @@ The preset identifiers in `models.js` are `balanced`, `aggressive`, `conservativ
 
 ### Glossary
 
-For all user-facing terminology (Needs/Wants/Future, Bucket, Quick Bucket, Cycle, Commitment, Trade-off/Cover, Safe to Spend, etc.), see [`docs/UX_GLOSSARY.md`](docs/UX_GLOSSARY.md).
+For all user-facing terminology (Needs/Wants/Future, Bucket, Quick Bucket, Cycle, Commitment, Trade-off/Cover, Safe to Spend, etc.), see [`UX_GLOSSARY.md`](UX_GLOSSARY.md).
 
 ---
 

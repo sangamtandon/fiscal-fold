@@ -55,9 +55,10 @@ Copy this when starting a new feature conversation:
 I'm working on Fiscal Fold.
 
 Read these files for context:
-- ARCHITECTURE.md (tech stack, file map, store API)
+- AGENTS.md (project-wide conventions and agent workflow)
+- docs/ARCHITECTURE.md (tech stack, file map, store API)
 - CHANGELOG.md (what's been built so far)
-- QUALITY_GATE.md (pre-merge checklist)
+- docs/QUALITY_GATE.md (pre-merge checklist)
 
 Task: <describe the feature or fix>
 Create a feature branch off main, implement the task, run the quality gate,
