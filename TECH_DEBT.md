@@ -418,7 +418,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-022] Service worker cache version `'fiscal-fold-v1'` is hardcoded — stale assets after deploy
+### ✅ [DEBT-022] Service worker cache version hardcoded — fixed (build-time token replacement via vite.config.js plugin)
 - **File:** `public/sw.js` (line 9)
 - **Category:** Observability
 - **Severity:** Low
