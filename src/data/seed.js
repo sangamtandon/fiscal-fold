@@ -22,6 +22,10 @@ function generateSeedState() {
   const now = new Date();
   const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  // Formats a Date as YYYY-MM-DD in local time (not UTC). toISOString() shifts
+  // by UTC offset and produces a datetime string that breaks split('-')[2] date math.
+  const fmtLocal = d =>
+    `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const cycleId = uid();
   const salary = 168000;
   const ratios = { needs: 50, wants: 30, future: 20 };
@@ -225,8 +229,8 @@ function generateSeedState() {
     },
     cycles: [{
       id: cycleId,
-      startDate: cycleStart.toISOString(),
-      endDate: cycleEnd.toISOString(),
+      startDate: fmtLocal(cycleStart),
+      endDate: fmtLocal(cycleEnd),
       salary,
       allocations,
       isActive: true,
