@@ -27,6 +27,13 @@ function generateSeedState() {
   const fmtLocal = d =>
     `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   const cycleId = uid();
+  // Pre-generated bucket IDs (UUIDs, not string counters) so seed data matches
+  // production ID format. Transaction references below use these by index.
+  const ids = {
+    needs: Array.from({ length: 5 }, uid),
+    wants: Array.from({ length: 6 }, uid),
+    future: Array.from({ length: 3 }, uid),
+  };
   const salary = 168000;
   const ratios = { needs: 50, wants: 30, future: 20 };
   const allocations = {
@@ -49,7 +56,7 @@ function generateSeedState() {
 
   needsBuckets.forEach((b, i) => {
     buckets.push({
-      id: `needs-${i}`,
+      id: ids.needs[i],
       cycleId,
       macroType: 'needs',
       name: b.name,
@@ -74,7 +81,7 @@ function generateSeedState() {
 
   wantsBuckets.forEach((b, i) => {
     buckets.push({
-      id: `wants-${i}`,
+      id: ids.wants[i],
       cycleId,
       macroType: 'wants',
       name: b.name,
@@ -96,7 +103,7 @@ function generateSeedState() {
 
   futureBuckets.forEach((b, i) => {
     buckets.push({
-      id: `future-${i}`,
+      id: ids.future[i],
       cycleId,
       macroType: 'future',
       name: b.name,
@@ -114,50 +121,50 @@ function generateSeedState() {
 
   const txnData = [
     // Day 1
-    { bucket: 'needs-0', amount: 2450, note: 'Weekly groceries - BigBasket', daysAgo: 11 },
-    { bucket: 'needs-1', amount: 350, note: 'Auto to office', daysAgo: 11 },
+    { bucket: ids.needs[0], amount: 2450, note: 'Weekly groceries - BigBasket', daysAgo: 11 },
+    { bucket: ids.needs[1], amount: 350, note: 'Auto to office', daysAgo: 11 },
     // Day 2
-    { bucket: 'wants-0', amount: 780, note: 'Dinner at Barbeque Nation', daysAgo: 10 },
-    { bucket: 'wants-2', amount: 40, note: 'Cutting chai x2', daysAgo: 10 },
+    { bucket: ids.wants[0], amount: 780, note: 'Dinner at Barbeque Nation', daysAgo: 10 },
+    { bucket: ids.wants[2], amount: 40, note: 'Cutting chai x2', daysAgo: 10 },
     // Day 3
-    { bucket: 'needs-1', amount: 280, note: 'Uber to meeting', daysAgo: 9 },
-    { bucket: 'wants-5', amount: 199, note: 'Spotify monthly', daysAgo: 9 },
+    { bucket: ids.needs[1], amount: 280, note: 'Uber to meeting', daysAgo: 9 },
+    { bucket: ids.wants[5], amount: 199, note: 'Spotify monthly', daysAgo: 9 },
     // Day 4
-    { bucket: 'needs-2', amount: 3200, note: 'Electricity bill', daysAgo: 8 },
-    { bucket: 'wants-2', amount: 80, note: 'Tea + samosa', daysAgo: 8 },
+    { bucket: ids.needs[2], amount: 3200, note: 'Electricity bill', daysAgo: 8 },
+    { bucket: ids.wants[2], amount: 80, note: 'Tea + samosa', daysAgo: 8 },
     // Day 5
-    { bucket: 'wants-0', amount: 450, note: 'Lunch with team', daysAgo: 7 },
-    { bucket: 'needs-0', amount: 890, note: 'Fruits & vegetables', daysAgo: 7 },
+    { bucket: ids.wants[0], amount: 450, note: 'Lunch with team', daysAgo: 7 },
+    { bucket: ids.needs[0], amount: 890, note: 'Fruits & vegetables', daysAgo: 7 },
     // Day 6
-    { bucket: 'wants-1', amount: 599, note: 'Movie - Pushpa 3', daysAgo: 6 },
-    { bucket: 'wants-2', amount: 60, note: 'Popcorn + cold coffee', daysAgo: 6 },
+    { bucket: ids.wants[1], amount: 599, note: 'Movie - Pushpa 3', daysAgo: 6 },
+    { bucket: ids.wants[2], amount: 60, note: 'Popcorn + cold coffee', daysAgo: 6 },
     // Day 7
-    { bucket: 'needs-0', amount: 1850, note: 'Weekly groceries', daysAgo: 5 },
-    { bucket: 'wants-3', amount: 2499, note: 'Running shoes - Decathlon', daysAgo: 5 },
+    { bucket: ids.needs[0], amount: 1850, note: 'Weekly groceries', daysAgo: 5 },
+    { bucket: ids.wants[3], amount: 2499, note: 'Running shoes - Decathlon', daysAgo: 5 },
     // Day 8
-    { bucket: 'needs-1', amount: 420, note: 'Metro + auto', daysAgo: 4 },
-    { bucket: 'wants-0', amount: 320, note: 'Biryani - Swiggy', daysAgo: 4 },
+    { bucket: ids.needs[1], amount: 420, note: 'Metro + auto', daysAgo: 4 },
+    { bucket: ids.wants[0], amount: 320, note: 'Biryani - Swiggy', daysAgo: 4 },
     // Day 9
-    { bucket: 'wants-4', amount: 1200, note: 'Haircut + grooming', daysAgo: 3 },
-    { bucket: 'wants-2', amount: 30, note: 'Chai break', daysAgo: 3 },
+    { bucket: ids.wants[4], amount: 1200, note: 'Haircut + grooming', daysAgo: 3 },
+    { bucket: ids.wants[2], amount: 30, note: 'Chai break', daysAgo: 3 },
     // Day 10
-    { bucket: 'needs-3', amount: 850, note: 'Pharmacy - vitamins', daysAgo: 2 },
-    { bucket: 'wants-0', amount: 650, note: 'Pizza party with friends', daysAgo: 2 },
+    { bucket: ids.needs[3], amount: 850, note: 'Pharmacy - vitamins', daysAgo: 2 },
+    { bucket: ids.wants[0], amount: 650, note: 'Pizza party with friends', daysAgo: 2 },
     // Day 11
-    { bucket: 'needs-0', amount: 1240, note: 'Groceries', daysAgo: 1 },
-    { bucket: 'wants-2', amount: 80, note: 'Chai & snacks', daysAgo: 1 },
+    { bucket: ids.needs[0], amount: 1240, note: 'Groceries', daysAgo: 1 },
+    { bucket: ids.wants[2], amount: 80, note: 'Chai & snacks', daysAgo: 1 },
     // Day 12 (today)
-    { bucket: 'wants-0', amount: 450, note: 'Lunch - South Indian', daysAgo: 0 },
-    { bucket: 'needs-1', amount: 280, note: 'Auto ride', daysAgo: 0 },
+    { bucket: ids.wants[0], amount: 450, note: 'Lunch - South Indian', daysAgo: 0 },
+    { bucket: ids.needs[1], amount: 280, note: 'Auto ride', daysAgo: 0 },
   ];
 
   // One trade-off transaction
   const tradeOffTxn = {
-    bucket: 'wants-1',
+    bucket: ids.wants[1],
     amount: 1500,
     note: 'Concert tickets (borrowed from Shopping)',
     daysAgo: 4,
-    borrowedFrom: 'wants-3',
+    borrowedFrom: ids.wants[3],
     borrowedAmount: 500,
   };
 

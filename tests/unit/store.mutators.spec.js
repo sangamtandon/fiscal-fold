@@ -202,6 +202,23 @@ describe('addIncome', () => {
     expect(updated.allocations.wants).toBe(cycleBefore.allocations.wants + 3000);
     expect(updated.allocations.future).toBe(cycleBefore.allocations.future + 2000);
   });
+
+  it('without target bucket: records an income transaction with bucketId=null (DEBT-007)', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    store.addIncome(5000, undefined, 'Freelance');
+    const incomeTxns = store.getAllTransactions().filter(t => t.type === 'income');
+    expect(incomeTxns.length).toBe(1);
+    expect(incomeTxns[0].bucketId).toBeNull();
+    expect(incomeTxns[0].amount).toBe(5000);
+    expect(incomeTxns[0].note).toBe('Freelance');
+  });
+
+  it('without target bucket: default note is "Added to overall budget"', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    store.addIncome(5000);
+    const incomeTxns = store.getAllTransactions().filter(t => t.type === 'income');
+    expect(incomeTxns[0].note).toBe('Added to overall budget');
+  });
 });
 
 describe('runSweep', () => {
@@ -295,6 +312,24 @@ describe('removeTransaction', () => {
 
     store.removeTransaction(refund.id);
     expect(store.getBucketById(wants.id).spent).toBe(1000);
+  });
+
+  it('reverses untargeted income — cycle.salary and macro allocations restored (DEBT-007)', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    const before = {
+      salary: store.getCurrentCycle().salary,
+      allocations: { ...store.getCurrentCycle().allocations },
+    };
+    store.addIncome(10000);
+    const incomeTxn = store.getAllTransactions().find(t => t.type === 'income');
+    expect(incomeTxn.bucketId).toBeNull();
+
+    store.removeTransaction(incomeTxn.id);
+    const after = store.getCurrentCycle();
+    expect(after.salary).toBe(before.salary);
+    expect(after.allocations.needs).toBe(before.allocations.needs);
+    expect(after.allocations.wants).toBe(before.allocations.wants);
+    expect(after.allocations.future).toBe(before.allocations.future);
   });
 
   it('reverses income — bucket.allocated drops back, cycle.allocations follows', async () => {

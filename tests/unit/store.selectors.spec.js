@@ -140,6 +140,30 @@ describe('getAllCommitments', () => {
   });
 });
 
+describe('getState', () => {
+  it('returns a snapshot — mutating the returned arrays does not affect store state', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    const snapshot = store.getState();
+    const bucketsLen = snapshot.buckets.length;
+    snapshot.buckets.push({ id: 'fake', cycleId: 'x', name: 'fake' });
+    snapshot.commitments.push({ id: 'fake-c' });
+    // Live store unchanged
+    expect(store.getState().buckets.length).toBe(bucketsLen);
+    expect(store.getAllCommitments().length).toBe(0);
+  });
+
+  it('exposes the same data fields as the internal state', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    const snapshot = store.getState();
+    expect(snapshot.user).toBeDefined();
+    expect(Array.isArray(snapshot.cycles)).toBe(true);
+    expect(Array.isArray(snapshot.buckets)).toBe(true);
+    expect(Array.isArray(snapshot.transactions)).toBe(true);
+    expect(Array.isArray(snapshot.commitments)).toBe(true);
+    expect(Array.isArray(snapshot.sweeps)).toBe(true);
+  });
+});
+
 describe('getCurrentCycle / isCycleExpired / getBuckets', () => {
   it('getCurrentCycle returns null when no cycle is set', async () => {
     const store = await freshStore();

@@ -11,11 +11,11 @@ test('users can delete a transaction from history; the bucket budget is restored
   await page.goto('/#/transactions');
   await expect(page.locator('.txn-row')).toHaveCount(3);
 
-  // Auto-accept the confirm() dialog
-  page.once('dialog', async d => { await d.accept(); });
-
-  // Delete the Dining transaction (₹4,000)
+  // Click delete on the Dining transaction — opens inline confirmation strip
   await page.locator('.txn-row', { hasText: 'Dining' }).locator('[data-delete-txn]').click({ force: true });
+
+  // Confirm in-row
+  await page.locator('[data-txn-confirm]').click();
 
   // Row gone
   await expect(page.locator('.txn-row', { hasText: 'Dining' })).toHaveCount(0);

@@ -18,7 +18,7 @@ import {
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
-import { formatCurrency, formatNumber, uid, formatPayday } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, uid, formatPayday, escapeHtml } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
@@ -153,14 +153,14 @@ function renderStep1(container) {
         class="input-field onboarding__name-input"
         id="input-name"
         placeholder="Your first name"
-        value="${formData.name}"
+        value="${escapeHtml(formData.name)}"
         autocomplete="given-name"
         maxlength="20"
         autofocus
       />
     </div>
     <div class="onboarding__preview card card--glass" id="greeting-preview" style="${formData.name ? '' : 'opacity: 0.3;'}">
-      <span class="app-header__name">${formData.name ? `Hey, ${formData.name} 👋` : 'Hey, ... 👋'}</span>
+      <span class="app-header__name">${formData.name ? `Hey, ${escapeHtml(formData.name)} 👋` : 'Hey, ... 👋'}</span>
       <span class="app-header__subtitle">Your finances, your rules.</span>
     </div>
   `;
@@ -342,7 +342,7 @@ function renderStep3(container) {
   `;
 
   setNextEnabled(true);
-  renderDonut();
+  renderDonut(container);
 
   // Preset chips
   container.querySelectorAll('.onboarding__preset-chip').forEach(chip => {
@@ -360,8 +360,8 @@ function renderStep3(container) {
         formData.ratios = { ...PRESETS[preset] };
       }
 
-      updateAllocCards(salary);
-      renderDonut();
+      updateAllocCards(salary, container);
+      renderDonut(container);
     });
   });
 
@@ -388,8 +388,8 @@ function renderStep3(container) {
       container.querySelector('#slider-wants-val').textContent = `${formData.ratios.wants}%`;
       container.querySelector('#slider-future-val').textContent = `${futureVal}%`;
 
-      updateAllocCards(salary);
-      renderDonut();
+      updateAllocCards(salary, container);
+      renderDonut(container);
     });
   });
 }
@@ -419,9 +419,9 @@ function renderSlider(type, label, value) {
   `;
 }
 
-function updateAllocCards(salary) {
+function updateAllocCards(salary, scope = document) {
   ['needs', 'wants', 'future'].forEach(type => {
-    const card = document.querySelector(`#alloc-${type}`);
+    const card = scope.querySelector(`#alloc-${type}`);
     if (!card) return;
     const pct = formData.ratios[type];
     const amount = Math.round(salary * pct / 100);
@@ -430,8 +430,8 @@ function updateAllocCards(salary) {
   });
 }
 
-function renderDonut() {
-  const svg = document.getElementById('donut-chart');
+function renderDonut(scope = document) {
+  const svg = scope.querySelector('#donut-chart');
   if (!svg) return;
 
   // Read live CSS var values so the donut matches dashboard macro colors
@@ -493,6 +493,7 @@ function renderStep4(container) {
 
   setNextEnabled(true);
   wireUpBucketEvents(container);
+  bindBucketDuePickers(container);
 }
 
 function renderBucketSection(macroType, label) {
@@ -536,39 +537,47 @@ function renderBucketSection(macroType, label) {
 
 function renderBucketItem(bucket, macroType) {
   return `
-    <div class="onboarding__bucket-item" data-id="${bucket.id}" data-macro="${macroType}">
-      <span class="onboarding__bucket-emoji">${bucket.emoji}</span>
-      <input
-        type="text"
-        class="onboarding__bucket-name"
-        value="${bucket.name}"
-        placeholder="Bucket name"
-        maxlength="25"
-        data-id="${bucket.id}"
-        data-macro="${macroType}"
-      />
-      <div class="onboarding__amount-wrap">
-        <span class="onboarding__amount-prefix">₹</span>
+    <div class="onboarding__bucket-wrap" data-id="${escapeHtml(bucket.id)}" data-macro="${macroType}">
+      <div class="onboarding__bucket-item">
+        <span class="onboarding__bucket-emoji">${escapeHtml(bucket.emoji)}</span>
         <input
-          type="number"
-          class="onboarding__bucket-allocated"
-          value="${bucket.allocated ?? 0}"
-          min="0"
-          inputmode="numeric"
-          data-id="${bucket.id}"
+          type="text"
+          class="onboarding__bucket-name"
+          value="${escapeHtml(bucket.name)}"
+          placeholder="Bucket name"
+          maxlength="25"
+          data-id="${escapeHtml(bucket.id)}"
           data-macro="${macroType}"
-          placeholder="0"
         />
+        <div class="onboarding__amount-wrap">
+          <span class="onboarding__amount-prefix">₹</span>
+          <input
+            type="number"
+            class="onboarding__bucket-allocated"
+            value="${bucket.allocated ?? 0}"
+            min="0"
+            inputmode="numeric"
+            data-id="${bucket.id}"
+            data-macro="${macroType}"
+            placeholder="0"
+          />
+        </div>
+        <button class="onboarding__bucket-recurring ${bucket.isRecurring ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Fixed monthly bill — will be set up as a Commitment">
+          🔄
+        </button>
+        <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket">
+          📌
+        </button>
+        <button class="onboarding__bucket-remove" data-id="${bucket.id}" data-macro="${macroType}" title="Remove">
+          ×
+        </button>
       </div>
-      <button class="onboarding__bucket-recurring ${bucket.isRecurring ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Fixed monthly bill — will be set up as a Commitment">
-        🔄
-      </button>
-      <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket">
-        📌
-      </button>
-      <button class="onboarding__bucket-remove" data-id="${bucket.id}" data-macro="${macroType}" title="Remove">
-        ×
-      </button>
+      ${bucket.isRecurring ? `
+        <div class="onboarding__bucket-due" data-bucket-id="${bucket.id}" data-macro="${macroType}">
+          <span class="onboarding__bucket-due__label">Due on</span>
+          ${renderDayPicker({ value: bucket.dueDate ?? 1, selectId: `due-${bucket.id}` })}
+        </div>
+      ` : ''}
     </div>
   `;
 }
@@ -608,7 +617,20 @@ function refreshBucketSections(container) {
       renderBucketSection('needs', 'Needs') +
       renderBucketSection('wants', 'Wants') +
       renderBucketSection('future', 'Future');
+    bindBucketDuePickers(container);
   }
+}
+
+function bindBucketDuePickers(container) {
+  // Each recurring bucket renders its own inline day picker. The picker's
+  // selectId is suffixed with the bucket id so they don't collide.
+  container.querySelectorAll('.onboarding__bucket-due[data-bucket-id]').forEach(el => {
+    const bucketId = el.dataset.bucketId;
+    const macro = el.dataset.macro;
+    const bucket = formData.buckets[macro].find(b => b.id === bucketId);
+    if (!bucket) return;
+    bindDayPicker(el, { selectId: `due-${bucketId}` }, v => { bucket.dueDate = v; });
+  });
 }
 
 function updatePoolCounter(macroType) {
@@ -681,7 +703,9 @@ function wireUpBucketEvents(container) {
       const bucket = formData.buckets[macro].find(b => b.id === id);
       if (bucket) {
         bucket.isRecurring = !bucket.isRecurring;
-        recurringBtn.classList.toggle('is-active');
+        if (bucket.isRecurring && bucket.dueDate == null) bucket.dueDate = 1;
+        // Re-render so the inline due-date picker appears/disappears
+        refreshBucketSections(container);
       }
     }
 
@@ -816,7 +840,7 @@ function finishOnboarding() {
           name: b.name,
           emoji: b.emoji,
           amount: b.allocated ?? 0,
-          dueDate: 1,
+          dueDate: b.dueDate ?? 1,
           macroType,
         });
       }

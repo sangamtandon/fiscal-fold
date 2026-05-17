@@ -424,3 +424,44 @@
   font-size: var(--text-xs);
   color: var(--text-tertiary);
 }
+
+/* ---- Emoji picker popup ---- */
+.settings-emoji-popup {
+  position: absolute;
+  z-index: 1000;
+  width: 232px;
+  max-height: 240px;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+  padding: var(--space-2);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.35));
+}
+
+.settings-emoji-popup__btn {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  font-size: 18px;
+  width: 100%;
+  aspect-ratio: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+
+.settings-emoji-popup__btn:hover {
+  background: var(--bg-elevated);
+}
+
+.settings-emoji-popup__btn.is-selected {
+  border-color: var(--accent-primary);
+  background: var(--accent-primary-dim);
+}

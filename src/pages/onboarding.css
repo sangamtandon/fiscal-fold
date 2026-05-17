@@ -419,6 +419,12 @@
   gap: var(--space-2);
 }
 
+.onboarding__bucket-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
 .onboarding__bucket-item {
   display: flex;
   align-items: center;
@@ -428,6 +434,23 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   animation: step-enter 0.3s var(--ease-out);
+}
+
+.onboarding__bucket-due {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin-left: var(--space-4);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--border);
+}
+
+.onboarding__bucket-due__label {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  white-space: nowrap;
 }
 
 .onboarding__bucket-emoji {

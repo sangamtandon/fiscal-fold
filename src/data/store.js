@@ -6,7 +6,7 @@
  * Designed to be swapped to a BaaS backend in later sprints without refactoring consumers.
  */
 
-import { uid } from '../utils/helpers.js';
+import { uid, distributeProportionally } from '../utils/helpers.js';
 import { PRESETS } from './models.js';
 
 // ---- Storage Key ----
@@ -83,9 +83,22 @@ function notify(key) {
 
 // ---- Getters ----
 
-/** @returns {import('./models.js').AppState} */
+/**
+ * Returns a shallow-cloned snapshot of state. Top-level arrays are also
+ * shallow-cloned so callers can't `.push()` into the live store. Mutations
+ * to a returned object DO NOT persist — go through a mutator (e.g.
+ * `updateBucket`) or you'll silently desync localStorage.
+ * @returns {import('./models.js').AppState}
+ */
 export function getState() {
-  return _state;
+  return {
+    ..._state,
+    cycles:       [..._state.cycles],
+    buckets:      [..._state.buckets],
+    transactions: [..._state.transactions],
+    commitments:  [..._state.commitments],
+    sweeps:       [..._state.sweeps],
+  };
 }
 
 /** @returns {import('./models.js').User|null} */
@@ -497,12 +510,29 @@ export function removeTransaction(id) {
         cycle.allocations[bucket.macroType] = Math.max(0, cycle.allocations[bucket.macroType] - txn.amount);
       }
     }
+  } else if (txn.type === 'income' && txn.bucketId == null) {
+    // Untargeted income: reverse the cycle.salary boost and the ratio-based
+    // split that addIncome() applied. Mirrors the math used on the way in.
+    const cycle = _state.cycles.find(c => c.id === txn.cycleId);
+    if (cycle) {
+      cycle.salary = Math.max(0, cycle.salary - txn.amount);
+      const ratios = _state.user?.ratios;
+      if (ratios && cycle.allocations) {
+        const subNeeds = Math.round(txn.amount * ratios.needs / 100);
+        const subWants = Math.round(txn.amount * ratios.wants / 100);
+        const subFuture = txn.amount - subNeeds - subWants;
+        cycle.allocations.needs = Math.max(0, (cycle.allocations.needs ?? 0) - subNeeds);
+        cycle.allocations.wants = Math.max(0, (cycle.allocations.wants ?? 0) - subWants);
+        cycle.allocations.future = Math.max(0, (cycle.allocations.future ?? 0) - subFuture);
+      }
+    }
   }
 
   _state.transactions.splice(idx, 1);
   save();
   notify('transactions');
   notify('buckets');
+  notify('cycles');
 }
 
 /**
@@ -641,26 +671,20 @@ export function copyBucketsToNewCycle(oldCycleId, newCycleId, newAllocations) {
       return;
     }
 
-    const oldTotal = macroBuckets.reduce((s, b) => s + b.allocated, 0);
-    const newBuckets = macroBuckets.map((b, i) => {
-      const proportion = oldTotal > 0 ? b.allocated / oldTotal : 1 / macroBuckets.length;
-      return {
-        id: uid(),
-        cycleId: newCycleId,
-        macroType,
-        name: b.name,
-        emoji: b.emoji,
-        allocated: Math.round(newTotal * proportion),
-        spent: 0,
-        isPinned: b.isPinned,
-        sortOrder: b.sortOrder,
-        createdAt: new Date().toISOString(),
-      };
-    });
-
-    // Largest-remainder correction: distribute any rounding shortfall to the last bucket
-    const roundedSum = newBuckets.reduce((s, b) => s + b.allocated, 0);
-    if (newBuckets.length > 0) newBuckets[newBuckets.length - 1].allocated += newTotal - roundedSum;
+    const weights = macroBuckets.map(b => b.allocated);
+    const allocations = distributeProportionally(weights, newTotal);
+    const newBuckets = macroBuckets.map((b, i) => ({
+      id: uid(),
+      cycleId: newCycleId,
+      macroType,
+      name: b.name,
+      emoji: b.emoji,
+      allocated: allocations[i],
+      spent: 0,
+      isPinned: b.isPinned,
+      sortOrder: b.sortOrder,
+      createdAt: new Date().toISOString(),
+    }));
 
     newBuckets.forEach(b => _state.buckets.push(b));
   });
@@ -732,6 +756,21 @@ export function addIncome(amount, targetBucketId, note = '') {
       cycle.allocations.wants = (cycle.allocations.wants ?? 0) + addWants;
       cycle.allocations.future = (cycle.allocations.future ?? 0) + addFuture;
     }
+    // Record an untargeted income transaction so it surfaces in history
+    // and (once a BaaS sync layer exists) reaches the offline queue.
+    // bucketId is null — the transactions page already handles missing buckets.
+    _state.transactions.push({
+      id: uid(),
+      cycleId: _state.currentCycleId,
+      bucketId: null,
+      amount,
+      type: 'income',
+      note: note || 'Added to overall budget',
+      borrowedFrom: null,
+      borrowedAmount: 0,
+      timestamp: new Date().toISOString(),
+    });
+    notify('transactions');
   }
 
   save();

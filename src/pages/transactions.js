@@ -14,7 +14,7 @@ import {
   getBucketById,
   removeTransaction,
 } from '../data/store.js';
-import { formatCurrency, timeAgo, debounce } from '../utils/helpers.js';
+import { formatCurrency, timeAgo, debounce, escapeHtml } from '../utils/helpers.js';
 import { groupByMonth } from '../utils/txn-grouping.js';
 import { showToast } from '../utils/toast.js';
 import { navigate } from '../router.js';
@@ -184,17 +184,17 @@ function _renderTxnRow(t) {
   const isIncome = t.type === 'income' || t.type === 'refund';
 
   return `
-    <div class="txn-row" data-txn-id="${t.id}">
-      <span class="txn-row__emoji">${bucket?.emoji || '📝'}</span>
+    <div class="txn-row" data-txn-id="${escapeHtml(t.id)}">
+      <span class="txn-row__emoji">${escapeHtml(bucket?.emoji || '📝')}</span>
       <div class="txn-row__meta">
         <div class="txn-row__top">
-          <span class="txn-row__name">${bucket?.name || 'Unknown'}</span>
-          ${borrowedBucket ? `<span class="badge badge--amber" style="font-size:10px;">covered by ${borrowedBucket.name}</span>` : ''}
+          <span class="txn-row__name">${escapeHtml(bucket?.name || 'Unknown')}</span>
+          ${borrowedBucket ? `<span class="badge badge--amber" style="font-size:10px;">covered by ${escapeHtml(borrowedBucket.name)}</span>` : ''}
           ${t.type === 'income' ? `<span class="badge badge--green" style="font-size:10px;">income</span>` : ''}
           ${t.type === 'refund' ? `<span class="badge badge--green" style="font-size:10px;">refund</span>` : ''}
         </div>
         <span class="txn-row__sub text-tertiary">
-          ${timeAgo(t.timestamp)}${t.note ? ` · ${t.note}` : ''}
+          ${escapeHtml(timeAgo(t.timestamp))}${t.note ? ` · ${escapeHtml(t.note)}` : ''}
         </span>
       </div>
       <span class="txn-row__amount${isIncome ? ' txn-row__amount--income' : ''}">
@@ -202,7 +202,7 @@ function _renderTxnRow(t) {
       </span>
       <button
         class="txn-row__delete btn-icon"
-        data-delete-txn="${t.id}"
+        data-delete-txn="${escapeHtml(t.id)}"
         aria-label="Delete transaction"
         title="Delete this transaction"
       >×</button>
@@ -281,7 +281,40 @@ function _wireEvents(container) {
     const id = btn.dataset.deleteTxn;
     const txn = getAllTransactions().find(t => t.id === id);
     if (!txn) return;
-    if (!confirm('Delete this transaction? The bucket budget will be restored.')) return;
+    _confirmDeleteTxn(container, id);
+  });
+}
+
+/**
+ * Replace the targeted transaction row with an inline confirmation strip
+ * (Cancel / Delete). Avoids the unstyled, event-loop-blocking window.confirm.
+ */
+function _confirmDeleteTxn(container, id) {
+  const row = container.querySelector(`[data-txn-id="${id}"]`);
+  if (!row || row.dataset.confirming === '1') return;
+  row.dataset.confirming = '1';
+
+  const originalHtml = row.innerHTML;
+  row.innerHTML = `
+    <span class="txn-row__emoji">🗑️</span>
+    <div class="txn-row__meta">
+      <div class="txn-row__top">
+        <span class="txn-row__name">Delete this transaction?</span>
+      </div>
+      <span class="txn-row__sub text-tertiary">Bucket budget will be restored.</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" data-txn-cancel>Cancel</button>
+    <button class="btn btn-sm txn-row__delete-confirm" data-txn-confirm>Delete</button>
+  `;
+
+  row.querySelector('[data-txn-cancel]').addEventListener('click', e => {
+    e.stopPropagation();
+    row.innerHTML = originalHtml;
+    delete row.dataset.confirming;
+  });
+
+  row.querySelector('[data-txn-confirm]').addEventListener('click', e => {
+    e.stopPropagation();
     removeTransaction(id);
     showToast('Transaction deleted');
     _refreshList(container);

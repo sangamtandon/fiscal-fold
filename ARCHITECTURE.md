@@ -212,3 +212,4 @@ All routes are hash-based and registered in `src/main.js` via `router.js`.
 | **JSDoc over TypeScript** | IDE autocompletion without a build step. Lower complexity for vanilla JS. |
 | **Never red for warnings** | Core UX philosophy — warm amber for course-correction, green for affirmation. |
 | **Pub/sub store** | Simple reactive pattern. Easy to swap to external state manager or BaaS later. |
+| **Per-page CSS, prefix-scoped (not CSS Modules)** | Each `src/pages/*.js` imports its sibling `*.css`. Vite injects every page's CSS as a global `<style>` tag on first import and never unloads it — so all selectors must be prefixed with the page slug (`.onboarding__…`, `.txn-…`, `.cm-…`, `.pd-…`, `.settings-…`) to avoid cross-page collisions. New page modules MUST use a unique prefix; reviewers should reject unprefixed classes. Migrating to `*.module.css` is the eventual escape hatch but isn't justified at current size. |

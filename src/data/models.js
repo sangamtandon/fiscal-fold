@@ -52,7 +52,7 @@
  * @typedef {Object} Transaction
  * @property {string} id - Unique transaction ID
  * @property {string} cycleId - Parent budget cycle ID
- * @property {string} bucketId - Target micro bucket ID
+ * @property {string|null} bucketId - Target micro bucket ID; `null` for untargeted income that boosts the cycle salary directly
  * @property {number} amount - Transaction amount (always positive)
  * @property {'expense'|'income'|'refund'} type - Transaction type
  * @property {string} [note] - Optional note

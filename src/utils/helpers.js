@@ -145,6 +145,49 @@ export function ordinalSuffix(n) {
 }
 
 /**
+ * HTML-escape a string for safe interpolation into innerHTML templates.
+ * Any value that originates from user input (bucket names, notes, profile
+ * names, commitment labels, etc.) MUST be passed through this before being
+ * concatenated into a template literal, otherwise an `<img src=x onerror=…>`
+ * bucket name executes arbitrary script — especially worrying because the
+ * Settings JSON import flow accepts arbitrary state.
+ * @param {*} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Distribute `total` across buckets proportionally using the largest-remainder
+ * method, so the sum is exact and the ±1 rounding shortfall isn't always
+ * absorbed by the last bucket (which over many cycles accumulates drift).
+ * @param {number[]} weights  Relative proportions; need not sum to anything specific.
+ * @param {number} total      Integer total to distribute.
+ * @returns {number[]}        Integer allocations whose sum equals `total`.
+ */
+export function distributeProportionally(weights, total) {
+  if (weights.length === 0) return [];
+  const sumW = weights.reduce((s, w) => s + w, 0);
+  const exact = sumW > 0
+    ? weights.map(w => (w / sumW) * total)
+    : weights.map(() => total / weights.length);
+  const floored = exact.map(Math.floor);
+  const remainder = Math.round(total - floored.reduce((s, v) => s + v, 0));
+  const fractionals = exact
+    .map((v, i) => ({ i, frac: v - Math.floor(v) }))
+    .sort((a, b) => b.frac - a.frac);
+  for (let k = 0; k < remainder; k++) floored[fractionals[k % fractionals.length].i]++;
+  return floored;
+}
+
+/**
  * Format a payday day-of-month for display.
  * Treats 99 as the sentinel for "last day of month".
  * @param {number} n  1–31 or 99

@@ -29,7 +29,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-002] `getState()` returns internal state by mutable reference — store integrity bypassed
+### ✅ [DEBT-002] `getState()` returns internal state by mutable reference — fixed (returns shallow copy)
 - **File:** `src/data/store.js` (line 88)
 - **Category:** Structural
 - **Severity:** High
@@ -93,7 +93,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-004] `window.confirm()` used for destructive actions — breaks design system
+### ✅ [DEBT-004] `window.confirm()` used for destructive actions — fixed (inline Cancel/Confirm in both call sites)
 - **File:** `src/pages/settings.js` (line 537), `src/pages/transactions.js` (line 284)
 - **Category:** Refactor
 - **Severity:** Medium
@@ -124,7 +124,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-006] Seed data uses hardcoded sequential IDs instead of `uid()`
+### ✅ [DEBT-006] Seed data uses hardcoded sequential IDs — fixed (uid() across buckets and references)
 - **File:** `src/data/seed.js` (lines 48–103)
 - **Category:** Structural
 - **Severity:** Medium
@@ -143,7 +143,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-007] `addIncome()` untargeted path silently skips offline queue and `notify('transactions')`
+### ✅ [DEBT-007] `addIncome()` untargeted path skips transaction record — fixed (records bucketId=null income txn)
 - **File:** `src/data/store.js` (lines 710–728)
 - **Category:** Observability
 - **Severity:** Medium
@@ -169,7 +169,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-008] Largest-remainder rounding correction always given to the last bucket
+### ✅ [DEBT-008] Largest-remainder rounding — fixed (shared `distributeProportionally` helper)
 - **File:** `src/data/store.js` (lines 634–652), `src/pages/settings.js` (lines 508–521)
 - **Category:** Refactor
 - **Severity:** Medium
@@ -200,7 +200,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-010] Leak warnings still render when cycle is expired (misleading on payday screen)
+### ✅ [DEBT-010] Leak warnings still render when cycle is expired — fixed (gated behind !cycleExpired)
 - **File:** `src/main.js` (lines 304–319, 407–427)
 - **Category:** Refactor
 - **Severity:** Medium
@@ -294,7 +294,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-015] `src/main.js` is a 659-line god file — dashboard route, app shell, PWA logic all co-located
+### ✅ [DEBT-015] `src/main.js` god file — fixed (dashboard extracted to `src/pages/dashboard.js`, main.js trimmed to ~320 lines)
 - **File:** `src/main.js` (lines 277–641)
 - **Category:** Structural
 - **Severity:** Medium
@@ -310,7 +310,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-016] `_pickEmojiPrompt` in settings.js cycles to next palette emoji instead of opening a picker
+### ✅ [DEBT-016] `_pickEmojiPrompt` — fixed (replaced with anchored grid popup picker)
 - **File:** `src/pages/settings.js` (lines 658–662)
 - **Category:** Refactor
 - **Severity:** Low
@@ -333,7 +333,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-017] Onboarding hardcodes `dueDate: 1` when a recurring bucket creates a Commitment
+### ✅ [DEBT-017] Onboarding hardcodes `dueDate: 1` — fixed (inline day picker per recurring bucket)
 - **File:** `src/pages/onboarding.js` (line 818)
 - **Category:** Refactor
 - **Severity:** Low
@@ -354,7 +354,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-018] Transaction modal keypad has no decimal key; income modal does — inconsistency
+### ✅ [DEBT-018] Transaction modal keypad missing decimal — fixed (replaced C with . to match income modal)
 - **File:** `src/pages/transaction-modal.js` (lines 149–151), `src/pages/income-modal.js` (line 81)
 - **Category:** Refactor
 - **Severity:** Low
@@ -369,7 +369,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-019] `updateAllocCards()` and `renderDonut()` in onboarding use `document.querySelector` — should be scoped
+### ✅ [DEBT-019] `updateAllocCards()` and `renderDonut()` in onboarding — fixed (scope parameter, defaults to document)
 - **File:** `src/pages/onboarding.js` (lines 422–431, 434)
 - **Category:** Refactor
 - **Severity:** Low
@@ -385,7 +385,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-020] User-controlled strings (bucket names, notes) inserted unescaped into `innerHTML`
+### ✅ [DEBT-020] User-controlled strings inserted unescaped — fixed (escapeHtml helper applied across renderers)
 - **File:** Multiple — `src/main.js` (lines 633–634, 636), `src/pages/transactions.js` (lines 191, 197), `src/pages/commitments.js` (lines 199), `src/pages/settings.js` (line 207), and others
 - **Category:** Structural
 - **Severity:** Medium
@@ -407,7 +407,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-021] Page CSS files accumulate as global stylesheets and are never unloaded on navigation
+### ✅ [DEBT-021] Page CSS files accumulate as global stylesheets — fixed (convention documented in ARCHITECTURE.md)
 - **File:** `src/pages/onboarding.js:11`, `transactions.js:10`, `transaction-modal.js:11`, `commitments.js:12`, `payday.js:8`, `settings.js:8`, `income-modal.js:10`
 - **Category:** Scalability
 - **Severity:** Low
@@ -418,7 +418,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-022] Service worker cache version `'fiscal-fold-v1'` is hardcoded — stale assets after deploy
+### ✅ [DEBT-022] Service worker cache version hardcoded — fixed (build-time token replacement via vite.config.js plugin)
 - **File:** `public/sw.js` (line 9)
 - **Category:** Observability
 - **Severity:** Low

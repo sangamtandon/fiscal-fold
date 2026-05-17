@@ -6,7 +6,10 @@
  *   - External (fonts etc.): stale-while-revalidate
  */
 
-const CACHE = 'fiscal-fold-v1';
+// __SW_CACHE_VERSION__ is replaced at build time by vite.config.js with a
+// timestamp-suffixed name so the SW byte-changes per deploy. During `vite
+// dev` the literal token is fine — the SW activates once and stays active.
+const CACHE = '__SW_CACHE_VERSION__';
 const SHELL_ASSETS = ['/', '/manifest.json', '/favicon.svg'];
 
 self.addEventListener('install', event => {

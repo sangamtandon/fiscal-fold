@@ -300,3 +300,18 @@
     opacity: 1;
   }
 }
+
+/* Confirm-delete strip inside the same row (replaces window.confirm) */
+.txn-row__delete-confirm {
+  background: var(--danger, #ef4444);
+  color: #fff;
+  border: 1px solid var(--danger, #ef4444);
+  font-weight: var(--weight-semibold);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.txn-row__delete-confirm:hover {
+  opacity: 0.9;
+}
