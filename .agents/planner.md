@@ -5,16 +5,21 @@
 
 ## Mission
 
-Generate a plan that fits the existing architecture and conventions of Fiscal Fold.
+Translate a user request, bug report, or `docs/TECH_DEBT.md` item into a
+concrete plan that fits the existing architecture and conventions of Fiscal
+Fold.
 
 ## Inputs to read first
 
-1. `CURRENT_SPRINT.md` — what is currently in flight and the next steps.
-2. The `AGENTS.md` file to understand all rules for the files you will be touching.
+1. `docs/CURRENT_SPRINT.md` — what is currently in flight and the next steps.
+2. `docs/TECH_DEBT.md` — known issues and constraints around the area you are
+   touching.
 3. The relevant page(s) under `src/pages/` and any helpers in `src/utils/`.
 4. `src/data/store.js` and `src/data/models.js` — to understand what state
    already exists.
 5. `docs/UX_GLOSSARY.md` — for any user-visible copy involved.
+6. `docs/ARCHITECTURE.md` — for cross-cutting concerns (routing, PWA,
+   persistence).
 
 ## Required output
 
@@ -34,7 +39,8 @@ Produce a plan with these sections, in order:
    glossary.
 6. **Test plan** — unit tests (file + cases), integration tests if
    multi-mutator, and Playwright specs to add or update.
-7. **Regression checklist** — specify which checks to run manually or via script for all touched screens.
+7. **QA checklist subset** — the `docs/QUALITY_GATE.md` items that apply to
+   the touched screens.
 8. **Rollout risks** — anything that could regress (data migration, PWA cache,
    coverage threshold, a11y, mobile layout).
 

@@ -40,7 +40,7 @@ Fiscal Fold is built with a focus on simplicity, speed, and zero dependency chur
 - **State Management:** Custom reactive pub/sub store
 - **Typography:** Inter + JetBrains Mono
 
-For more detailed technical insights and rules for AI agents, read the [AGENTS.md](AGENTS.md) file.
+For more detailed technical insights, read [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). If you are an AI coding agent contributing to this project, start with [`AGENTS.md`](AGENTS.md).
 
 ## 🚀 Getting Started
 
@@ -87,10 +87,21 @@ The optimized files will be generated in the `dist` directory.
 - `public/` — `manifest.json`, `sw.js` (service worker), `favicon.svg`, `icons.svg`
 
 ## 📚 Documentation
-- [`AGENTS.md`](AGENTS.md) — architectural stack, workflow instructions, pre-commit quality gate checklist, and explicit guidelines for AI development platforms
+
+**Project entry points (root):**
+- [`AGENTS.md`](AGENTS.md) — single source of truth for AI agents (conventions, hard rules, agent workflow)
 - [`CHANGELOG.md`](CHANGELOG.md) — version history (sprint releases + post-MVP work)
-- [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — original sprint plan (historical)
+
+**Deep references (`docs/`):**
+- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — stack, file map, store API, design decisions
+- [`docs/QUALITY_GATE.md`](docs/QUALITY_GATE.md) — 50+ item pre-merge regression checklist (per screen)
+- [`docs/CURRENT_SPRINT.md`](docs/CURRENT_SPRINT.md) — current status and AI handoff notes
+- [`docs/TECH_DEBT.md`](docs/TECH_DEBT.md) — backlog of issues and optimisations
 - [`docs/UX_GLOSSARY.md`](docs/UX_GLOSSARY.md) — every user-facing term, with the exact copy used in-app
+- [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — original sprint plan (historical)
+
+**Per-phase agent briefs (`.agents/`):**
+- `planner.md`, `implementer.md`, `tester.md`, `reviewer.md`, `documenter.md`, `release-manager.md` — see `AGENTS.md` for which to open when.
 
 ## 🧪 Testing
 - `npm test` — unit + integration suite (Vitest, ~100 tests covering store mutators, selectors, helpers, and lifecycle)
@@ -100,4 +111,4 @@ The optimized files will be generated in the `dist` directory.
 MVP complete — Sprints 1–12 shipped. See `CHANGELOG.md` for ongoing work.
 
 ## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check the Quality Gate section in `AGENTS.md` and run through the checklist before requesting review.
+Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check [`docs/QUALITY_GATE.md`](docs/QUALITY_GATE.md) and run through the regression checklist before requesting review.
