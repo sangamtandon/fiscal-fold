@@ -32,6 +32,10 @@ let _state = createDefaultState();
 /** @type {Map<string, Set<Function>>} */
 const _listeners = new Map();
 
+// ⚡ Bolt: Cache maps for expensive lookups and sorts
+let _bucketMapCache = null;
+let _sortedTransactionsCache = null;
+
 // ---- Persistence ----
 
 function save() {
@@ -53,6 +57,9 @@ function load() {
     console.warn('[Store] Failed to load state, starting fresh:', e);
     _state = createDefaultState();
   }
+  // ⚡ Bolt: Clear caches on load
+  _bucketMapCache = null;
+  _sortedTransactionsCache = null;
 }
 
 // ---- Pub/Sub ----
@@ -76,6 +83,10 @@ export function subscribe(key, callback) {
  * @param {string} key
  */
 function notify(key) {
+  // ⚡ Bolt: Invalidate caches when relevant state changes
+  if (key === 'buckets') _bucketMapCache = null;
+  if (key === 'transactions') _sortedTransactionsCache = null;
+
   const value = _state[key];
   _listeners.get(key)?.forEach(fn => fn(value, key));
   _listeners.get('*')?.forEach(fn => fn(value, key));
@@ -146,7 +157,11 @@ export function getBuckets(macroType) {
  * @returns {import('./models.js').MicroBucket|undefined}
  */
 export function getBucketById(id) {
-  return _state.buckets.find(b => b.id === id);
+  // ⚡ Bolt: Use Map for O(1) lookups instead of O(N) array find
+  if (!_bucketMapCache) {
+    _bucketMapCache = new Map(_state.buckets.map(b => [b.id, b]));
+  }
+  return _bucketMapCache.get(id);
 }
 
 /**
@@ -169,9 +184,9 @@ export function getQuickBuckets() {
  */
 export function getTransactions({ limit, bucketId } = {}) {
   const cycleId = _state.currentCycleId;
-  let txns = _state.transactions.filter(t => t.cycleId === cycleId);
+  // ⚡ Bolt: Use the pre-sorted list and filter it, avoiding an O(T log T) sort per call
+  let txns = getAllTransactions().filter(t => t.cycleId === cycleId);
   if (bucketId) txns = txns.filter(t => t.bucketId === bucketId);
-  txns.sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
   if (limit) txns = txns.slice(0, limit);
   return txns;
 }
@@ -783,7 +798,11 @@ export function addIncome(amount, targetBucketId, note = '') {
  * @returns {import('./models.js').Transaction[]}
  */
 export function getAllTransactions() {
-  return [..._state.transactions].sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
+  // ⚡ Bolt: Cache the sorted transactions to avoid expensive sorts on every render/search keystroke
+  if (!_sortedTransactionsCache) {
+    _sortedTransactionsCache = [..._state.transactions].sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
+  }
+  return _sortedTransactionsCache;
 }
 
 // ---- Lifecycle ----

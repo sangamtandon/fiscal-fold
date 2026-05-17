@@ -1,0 +1,3 @@
+## 2025-02-12 - Transactions sorting & Bucket lookup bottleneck
+**Learning:** Store access patterns generated accidental O(N) array scans (`getBucketById`) and O(T log T) array sorts (`getAllTransactions` and `getTransactions`) deep inside rendering iterations and keystroke event handlers. Because `getAllTransactions` instantiated and sorted a new array on every debounced search keystroke, this was compounding quickly to noticeable lag on pages rendering many transactions.
+**Action:** Always memoize and cache computed expensive store state (`getAllTransactions`) and convert frequent O(N) lookups inside rendering loops (`getBucketById`) into O(1) lookups using Map caches that are invalidated symmetrically during store `notify()` events.
