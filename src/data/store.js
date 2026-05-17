@@ -510,12 +510,29 @@ export function removeTransaction(id) {
         cycle.allocations[bucket.macroType] = Math.max(0, cycle.allocations[bucket.macroType] - txn.amount);
       }
     }
+  } else if (txn.type === 'income' && txn.bucketId == null) {
+    // Untargeted income: reverse the cycle.salary boost and the ratio-based
+    // split that addIncome() applied. Mirrors the math used on the way in.
+    const cycle = _state.cycles.find(c => c.id === txn.cycleId);
+    if (cycle) {
+      cycle.salary = Math.max(0, cycle.salary - txn.amount);
+      const ratios = _state.user?.ratios;
+      if (ratios && cycle.allocations) {
+        const subNeeds = Math.round(txn.amount * ratios.needs / 100);
+        const subWants = Math.round(txn.amount * ratios.wants / 100);
+        const subFuture = txn.amount - subNeeds - subWants;
+        cycle.allocations.needs = Math.max(0, (cycle.allocations.needs ?? 0) - subNeeds);
+        cycle.allocations.wants = Math.max(0, (cycle.allocations.wants ?? 0) - subWants);
+        cycle.allocations.future = Math.max(0, (cycle.allocations.future ?? 0) - subFuture);
+      }
+    }
   }
 
   _state.transactions.splice(idx, 1);
   save();
   notify('transactions');
   notify('buckets');
+  notify('cycles');
 }
 
 /**
@@ -739,6 +756,21 @@ export function addIncome(amount, targetBucketId, note = '') {
       cycle.allocations.wants = (cycle.allocations.wants ?? 0) + addWants;
       cycle.allocations.future = (cycle.allocations.future ?? 0) + addFuture;
     }
+    // Record an untargeted income transaction so it surfaces in history
+    // and (once a BaaS sync layer exists) reaches the offline queue.
+    // bucketId is null — the transactions page already handles missing buckets.
+    _state.transactions.push({
+      id: uid(),
+      cycleId: _state.currentCycleId,
+      bucketId: null,
+      amount,
+      type: 'income',
+      note: note || 'Added to overall budget',
+      borrowedFrom: null,
+      borrowedAmount: 0,
+      timestamp: new Date().toISOString(),
+    });
+    notify('transactions');
   }
 
   save();

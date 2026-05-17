@@ -143,7 +143,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-007] `addIncome()` untargeted path silently skips offline queue and `notify('transactions')`
+### ✅ [DEBT-007] `addIncome()` untargeted path skips transaction record — fixed (records bucketId=null income txn)
 - **File:** `src/data/store.js` (lines 710–728)
 - **Category:** Observability
 - **Severity:** Medium
