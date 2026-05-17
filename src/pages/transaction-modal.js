@@ -146,8 +146,8 @@ function _renderAmount(container) {
       </div>
 
       <div class="txn-keypad">
-        ${[1,2,3,4,5,6,7,8,9,'C',0,'⌫'].map(k => `
-          <button class="txn-key${k === '⌫' ? ' txn-key--back' : ''}${k === 'C' ? ' txn-key--clear' : ''}" data-key="${k}">${k}</button>
+        ${[1,2,3,4,5,6,7,8,9,'.',0,'⌫'].map(k => `
+          <button class="txn-key${k === '⌫' ? ' txn-key--back' : ''}${k === '.' ? ' txn-key--dot' : ''}" data-key="${k}">${k}</button>
         `).join('')}
       </div>
 
@@ -197,8 +197,10 @@ function _renderAmount(container) {
 function _handleKey(key) {
   if (key === '⌫') {
     _amountStr = _amountStr.slice(0, -1);
-  } else if (key === 'C') {
-    _amountStr = '';
+  } else if (key === '.') {
+    // Single decimal point only; ignore taps once one is already present.
+    if (_amountStr.includes('.')) return;
+    _amountStr = (_amountStr || '0') + '.';
   } else {
     if (_amountStr === '0') {
       _amountStr = key;

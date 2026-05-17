@@ -354,7 +354,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-018] Transaction modal keypad has no decimal key; income modal does — inconsistency
+### ✅ [DEBT-018] Transaction modal keypad missing decimal — fixed (replaced C with . to match income modal)
 - **File:** `src/pages/transaction-modal.js` (lines 149–151), `src/pages/income-modal.js` (line 81)
 - **Category:** Refactor
 - **Severity:** Low
