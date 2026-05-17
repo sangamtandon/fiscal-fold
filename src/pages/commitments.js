@@ -13,12 +13,12 @@
 import './commitments.css';
 import {
   getCommitments,
+  getAllCommitments,
   addCommitment,
   updateCommitment,
   removeCommitment,
   addTransaction,
   getBuckets,
-  getState,
 } from '../data/store.js';
 import { formatCurrency, ordinalSuffix } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
@@ -92,7 +92,7 @@ export function renderCommitmentsPage(container) {
 }
 
 function _render(container) {
-  const all = getState().commitments;
+  const all = getAllCommitments();
   const sorted = [...all].sort((a, b) => {
     if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
     return a.dueDate - b.dueDate;
@@ -139,7 +139,7 @@ function _render(container) {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.cmPaid;
-      const c = getState().commitments.find(x => x.id === id);
+      const c = getAllCommitments().find(x => x.id === id);
       if (!c) return;
       if (c.isPaid) {
         updateCommitment(id, { isPaid: false });
@@ -158,7 +158,7 @@ function _render(container) {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.cmDelete;
-      const c = getState().commitments.find(x => x.id === id);
+      const c = getAllCommitments().find(x => x.id === id);
       removeCommitment(id);
       _render(container);
       showToast(`${c?.name || 'Commitment'} removed`);
@@ -169,7 +169,7 @@ function _render(container) {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       const id = btn.dataset.cmToggle;
-      const c = getState().commitments.find(x => x.id === id);
+      const c = getAllCommitments().find(x => x.id === id);
       if (!c) return;
       updateCommitment(id, { isActive: !c.isActive });
       _render(container);
@@ -180,7 +180,7 @@ function _render(container) {
   container.querySelectorAll('[data-cm-edit]').forEach(row => {
     row.addEventListener('click', () => {
       const id = row.dataset.cmEdit;
-      const c = getState().commitments.find(x => x.id === id);
+      const c = getAllCommitments().find(x => x.id === id);
       if (c) _openForm(container, c);
     });
   });

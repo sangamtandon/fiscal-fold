@@ -168,6 +168,13 @@ export function getCommitments() {
   return _state.commitments.filter(c => c.isActive);
 }
 
+/** Returns all commitments regardless of active status — for management UIs.
+ * @returns {import('./models.js').Commitment[]}
+ */
+export function getAllCommitments() {
+  return [..._state.commitments];
+}
+
 /**
  * Get total reserved (unpaid active commitments) for a macro type.
  * Reserved = committed but not yet paid — subtracted from available balance.

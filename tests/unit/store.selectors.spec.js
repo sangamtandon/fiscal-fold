@@ -118,6 +118,28 @@ describe('getMacroReserved', () => {
   });
 });
 
+describe('getAllCommitments', () => {
+  it('returns active and inactive commitments', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    const active = store.addCommitment({ name: 'Active', emoji: '📌', amount: 500, dueDate: 1, macroType: 'wants' });
+    const inactive = store.addCommitment({ name: 'Inactive', emoji: '📌', amount: 300, dueDate: 1, macroType: 'wants' });
+    store.updateCommitment(inactive.id, { isActive: false });
+
+    const all = store.getAllCommitments();
+    expect(all.find(c => c.id === active.id)).toBeDefined();
+    expect(all.find(c => c.id === inactive.id)).toBeDefined();
+    expect(all.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('returns a copy — mutations do not affect store state', async () => {
+    const { store } = await bootstrapStore(freshStore);
+    store.addCommitment({ name: 'X', emoji: '📌', amount: 100, dueDate: 1, macroType: 'wants' });
+    const snapshot = store.getAllCommitments();
+    snapshot.pop();
+    expect(store.getAllCommitments().length).toBe(snapshot.length + 1);
+  });
+});
+
 describe('getCurrentCycle / isCycleExpired / getBuckets', () => {
   it('getCurrentCycle returns null when no cycle is set', async () => {
     const store = await freshStore();
