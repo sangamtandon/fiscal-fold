@@ -16,7 +16,7 @@ import {
   addTransaction,
   addTradeOffTransaction,
 } from '../data/store.js';
-import { formatCurrency } from '../utils/helpers.js';
+import { formatCurrency, escapeHtml } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { rerender } from '../router.js';
 import { enqueue as offlineEnqueue } from '../utils/offlineQueue.js';
@@ -130,7 +130,7 @@ function _renderAmount(container) {
     <div class="txn-step">
       <div class="txn-header">
         <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
-        <span class="txn-header__title">${_targetBucket ? bucketLabel : 'Log Expense'}</span>
+        <span class="txn-header__title">${_targetBucket ? escapeHtml(bucketLabel) : 'Log Expense'}</span>
         <button class="btn btn-ghost txn-income-link" id="txn-income-link" data-testid="txn-income-link">Income →</button>
       </div>
 
@@ -242,12 +242,12 @@ function _renderBucket(container) {
     return `
       <button
         class="txn-bucket-row${isEmpty ? ' txn-bucket-row--empty' : ''}${isLow ? ' txn-bucket-row--low' : ''}"
-        data-id="${b.id}"
+        data-id="${escapeHtml(b.id)}"
         title="${isEmpty ? 'No budget left — tap another bucket and we’ll offer to cover from this one.' : ''}"
       >
-        <span class="txn-bucket-row__emoji">${b.emoji}</span>
+        <span class="txn-bucket-row__emoji">${escapeHtml(b.emoji)}</span>
         <div class="txn-bucket-row__text">
-          <span class="txn-bucket-row__name">${b.name}</span>
+          <span class="txn-bucket-row__name">${escapeHtml(b.name)}</span>
           ${isEmpty ? '<span class="txn-bucket-row__hint">No budget left this cycle</span>' : ''}
         </div>
         <div class="txn-bucket-row__right">
@@ -333,7 +333,7 @@ function _renderNote(container) {
         </div>
         <div class="txn-confirm-row">
           <span class="txn-confirm-label">Bucket</span>
-          <span class="txn-confirm-value">${_targetBucket.emoji} ${_targetBucket.name}</span>
+          <span class="txn-confirm-value">${escapeHtml(_targetBucket.emoji)} ${escapeHtml(_targetBucket.name)}</span>
         </div>
         <div class="txn-confirm-row">
           <span class="txn-confirm-label">Remaining after</span>
@@ -352,12 +352,12 @@ function _renderNote(container) {
           id="txn-note"
           placeholder="Coffee with Rahul, groceries run…"
           maxlength="60"
-          value="${_note}"
+          value="${escapeHtml(_note)}"
         />
       </div>
 
       <button class="btn btn-primary btn-full txn-confirm-btn" id="txn-confirm" style="margin-top:var(--space-6)">
-        <span class="txn-confirm-btn__text">Log ${formatCurrency(_amount)} → ${_targetBucket.name}</span>
+        <span class="txn-confirm-btn__text">Log ${formatCurrency(_amount)} → ${escapeHtml(_targetBucket.name)}</span>
         <span class="txn-confirm-btn__check" aria-hidden="true">✓</span>
       </button>
     </div>
@@ -422,7 +422,7 @@ function _renderTradeOff(container) {
       <div class="txn-tradeoff-alert">
         <span style="font-size:28px">⚡</span>
         <div>
-          <p class="txn-tradeoff-alert__title">${_targetBucket.name} is short</p>
+          <p class="txn-tradeoff-alert__title">${escapeHtml(_targetBucket.name)} is short</p>
           <p class="txn-tradeoff-alert__desc">
             Has ${formatCurrency(rem)}, needs ${formatCurrency(_amount)}.
             Cover the missing ${formatCurrency(deficit)} from another bucket?
@@ -441,10 +441,10 @@ function _renderTradeOff(container) {
               ? `Can cover ${formatCurrency(deficit)}`
               : `Only ${formatCurrency(bRem)} available`;
             return `
-              <button class="txn-bucket-row${!canCover ? ' txn-bucket-row--low' : ''}" data-donor="${b.id}">
-                <span class="txn-bucket-row__emoji">${b.emoji}</span>
+              <button class="txn-bucket-row${!canCover ? ' txn-bucket-row--low' : ''}" data-donor="${escapeHtml(b.id)}">
+                <span class="txn-bucket-row__emoji">${escapeHtml(b.emoji)}</span>
                 <div class="txn-bucket-row__text">
-                  <span class="txn-bucket-row__name">${b.name}</span>
+                  <span class="txn-bucket-row__name">${escapeHtml(b.name)}</span>
                   <span class="txn-bucket-row__hint">${coverableLabel}</span>
                 </div>
                 <div class="txn-bucket-row__right">
@@ -512,12 +512,12 @@ function _renderTradeOffConfirm(container) {
 
       <div class="txn-split-card">
         <div class="txn-split-row">
-          <span>${_targetBucket.emoji} ${_targetBucket.name}</span>
+          <span>${escapeHtml(_targetBucket.emoji)} ${escapeHtml(_targetBucket.name)}</span>
           <span class="text-mono">pays ${formatCurrency(targetRem)}</span>
         </div>
         <div class="txn-split-plus">+</div>
         <div class="txn-split-row txn-split-row--borrow">
-          <span>${_borrowBucket.emoji} ${_borrowBucket.name}</span>
+          <span>${escapeHtml(_borrowBucket.emoji)} ${escapeHtml(_borrowBucket.name)}</span>
           <span class="text-mono text-warn">covers ${formatCurrency(borrowAmount)}</span>
         </div>
         <div class="txn-split-total">
@@ -525,7 +525,7 @@ function _renderTradeOffConfirm(container) {
           <span class="text-mono font-bold">${formatCurrency(_amount)}</span>
         </div>
       </div>
-      <p class="txn-split-note">${_borrowBucket.name}'s budget drops by ${formatCurrency(borrowAmount)}. No payback.</p>
+      <p class="txn-split-note">${escapeHtml(_borrowBucket.name)}'s budget drops by ${formatCurrency(borrowAmount)}. No payback.</p>
 
       <button class="txn-note-toggle" id="txn-note-toggle">
         <span class="txn-note-toggle__icon">＋</span>
@@ -538,7 +538,7 @@ function _renderTradeOffConfirm(container) {
           id="txn-note"
           placeholder="Weekend trip supplies…"
           maxlength="60"
-          value="${_note}"
+          value="${escapeHtml(_note)}"
         />
       </div>
 

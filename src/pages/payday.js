@@ -15,7 +15,7 @@ import {
   createCycle,
   copyBucketsToNewCycle,
 } from '../data/store.js';
-import { formatCurrency, percent, cycleDayCount } from '../utils/helpers.js';
+import { formatCurrency, percent, cycleDayCount, escapeHtml } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { navigate } from '../router.js';
 
@@ -100,8 +100,8 @@ export function renderPaydayPage(container) {
           <div class="pd-sweep-list">
             ${sweepBuckets.map(b => `
               <div class="pd-sweep-row">
-                <span class="pd-sweep-row__emoji">${b.emoji}</span>
-                <span class="pd-sweep-row__name">${b.name}</span>
+                <span class="pd-sweep-row__emoji">${escapeHtml(b.emoji)}</span>
+                <span class="pd-sweep-row__name">${escapeHtml(b.name)}</span>
                 <span class="pd-sweep-row__amount text-mono">+${formatCurrency(b.remaining)}</span>
               </div>
             `).join('')}

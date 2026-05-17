@@ -13,6 +13,7 @@ import {
   ordinalSuffix,
   formatPayday,
   distributeProportionally,
+  escapeHtml,
 } from '../../src/utils/helpers.js';
 
 describe('formatCurrency', () => {
@@ -228,6 +229,34 @@ describe('distributeProportionally', () => {
 
   it('returns zeros when total is 0', () => {
     expect(distributeProportionally([1, 2, 3], 0)).toEqual([0, 0, 0]);
+  });
+});
+
+describe('escapeHtml', () => {
+  it('escapes &, <, >, ", and \'', () => {
+    expect(escapeHtml(`<script>alert("x & 'y'")</script>`))
+      .toBe('&lt;script&gt;alert(&quot;x &amp; &#39;y&#39;&quot;)&lt;/script&gt;');
+  });
+
+  it('escapes & first to avoid double-escaping', () => {
+    expect(escapeHtml('&lt;')).toBe('&amp;lt;');
+  });
+
+  it('neutralises the canonical img/onerror XSS payload', () => {
+    const payload = `<img src=x onerror="alert(1)">`;
+    const escaped = escapeHtml(payload);
+    expect(escaped).not.toContain('<');
+    expect(escaped).not.toContain('"');
+  });
+
+  it('returns "" for null and undefined', () => {
+    expect(escapeHtml(null)).toBe('');
+    expect(escapeHtml(undefined)).toBe('');
+  });
+
+  it('coerces non-string values to strings', () => {
+    expect(escapeHtml(42)).toBe('42');
+    expect(escapeHtml(true)).toBe('true');
   });
 });
 

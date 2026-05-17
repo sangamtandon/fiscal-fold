@@ -145,6 +145,26 @@ export function ordinalSuffix(n) {
 }
 
 /**
+ * HTML-escape a string for safe interpolation into innerHTML templates.
+ * Any value that originates from user input (bucket names, notes, profile
+ * names, commitment labels, etc.) MUST be passed through this before being
+ * concatenated into a template literal, otherwise an `<img src=x onerror=…>`
+ * bucket name executes arbitrary script — especially worrying because the
+ * Settings JSON import flow accepts arbitrary state.
+ * @param {*} str
+ * @returns {string}
+ */
+export function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
  * Distribute `total` across buckets proportionally using the largest-remainder
  * method, so the sum is exact and the ±1 rounding shortfall isn't always
  * absorbed by the last bucket (which over many cycles accumulates drift).

@@ -20,7 +20,7 @@ import {
   addTransaction,
   getBuckets,
 } from '../data/store.js';
-import { formatCurrency, ordinalSuffix } from '../utils/helpers.js';
+import { formatCurrency, ordinalSuffix, escapeHtml } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { showToast } from '../utils/toast.js';
 import { navigate } from '../router.js';
@@ -192,12 +192,12 @@ function _renderRow(c) {
   const { text: statusText, cls: statusCls } = _statusLabel[status];
 
   return `
-    <div class="cm-row${c.isActive ? '' : ' cm-row--inactive'}" data-cm-edit="${c.id}">
-      <div class="cm-row__emoji">${c.emoji}</div>
+    <div class="cm-row${c.isActive ? '' : ' cm-row--inactive'}" data-cm-edit="${escapeHtml(c.id)}">
+      <div class="cm-row__emoji">${escapeHtml(c.emoji)}</div>
 
       <div class="cm-row__body">
         <div class="cm-row__top">
-          <span class="cm-row__name">${c.name}</span>
+          <span class="cm-row__name">${escapeHtml(c.name)}</span>
           ${!c.isActive ? `<span class="badge cm-row__status" style="opacity:.6" title="Paused commitments don't reserve budget until you resume them.">Paused</span>` : statusText ? `<span class="badge ${statusCls} cm-row__status">${statusText}</span>` : ''}
         </div>
         <div class="cm-row__meta">
@@ -212,20 +212,20 @@ function _renderRow(c) {
           ${c.isActive ? `
             <button
               class="cm-action-btn cm-action-btn--paid ${c.isPaid ? 'is-paid' : ''}"
-              data-cm-paid="${c.id}"
+              data-cm-paid="${escapeHtml(c.id)}"
               title="${c.isPaid ? 'Mark unpaid' : 'Mark paid'}"
               aria-label="${c.isPaid ? 'Mark unpaid' : 'Mark paid'}"
             >✓</button>
           ` : ''}
           <button
             class="cm-action-btn cm-action-btn--toggle"
-            data-cm-toggle="${c.id}"
+            data-cm-toggle="${escapeHtml(c.id)}"
             title="${c.isActive ? 'Pause' : 'Resume'}"
             aria-label="${c.isActive ? 'Pause commitment' : 'Resume commitment'}"
           >${c.isActive ? '⏸' : '▶'}</button>
           <button
             class="cm-action-btn cm-action-btn--delete"
-            data-cm-delete="${c.id}"
+            data-cm-delete="${escapeHtml(c.id)}"
             title="Delete"
             aria-label="Delete commitment"
           >✕</button>
@@ -255,7 +255,7 @@ function _openMarkPaid(pageContainer, commitment) {
     <div class="drawer__handle"></div>
     <div class="cm-form">
       <div class="cm-form__header">
-        <span class="cm-form__title">Mark "${commitment.name}" paid</span>
+        <span class="cm-form__title">Mark "${escapeHtml(commitment.name)}" paid</span>
         <button class="btn btn-ghost" data-close-mp>✕</button>
       </div>
       <p class="cm-mp-amount text-mono">${formatCurrency(commitment.amount)}</p>
@@ -270,9 +270,9 @@ function _openMarkPaid(pageContainer, commitment) {
           ${buckets.map(b => {
             const rem = Math.max(0, b.allocated - b.spent);
             return `
-              <button class="cm-mp-bucket" data-mp-bucket="${b.id}">
-                <span class="cm-mp-bucket__emoji">${b.emoji}</span>
-                <span class="cm-mp-bucket__name">${b.name}</span>
+              <button class="cm-mp-bucket" data-mp-bucket="${escapeHtml(b.id)}">
+                <span class="cm-mp-bucket__emoji">${escapeHtml(b.emoji)}</span>
+                <span class="cm-mp-bucket__name">${escapeHtml(b.name)}</span>
                 <span class="cm-mp-bucket__rem text-mono">${formatCurrency(rem)}</span>
               </button>
             `;
@@ -378,7 +378,7 @@ function _renderForm(existing, pageContainer) {
           id="cf-name"
           placeholder="Rent, Netflix, EMI…"
           maxlength="30"
-          value="${state.name}"
+          value="${escapeHtml(state.name)}"
         />
       </div>
 
@@ -393,7 +393,7 @@ function _renderForm(existing, pageContainer) {
             id="cf-amount"
             placeholder="0"
             min="1"
-            value="${state.amount}"
+            value="${escapeHtml(state.amount)}"
           />
         </div>
       </div>
@@ -515,9 +515,9 @@ export function renderCommitmentDueRow(c) {
 
   return `
     <div class="cm-due-row">
-      <span class="cm-due-row__emoji">${c.emoji}</span>
+      <span class="cm-due-row__emoji">${escapeHtml(c.emoji)}</span>
       <div class="cm-due-row__body">
-        <span class="cm-due-row__name">${c.name}</span>
+        <span class="cm-due-row__name">${escapeHtml(c.name)}</span>
         <span class="cm-due-row__time ${status === 'overdue' ? 'text-warn' : ''}">${timeLabel}</span>
       </div>
       <span class="cm-due-row__amount text-mono">${formatCurrency(c.amount)}</span>

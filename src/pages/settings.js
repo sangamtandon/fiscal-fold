@@ -19,7 +19,7 @@ import {
   getCurrentCycle,
   updateCycleAllocations,
 } from '../data/store.js';
-import { formatCurrency, formatNumber, ordinalSuffix, formatPayday, distributeProportionally } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, ordinalSuffix, formatPayday, distributeProportionally, escapeHtml } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { showToast } from '../utils/toast.js';
 import { getTheme, setTheme } from '../utils/theme.js';
@@ -49,7 +49,7 @@ function _render(container) {
         <div class="settings-field" id="field-name">
           <span class="settings-field__label">Name</span>
           <div class="settings-field__right">
-            <span class="settings-field__value" id="val-name">${user?.name || 'Not set'}</span>
+            <span class="settings-field__value" id="val-name">${escapeHtml(user?.name || 'Not set')}</span>
             <button class="btn-text settings-edit-btn" data-edit="name">Edit</button>
           </div>
         </div>
@@ -201,18 +201,18 @@ function _renderBucketGroup(macroType, label) {
         </div>
       ` : ''}
       ${buckets.map(b => `
-        <div class="settings-bucket-row" data-bucket-id="${b.id}">
-          <span class="settings-bucket-row__emoji">${b.emoji}</span>
-          <span class="settings-bucket-row__name">${b.name}</span>
+        <div class="settings-bucket-row" data-bucket-id="${escapeHtml(b.id)}">
+          <span class="settings-bucket-row__emoji">${escapeHtml(b.emoji)}</span>
+          <span class="settings-bucket-row__name">${escapeHtml(b.name)}</span>
           <span class="settings-bucket-row__alloc text-mono text-tertiary">${formatCurrency(b.allocated)}</span>
           <button class="btn-icon settings-bucket-btn${b.isPinned ? ' is-pinned' : ''}"
-            data-action="toggle-pin" data-bucket-id="${b.id}"
+            data-action="toggle-pin" data-bucket-id="${escapeHtml(b.id)}"
             title="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">📌</button>
           <button class="btn-icon settings-bucket-btn"
-            data-action="edit-bucket" data-bucket-id="${b.id}" data-macro="${macroType}"
+            data-action="edit-bucket" data-bucket-id="${escapeHtml(b.id)}" data-macro="${macroType}"
             title="Edit bucket">✏️</button>
           <button class="btn-icon settings-bucket-btn settings-bucket-btn--danger"
-            data-action="remove-bucket" data-bucket-id="${b.id}"
+            data-action="remove-bucket" data-bucket-id="${escapeHtml(b.id)}"
             title="Remove">×</button>
         </div>
       `).join('')}
@@ -303,7 +303,7 @@ function _openProfileEdit(container, field) {
   if (field === 'name') {
     rightEl.innerHTML = `
       <input type="text" class="input-field settings-inline-input" id="edit-input-name"
-        value="${user?.name || ''}" placeholder="Your name" maxlength="20" />
+        value="${escapeHtml(user?.name || '')}" placeholder="Your name" maxlength="20" />
       <button class="btn btn-primary btn-sm" data-save="name">Save</button>
       <button class="btn btn-ghost btn-sm" data-cancel="name">✕</button>
     `;
@@ -433,8 +433,10 @@ function _restoreProfileField(container, field, displayValue) {
   if (!fieldEl) return;
   const rightEl = fieldEl.querySelector('.settings-field__right');
   const fieldName = { name: 'name', salary: 'salary', salaryDate: 'salaryDate', ratios: 'ratios' }[field] || field;
+  // displayValue is rendered as text — name is user-controlled, other fields
+  // are computed strings (currency, percent). Always escape.
   rightEl.innerHTML = `
-    <span class="settings-field__value" id="val-${fieldName}">${displayValue}</span>
+    <span class="settings-field__value" id="val-${fieldName}">${escapeHtml(displayValue)}</span>
     <button class="btn-text settings-edit-btn" data-edit="${fieldName}">Edit</button>
   `;
   rightEl.querySelector('.settings-edit-btn').addEventListener('click', () => {
@@ -565,9 +567,9 @@ function _openBucketEditInline(container, bucketId, macro) {
   if (!rowEl) return;
 
   rowEl.innerHTML = `
-    <span class="settings-bucket-row__emoji" style="cursor:pointer;" data-action="pick-emoji" data-bucket-id="${bucketId}" id="emoji-picker-target-${bucketId}">${bucket.emoji}</span>
-    <input type="text" class="input-field settings-inline-input" id="edit-bucket-name-${bucketId}"
-      value="${bucket.name}" placeholder="Bucket name" maxlength="25" style="flex:1;" />
+    <span class="settings-bucket-row__emoji" style="cursor:pointer;" data-action="pick-emoji" data-bucket-id="${escapeHtml(bucketId)}" id="emoji-picker-target-${escapeHtml(bucketId)}">${escapeHtml(bucket.emoji)}</span>
+    <input type="text" class="input-field settings-inline-input" id="edit-bucket-name-${escapeHtml(bucketId)}"
+      value="${escapeHtml(bucket.name)}" placeholder="Bucket name" maxlength="25" style="flex:1;" />
     <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${bucketId}"
       inputmode="numeric" value="${bucket.allocated > 0 ? formatNumber(bucket.allocated) : ''}" placeholder="₹0" style="max-width:90px;" />
     <button class="btn btn-primary btn-sm" data-save-bucket="${bucketId}">Save</button>

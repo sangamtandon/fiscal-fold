@@ -26,7 +26,7 @@ import {
   isCycleExpired,
 } from './data/store.js';
 import { seedDemoData, renderDevToolbar } from './data/seed.js';
-import { formatCurrency, timeAgo, percent, daysRemaining, cycleDayCount } from './utils/helpers.js';
+import { formatCurrency, timeAgo, percent, daysRemaining, cycleDayCount, escapeHtml } from './utils/helpers.js';
 import { showToast } from './utils/toast.js';
 
 // ---- Theme ----
@@ -209,6 +209,7 @@ export function updateHeaderGreeting() {
   const el = document.getElementById('header-greeting');
   const sub = document.getElementById('header-subtitle');
   if (el && user?.name) {
+    // textContent already escapes — no need for escapeHtml here.
     el.textContent = `Hey, ${user.name} 👋`;
     sub.textContent = 'Your finances, your rules.';
   }
@@ -355,9 +356,9 @@ function registerRoutes() {
             </div>
             <div class="quick-buckets">
               ${quickBuckets.map(b => `
-                <div class="quick-bucket" data-bucket-id="${b.id}">
-                  <div class="quick-bucket__emoji">${b.emoji}</div>
-                  <span class="quick-bucket__name">${b.name}</span>
+                <div class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}">
+                  <div class="quick-bucket__emoji">${escapeHtml(b.emoji)}</div>
+                  <span class="quick-bucket__name">${escapeHtml(b.name)}</span>
                 </div>
               `).join('')}
             </div>
@@ -409,11 +410,11 @@ function registerRoutes() {
 
         <!-- Leak Warnings (hidden on expired cycle — see leak gate above) -->
         ${cycleExpired ? '' : (leaks.length > 0 ? leaks.map(b => `
-          <div class="card leak-warning-card" data-leak-bucket-id="${b.id}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
+          <div class="card leak-warning-card" data-leak-bucket-id="${escapeHtml(b.id)}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
             <div class="flex items-center gap-3">
               <span style="font-size: 24px;">⚡</span>
               <div style="flex: 1; min-width: 0;">
-                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${b.name} — ${percent(b.spent, b.allocated)}% spent with ${daysLeft} day${daysLeft === 1 ? '' : 's'} left</p>
+                <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${escapeHtml(b.name)} — ${percent(b.spent, b.allocated)}% spent with ${daysLeft} day${daysLeft === 1 ? '' : 's'} left</p>
                 <p class="text-tertiary" style="font-size: var(--text-xs);">Tap to log a spend here or adjust the budget.</p>
               </div>
             </div>
@@ -612,8 +613,8 @@ function renderMacroBar(label, summary, type, reserved = 0) {
             const bRemainingPct = b.allocated > 0 ? Math.max(0, 100 - (b.spent / b.allocated) * 100) : 0;
             return `
               <div class="micro-bucket-row">
-                <div class="micro-bucket-row__emoji">${b.emoji}</div>
-                <div class="micro-bucket-row__name">${b.name}</div>
+                <div class="micro-bucket-row__emoji">${escapeHtml(b.emoji)}</div>
+                <div class="micro-bucket-row__name">${escapeHtml(b.name)}</div>
                 <div class="micro-bucket-row__amount">${formatCurrency(Math.max(0, b.allocated - b.spent))}</div>
                 <div class="micro-bucket-row__progress">
                   <div class="micro-bucket-row__fill ${fillClass}" style="width:0" data-width="${bRemainingPct}"></div>
@@ -631,13 +632,13 @@ function renderTransaction(emoji, name, amount, time, borrowedFromName, note, ty
   const isIncome = type === 'income' || type === 'refund';
   return `
     <div class="card" style="padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: var(--space-3);">
-      <span style="font-size: 22px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border-radius: var(--radius-md); flex-shrink: 0;">${emoji}</span>
+      <span style="font-size: 22px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border-radius: var(--radius-md); flex-shrink: 0;">${escapeHtml(emoji)}</span>
       <div style="flex: 1; min-width: 0;">
         <div class="flex items-center gap-2">
-          <p class="font-medium" style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${name}</p>
-          ${note ? `<span class="text-tertiary" style="font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">• ${note}</span>` : ''}
+          <p class="font-medium" style="font-size: var(--text-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(name)}</p>
+          ${note ? `<span class="text-tertiary" style="font-size: var(--text-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">• ${escapeHtml(note)}</span>` : ''}
         </div>
-        <p class="text-tertiary" style="font-size: var(--text-xs);">${time}${borrowedFromName ? ` · <span class="badge badge--amber" style="font-size: 10px; padding: 1px 6px;">from ${borrowedFromName}</span>` : ''}</p>
+        <p class="text-tertiary" style="font-size: var(--text-xs);">${escapeHtml(time)}${borrowedFromName ? ` · <span class="badge badge--amber" style="font-size: 10px; padding: 1px 6px;">from ${escapeHtml(borrowedFromName)}</span>` : ''}</p>
       </div>
       <span class="text-mono font-semibold" style="font-size: var(--text-sm); flex-shrink: 0; ${isIncome ? 'color: var(--accent-primary);' : ''}">${isIncome ? '+' : '−'}${formatCurrency(amount)}</span>
     </div>

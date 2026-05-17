@@ -18,7 +18,7 @@ import {
   completeOnboarding,
 } from '../data/store.js';
 import { PRESETS, BUCKET_TEMPLATES, EMOJI_PALETTE, MAX_BUCKETS_PER_MACRO } from '../data/models.js';
-import { formatCurrency, formatNumber, uid, formatPayday } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, uid, formatPayday, escapeHtml } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { navigate } from '../router.js';
 import { showToast } from '../utils/toast.js';
@@ -153,14 +153,14 @@ function renderStep1(container) {
         class="input-field onboarding__name-input"
         id="input-name"
         placeholder="Your first name"
-        value="${formData.name}"
+        value="${escapeHtml(formData.name)}"
         autocomplete="given-name"
         maxlength="20"
         autofocus
       />
     </div>
     <div class="onboarding__preview card card--glass" id="greeting-preview" style="${formData.name ? '' : 'opacity: 0.3;'}">
-      <span class="app-header__name">${formData.name ? `Hey, ${formData.name} 👋` : 'Hey, ... 👋'}</span>
+      <span class="app-header__name">${formData.name ? `Hey, ${escapeHtml(formData.name)} 👋` : 'Hey, ... 👋'}</span>
       <span class="app-header__subtitle">Your finances, your rules.</span>
     </div>
   `;
@@ -537,16 +537,16 @@ function renderBucketSection(macroType, label) {
 
 function renderBucketItem(bucket, macroType) {
   return `
-    <div class="onboarding__bucket-wrap" data-id="${bucket.id}" data-macro="${macroType}">
+    <div class="onboarding__bucket-wrap" data-id="${escapeHtml(bucket.id)}" data-macro="${macroType}">
       <div class="onboarding__bucket-item">
-        <span class="onboarding__bucket-emoji">${bucket.emoji}</span>
+        <span class="onboarding__bucket-emoji">${escapeHtml(bucket.emoji)}</span>
         <input
           type="text"
           class="onboarding__bucket-name"
-          value="${bucket.name}"
+          value="${escapeHtml(bucket.name)}"
           placeholder="Bucket name"
           maxlength="25"
-          data-id="${bucket.id}"
+          data-id="${escapeHtml(bucket.id)}"
           data-macro="${macroType}"
         />
         <div class="onboarding__amount-wrap">

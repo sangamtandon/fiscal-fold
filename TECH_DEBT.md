@@ -385,7 +385,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-020] User-controlled strings (bucket names, notes) inserted unescaped into `innerHTML`
+### ✅ [DEBT-020] User-controlled strings inserted unescaped — fixed (escapeHtml helper applied across renderers)
 - **File:** Multiple — `src/main.js` (lines 633–634, 636), `src/pages/transactions.js` (lines 191, 197), `src/pages/commitments.js` (lines 199), `src/pages/settings.js` (line 207), and others
 - **Category:** Structural
 - **Severity:** Medium

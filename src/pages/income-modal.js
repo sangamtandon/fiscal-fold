@@ -12,7 +12,7 @@ import {
   getBuckets,
   addIncome,
 } from '../data/store.js';
-import { formatCurrency, formatNumber } from '../utils/helpers.js';
+import { formatCurrency, formatNumber, escapeHtml } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
 import { rerender } from '../router.js';
 
@@ -155,10 +155,10 @@ function _renderBucket() {
         return `
           <div class="income-bucket-section-label" style="color:${color};">${label}</div>
           ${buckets.map(b => `
-            <button class="income-bucket-option${_targetBucketId === b.id ? ' is-selected' : ''}" data-bucket-id="${b.id}">
-              <span style="font-size:20px;">${b.emoji}</span>
+            <button class="income-bucket-option${_targetBucketId === b.id ? ' is-selected' : ''}" data-bucket-id="${escapeHtml(b.id)}">
+              <span style="font-size:20px;">${escapeHtml(b.emoji)}</span>
               <div class="income-bucket-option__info">
-                <span class="income-bucket-option__name">${b.name}</span>
+                <span class="income-bucket-option__name">${escapeHtml(b.name)}</span>
                 <span class="income-bucket-option__sub text-tertiary">${formatCurrency(Math.max(0, b.allocated - b.spent))} remaining</span>
               </div>
               ${_targetBucketId === b.id ? '<span class="income-bucket-option__check">✓</span>' : ''}
@@ -215,13 +215,13 @@ function _renderConfirm() {
       </div>
       <div class="income-confirm-row">
         <span class="text-secondary" style="font-size:var(--text-sm);">Adding to</span>
-        <span class="font-semibold" style="font-size:var(--text-sm);">${targetLabel}</span>
+        <span class="font-semibold" style="font-size:var(--text-sm);">${escapeHtml(targetLabel)}</span>
       </div>
     </div>
 
     <div class="income-note-wrap">
       <input type="text" class="input-field" id="ic-note"
-        placeholder="Note (optional)" value="${_note}" maxlength="60" />
+        placeholder="Note (optional)" value="${escapeHtml(_note)}" maxlength="60" />
     </div>
 
     <div class="income-drawer__footer">
