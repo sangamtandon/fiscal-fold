@@ -333,7 +333,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-017] Onboarding hardcodes `dueDate: 1` when a recurring bucket creates a Commitment
+### ✅ [DEBT-017] Onboarding hardcodes `dueDate: 1` — fixed (inline day picker per recurring bucket)
 - **File:** `src/pages/onboarding.js` (line 818)
 - **Category:** Refactor
 - **Severity:** Low
