@@ -361,7 +361,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Emoji picker -->
       <div class="cm-form__section">
-        <p class="cm-form__label">Emoji</p>
+        <span class="cm-form__label">Emoji</span>
         <div class="cm-emoji-grid" id="cf-emoji-grid">
           ${EMOJI_PALETTE.slice(0, 24).map(e => `
             <button class="cm-emoji-btn${state.emoji === e ? ' is-selected' : ''}" data-emoji="${e}">${e}</button>
@@ -371,7 +371,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Name -->
       <div class="cm-form__section">
-        <p class="cm-form__label">Name</p>
+        <label class="cm-form__label" for="cf-name">Name</label>
         <input
           type="text"
           class="input-field"
@@ -384,7 +384,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Amount -->
       <div class="cm-form__section">
-        <p class="cm-form__label">Monthly Amount</p>
+        <label class="cm-form__label" for="cf-amount">Monthly Amount</label>
         <div class="cm-amount-wrap">
           <span class="cm-amount-symbol">₹</span>
           <input
@@ -400,7 +400,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Macro -->
       <div class="cm-form__section">
-        <p class="cm-form__label">Category</p>
+        <span class="cm-form__label">Category</span>
         <div class="cm-chip-group" id="cf-macro">
           ${['needs', 'wants', 'future'].map(m => `
             <button
@@ -414,7 +414,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Due date -->
       <div class="cm-form__section">
-        <p class="cm-form__label">Due Date (day of month)</p>
+        <label class="cm-form__label" for="cf-due-select">Due Date (day of month)</label>
         ${renderDayPicker({ value: state.dueDate, selectId: 'cf-due-select' })}
       </div>
 
