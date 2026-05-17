@@ -124,7 +124,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-006] Seed data uses hardcoded sequential IDs instead of `uid()`
+### ✅ [DEBT-006] Seed data uses hardcoded sequential IDs — fixed (uid() across buckets and references)
 - **File:** `src/data/seed.js` (lines 48–103)
 - **Category:** Structural
 - **Severity:** Medium
