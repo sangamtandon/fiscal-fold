@@ -40,7 +40,7 @@ Fiscal Fold is built with a focus on simplicity, speed, and zero dependency chur
 - **State Management:** Custom reactive pub/sub store
 - **Typography:** Inter + JetBrains Mono
 
-For more detailed technical insights, read the [Architecture Documentation](ARCHITECTURE.md).
+For more detailed technical insights and rules for AI agents, read the [AGENTS.md](AGENTS.md) file.
 
 ## 🚀 Getting Started
 
@@ -87,9 +87,8 @@ The optimized files will be generated in the `dist` directory.
 - `public/` — `manifest.json`, `sw.js` (service worker), `favicon.svg`, `icons.svg`
 
 ## 📚 Documentation
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — stack, file map, store API, design decisions
+- [`AGENTS.md`](AGENTS.md) — architectural stack, workflow instructions, pre-commit quality gate checklist, and explicit guidelines for AI development platforms
 - [`CHANGELOG.md`](CHANGELOG.md) — version history (sprint releases + post-MVP work)
-- [`QUALITY_GATE.md`](QUALITY_GATE.md) — pre-merge regression checklist
 - [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) — original sprint plan (historical)
 - [`docs/UX_GLOSSARY.md`](docs/UX_GLOSSARY.md) — every user-facing term, with the exact copy used in-app
 
@@ -101,4 +100,4 @@ The optimized files will be generated in the `dist` directory.
 MVP complete — Sprints 1–12 shipped. See `CHANGELOG.md` for ongoing work.
 
 ## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check `QUALITY_GATE.md` and run through the regression checklist before requesting review.
+Contributions are welcome! Please feel free to submit a Pull Request. Be sure to check the Quality Gate section in `AGENTS.md` and run through the checklist before requesting review.
