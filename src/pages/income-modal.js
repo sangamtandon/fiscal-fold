@@ -196,12 +196,9 @@ function _renderBucket() {
 // ---- Step 3: Confirm ----
 
 function _renderConfirm() {
+  const _confirmBucket = _targetBucketId ? getBuckets().find(bk => bk.id === _targetBucketId) : null;
   const targetLabel = _targetBucketId
-    ? (() => {
-        const b = getBuckets().find(bk => bk.id === _targetBucketId) ||
-                  [...getBuckets('needs'), ...getBuckets('wants'), ...getBuckets('future')].find(bk => bk.id === _targetBucketId);
-        return b ? `${b.emoji} ${b.name}` : 'Unknown bucket';
-      })()
+    ? (_confirmBucket ? `${_confirmBucket.emoji} ${_confirmBucket.name}` : 'Unknown bucket')
     : '🏦 Overall budget';
 
   _drawer.innerHTML = `
