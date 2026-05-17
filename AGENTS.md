@@ -1,26 +1,151 @@
-# AI Agents Instructions (`AGENTS.md`)
+# AGENTS.md
 
-Welcome! This file serves as the single source of truth for AI agents (like Cursor, Aider, GitHub Copilot Workspace, Devin, etc.) contributing to the **Fiscal Fold** project.
+> Single entry point for any AI coding agent (Claude Code, OpenAI Codex, Cursor,
+> Gemini CLI, Aider, Jules, etc.) working on this repo. Read this first, then
+> open the relevant role file under `.agents/` for the work you're about to do.
 
-Fiscal Fold is a lightning-fast, local-first personal finance PWA that uses envelope budgeting based on the 50/30/20 rule. Our focus is on zero-guilt spending and absolute data privacy.
+## Project snapshot
 
-As an AI agent, you must read and adhere to the guidelines, architectural decisions, and workflows defined in this document before writing any code or proposing any changes.
+**Fiscal Fold** is a local-first personal-finance PWA that implements 50/30/20
+envelope budgeting (salary auto-split into Needs / Wants / Future jars). It is
+a single-user, offline-capable app with **no backend** — all state lives in
+`localStorage`. Currency is INR (lakhs / crores formatting). Mobile-first from
+375px.
 
----
+## Tech stack
 
-## 1. Project Architecture & Tech Stack
+- **Build:** Vite 5 (vanilla ES modules)
+- **Language:** Vanilla JavaScript with JSDoc typedefs (no TypeScript)
+- **State:** Custom reactive pub/sub store in `src/data/store.js`
+- **Routing:** Custom hash router in `src/router.js`
+- **Styling:** Vanilla CSS with design tokens in `src/style.css`; per-page CSS scoped by slug prefix
+- **PWA:** Service worker in `public/sw.js` (cache-bust via custom Vite plugin)
+- **Tests:** Vitest (unit + integration) and Playwright (e2e on Pixel 5 profile)
+- **CI:** `.github/workflows/test.yml` (build → unit + coverage → e2e)
 
-This project strictly avoids modern complex frameworks in favor of speed, small bundle sizes, and zero dependency churn.
+## Setup & commands
 
-- **Build Tool:** Vite 5
-- **Core:** Vanilla JS (ES Modules) — **No frameworks** (No React, Vue, Svelte, etc.)
-- **Styling:** Vanilla CSS (Custom properties / Design tokens) — **No Tailwind or CSS processors**
-- **Routing:** Custom lightweight hash router (`src/router.js`)
-- **State Management:** Custom reactive pub/sub store (`src/data/store.js`)
-- **Persistence:** LocalStorage only. `offlineQueue.js` is merely a sync stub for future use.
-- **Testing:** Vitest (Unit/Integration) and Playwright (E2E)
+```bash
+npm install            # one-time
 
-### Intentional Decisions (DO NOT CHANGE)
+npm run dev            # Vite dev server on http://localhost:5173
+npm run build          # production build to dist/
+npm run preview        # preview production build
+
+npm test               # Vitest unit + integration
+npm run test:watch     # Vitest watch mode
+npm run test:cov       # coverage (85% line threshold on store/models/helpers)
+npm run test:e2e       # Playwright on Pixel 5 mobile profile
+```
+
+CI runs the same scripts; do not commit if any of them fail locally.
+
+## Repo map
+
+```
+src/
+  main.js              app shell, dashboard wiring, FAB, toast, install banner
+  router.js            hash router — register new pages here
+  style.css            60+ design tokens, global components
+  pages/               one .js + .css per route, slug-prefixed CSS classes
+  data/
+    store.js           reactive store — ALL state writes go through this
+    models.js          JSDoc typedefs for User / BudgetCycle / MicroBucket / Transaction / Commitment / Sweep
+    seed.js            demo data + dev toolbar
+  utils/               helpers.js (INR), theme.js, toast.js, offlineQueue.js, export.js, txn-grouping.js
+public/                manifest.json, sw.js, favicon.svg, icons.svg
+tests/
+  unit/                Vitest, jsdom — store mutators, selectors, helpers, money precision
+  integration/         Vitest — multi-mutator lifecycle flows
+  e2e/                 Playwright — 12 specs covering onboarding, dashboard, persistence, payday, etc.
+  helpers/             freshStore factory, builders
+docs/
+  UX_GLOSSARY.md       every user-facing string — copy MUST match
+  IMPLEMENTATION_PLAN.md  historical sprint plan
+```
+
+## Code conventions
+
+- **State:** every mutation goes through a mutator in `src/data/store.js`.
+  Never call `localStorage.setItem` outside the store. Subscribe via
+  `subscribe(key, callback)`.
+- **Models:** add or extend JSDoc typedefs in `src/data/models.js` before
+  changing state shape.
+- **Pages:** a new route = a new `src/pages/<name>.js` + `src/pages/<name>.css`
+  registered in `src/router.js`. CSS classes are prefixed with the page slug
+  (`.txn-`, `.cm-`, `.pd-`, `.settings-`, etc.). Global styles only in
+  `src/style.css`.
+- **Money:** all currency formatting goes through `src/utils/helpers.js`
+  (lakhs / crores). Money math goes through the precision helpers covered by
+  `tests/unit/precision.spec.js` — never use raw floats.
+- **UX copy:** every user-visible string must exist in `docs/UX_GLOSSARY.md`.
+  Notable rules: say "cover from another bucket", never "borrow"; warnings
+  are **warm amber, never red**.
+- **Accessibility:** 44 px min touch targets (WCAG 2.5.5), visible focus
+  rings, `role="dialog"` on modals, `role="progressbar"` on health bars.
+- **Responsive:** mobile-first from 375 px (iPhone SE); tablet break 768 px;
+  desktop 1024 px.
+- **Dark mode is default**; light is a toggle in `src/utils/theme.js`.
+
+## Testing rules
+
+- Every new store mutator gets a unit test in `tests/unit/`.
+- Every new user-visible flow gets a Playwright spec in `tests/e2e/`.
+- Coverage thresholds in `vitest.config.js` must not be lowered to make tests
+  pass — fix the test or fix the code.
+- E2E assertions reference visible copy from `docs/UX_GLOSSARY.md`, not
+  internal IDs or class names.
+
+## Agent workflow — which `.agents/` file to open
+
+| Intent                              | Read                          |
+| ----------------------------------- | ----------------------------- |
+| Break a request into a plan         | `.agents/planner.md`          |
+| Write production code               | `.agents/implementer.md`      |
+| Add / update tests                  | `.agents/tester.md`           |
+| Pre-merge review                    | `.agents/reviewer.md`         |
+| Update docs after a change          | `.agents/documenter.md`       |
+| Cut a release                       | `.agents/release-manager.md`  |
+
+A full feature usually flows planner → implementer → tester → documenter →
+reviewer → release-manager. Each role file lists its inputs, outputs, and stop
+conditions.
+
+## Deeper documentation
+
+- `README.md` — product overview and getting started
+- `CURRENT_SPRINT.md` — current status and handoff notes
+- `CHANGELOG.md` — release notes per sprint and post-MVP PR
+- `docs/UX_GLOSSARY.md` — canonical user-facing copy
+- `docs/IMPLEMENTATION_PLAN.md` — historical sprint plan
+
+## Commit & PR conventions
+
+- Short imperative subject (`fix: payday sweep rounding`, `feat: bucket pin toggle`).
+- Never commit `dist/`, `.env*`, or `node_modules/`.
+- One logical change per PR; keep diffs reviewable.
+- PR description: what changed, why, screenshots for UI.
+
+## Hard rules (don'ts)
+
+- No new frameworks (React, Vue, Svelte, etc.).
+- No Tailwind, SCSS, or any CSS preprocessor — vanilla CSS only.
+- No TypeScript migration — stay on JSDoc.
+
+## Quality Gate & Regression Checklist
+Before requesting a code review, ensure you have:
+1. Run `npm test` and `npm run test:e2e` locally.
+2. Verified changes on Mobile (375px), Tablet (768px), and Desktop (1024px).
+3. Checked that all UI copy matches `docs/UX_GLOSSARY.md`.
+4. Run `npm run build` with zero warnings.
+- No cloud sync, no telemetry, no analytics SDKs.
+- No new runtime dependencies without explicit user approval.
+- No breaking changes to the `localStorage` schema without a written migration
+  step in `src/data/store.js` and a note in `CHANGELOG.md`.
+- Never lower coverage thresholds to make a build pass.
+- Never `console.log` in committed code.
+
+## Intentional Decisions (DO NOT CHANGE)
 
 1. **No JavaScript framework.** Do not introduce React, Vue, Svelte, or any VDOM layer.
 2. **Hash-based routing.** Do not migrate to the History API.
@@ -30,71 +155,3 @@ This project strictly avoids modern complex frameworks in favor of speed, small 
 6. **INR currency formatting.** Do not change the locale (`en-IN`) or currency (`INR`).
 7. **Amber/warn color for over-budget, never red.** Use `var(--warn)` for warnings. Red (`var(--danger)`) is only for destructive settings (Danger Zone).
 8. **Module-level state in page modules.** Pages use module-level variables (e.g., `_activeFilter`). Do not refactor to class instances or closures unless specifically asked to extract logic.
-
----
-
-## 2. Directory Structure & Conventions
-
-```
-fiscal-fold/
-├── index.html                  # PWA entry point
-├── public/                     # Static assets, SW, manifest
-├── src/
-│   ├── main.js                 # App shell, PWA logic
-│   ├── router.js               # Hash router
-│   ├── style.css               # Global design system & tokens
-│   ├── pages/                  # Page modules with scoped CSS
-│   ├── data/                   # Store, Models (JSDocs), Seed data
-│   └── utils/                  # Helpers, theme, offline queue
-└── tests/                      # Vitest and Playwright specs
-```
-
-### Coding Conventions
-
-1. **CSS Scoping:** Since Vite injects all imported CSS globally, every page module must prefix its CSS classes uniquely (e.g., `.onboarding__`, `.txn-`, `.settings-`). Reviewers/Agents must ensure no unprefixed classes are introduced.
-2. **State Access:** All state flows through `src/data/store.js`. Components must never access `localStorage` directly. Use exported getters and mutators.
-3. **HTML Escaping:** Always use `escapeHtml(str)` from `src/utils/helpers.js` when interpolating user-controlled strings (like bucket names or notes) into `innerHTML`.
-4. **Data Models:** Always consult `src/data/models.js` for expected object shapes.
-
----
-
-## 3. Workflow & Branching Strategy
-
-When assigned a task (feature or bugfix), follow this exact workflow:
-
-1. **Branching:** Always branch off the latest `main`. Name your branches descriptively, e.g., `feature/add-dark-mode` or `fix/dashboard-rendering`.
-2. **Planning:** Review the files, write a plan, and ask the user for clarification if the requirements are ambiguous.
-3. **Implementation:** Write clean Vanilla JS.
-4. **Testing (Mandatory):**
-   - Write or update unit tests (`tests/unit/`) if modifying store logic or helpers.
-   - Update Playwright E2E tests (`tests/e2e/`) if modifying UI flows.
-5. **Quality Gate:** You must successfully run the test commands and build commands before finalizing your work.
-6. **Commits:** Write clear, conventional commit messages.
-
----
-
-## 4. Quality Gate (Pre-Commit Checks)
-
-Before you declare a task complete, you must verify the following in your bash session:
-
-### Automated Checks
-1. `npm run build` — Must complete without errors.
-2. `npm test` — Vitest unit and integration tests must pass.
-3. `npm run test:e2e` — Playwright end-to-end tests must pass.
-
-### Visual / Functional Verification (To verify manually or via scripts)
-- Run `npm run dev` and ensure there are no console errors.
-- If modifying UI, ensure responsive behavior across Mobile (375px), Tablet (768px), and Desktop (1280px).
-- Verify Data Integrity: Reloading the page should preserve state. Wiping data should redirect to `/onboarding`.
-
-### Glossary Check
-Always ensure UI terminology matches the project's exact glossary:
-- **Jars:** Needs / Wants / Future
-- **Bucket:** Never "envelope"
-- **Quick Bucket:** Pinned bucket on the dashboard
-- **Cycle:** The budget period
-- **Commitment:** Recurring bill (Never "Subscription")
-- **Trade-off / Cover:** Never "Borrow" (there is no payback)
-- **Safe to Spend:** Wants budget remaining
-
-If you encounter an issue during testing, you must fix it before submitting the code. Do not ignore failing tests.
