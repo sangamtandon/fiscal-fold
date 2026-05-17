@@ -395,7 +395,8 @@ function registerRoutes() {
                     t.amount,
                     timeAgo(t.timestamp),
                     t.borrowedFrom ? getBucketById(t.borrowedFrom)?.name : null,
-                    t.note
+                    t.note,
+                    t.type,
                   );
                 }).join('')
               : '<p class="text-tertiary text-center" data-testid="txn-empty-state" style="padding: var(--space-6); font-size: var(--text-sm);">No transactions yet. Tap the green ＋ button below to log your first.</p>'
@@ -623,7 +624,8 @@ function renderMacroBar(label, summary, type, reserved = 0) {
   `;
 }
 
-function renderTransaction(emoji, name, amount, time, borrowedFromName, note) {
+function renderTransaction(emoji, name, amount, time, borrowedFromName, note, type = 'expense') {
+  const isIncome = type === 'income' || type === 'refund';
   return `
     <div class="card" style="padding: var(--space-3) var(--space-4); display: flex; align-items: center; gap: var(--space-3);">
       <span style="font-size: 22px; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; background: var(--bg-elevated); border-radius: var(--radius-md); flex-shrink: 0;">${emoji}</span>
@@ -634,7 +636,7 @@ function renderTransaction(emoji, name, amount, time, borrowedFromName, note) {
         </div>
         <p class="text-tertiary" style="font-size: var(--text-xs);">${time}${borrowedFromName ? ` · <span class="badge badge--amber" style="font-size: 10px; padding: 1px 6px;">from ${borrowedFromName}</span>` : ''}</p>
       </div>
-      <span class="text-mono font-semibold" style="font-size: var(--text-sm); flex-shrink: 0;">−${formatCurrency(amount)}</span>
+      <span class="text-mono font-semibold" style="font-size: var(--text-sm); flex-shrink: 0; ${isIncome ? 'color: var(--accent-primary);' : ''}">${isIncome ? '+' : '−'}${formatCurrency(amount)}</span>
     </div>
   `;
 }

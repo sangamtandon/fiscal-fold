@@ -17,6 +17,7 @@ import {
 } from '../data/store.js';
 import { formatCurrency, percent, cycleDayCount } from '../utils/helpers.js';
 import { showToast } from '../utils/toast.js';
+import { navigate } from '../router.js';
 
 const _macroColor = {
   needs: 'var(--needs)',
@@ -32,7 +33,7 @@ export function renderPaydayPage(container) {
   const user = getUser();
 
   if (!cycle || !user) {
-    import('../router.js').then(({ navigate }) => navigate('/dashboard'));
+    navigate('/dashboard');
     return;
   }
 
@@ -134,7 +135,7 @@ export function renderPaydayPage(container) {
   `;
 
   container.querySelector('#pd-back').addEventListener('click', () => {
-    import('../router.js').then(({ navigate }) => navigate('/dashboard'));
+    navigate('/dashboard');
   });
 
   container.querySelector('#pd-confirm').addEventListener('click', () => {
@@ -222,10 +223,8 @@ function _startNewCycle(container, cycle, user) {
     // Copy bucket structure from old cycle with proportional re-allocation
     copyBucketsToNewCycle(oldCycleId, newCycle.id, newAllocations);
 
-    import('../router.js').then(({ navigate }) => {
-      navigate('/dashboard');
-      showToast('New pay period started! 🎉', 'success');
-    });
+    navigate('/dashboard');
+    showToast('New pay period started! 🎉', 'success');
   } catch (e) {
     if (btn) btn.disabled = false;
     showToast('Failed to start new pay period — please try again');

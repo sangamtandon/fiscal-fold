@@ -158,7 +158,7 @@ export function getTransactions({ limit, bucketId } = {}) {
   const cycleId = _state.currentCycleId;
   let txns = _state.transactions.filter(t => t.cycleId === cycleId);
   if (bucketId) txns = txns.filter(t => t.bucketId === bucketId);
-  txns.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  txns.sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
   if (limit) txns = txns.slice(0, limit);
   return txns;
 }
@@ -166,6 +166,13 @@ export function getTransactions({ limit, bucketId } = {}) {
 /** @returns {import('./models.js').Commitment[]} */
 export function getCommitments() {
   return _state.commitments.filter(c => c.isActive);
+}
+
+/** Returns all commitments regardless of active status — for management UIs.
+ * @returns {import('./models.js').Commitment[]}
+ */
+export function getAllCommitments() {
+  return [..._state.commitments];
 }
 
 /**
@@ -397,6 +404,10 @@ export function addTransaction({ bucketId, amount, note, type = 'expense' }) {
 
   // Update bucket spent
   const bucket = _state.buckets.find(b => b.id === bucketId);
+  if (bucket && type === 'expense' && (bucket.swept ?? 0) > 0) {
+    _state.transactions.pop();
+    throw new Error(`addTransaction: bucket "${bucket.name}" has been swept — start a new cycle before logging expenses`);
+  }
   if (bucket) {
     if (type === 'expense') {
       bucket.spent += amount;
@@ -733,7 +744,7 @@ export function addIncome(amount, targetBucketId, note = '') {
  * @returns {import('./models.js').Transaction[]}
  */
 export function getAllTransactions() {
-  return [..._state.transactions].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  return [..._state.transactions].sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
 }
 
 // ---- Lifecycle ----

@@ -85,7 +85,7 @@ export function groupByMonth(txns, getBucket, now = new Date()) {
 
   return sortedKeys.map(monthKey => {
     const monthTxns = byKey.get(monthKey).slice().sort(
-      (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+      (a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0)
     );
     return {
       monthKey,
