@@ -23,6 +23,7 @@ import {
 import { formatCurrency, ordinalSuffix } from '../utils/helpers.js';
 import { renderDayPicker, bindDayPicker } from '../utils/day-of-month-picker.js';
 import { showToast } from '../utils/toast.js';
+import { navigate } from '../router.js';
 import { EMOJI_PALETTE } from '../data/models.js';
 
 // ---- Due-date helpers ----
@@ -127,7 +128,7 @@ function _render(container) {
   `;
 
   container.querySelector('#cm-back').addEventListener('click', () => {
-    import('../router.js').then(({ navigate }) => navigate('/settings'));
+    navigate('/settings');
   });
 
   container.querySelector('#cm-add').addEventListener('click', () => {
