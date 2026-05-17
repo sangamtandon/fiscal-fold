@@ -8,7 +8,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ## Debt Items
 
-### [DEBT-001] Seed data uses full ISO datetime strings for cycle dates — causes NaN in all date math
+### ✅ [DEBT-001] Seed data uses full ISO datetime strings for cycle dates — fixed in ab30357
 - **File:** `src/data/seed.js` (lines 225–232)
 - **Category:** Structural
 - **Severity:** High
@@ -59,7 +59,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-003] Dashboard's recent-transactions list always shows `−` — income/refund appear negative
+### ✅ [DEBT-003] Dashboard's recent-transactions list always shows `−` — fixed in 5e3bd86
 - **File:** `src/main.js` (lines 626–640)
 - **Category:** Refactor
 - **Severity:** High
@@ -106,7 +106,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-005] `commitments.js` reads `getState().commitments` directly — missing `getAllCommitments()` selector
+### ✅ [DEBT-005] `commitments.js` reads `getState().commitments` directly — fixed in 0ad53bd
 - **File:** `src/pages/commitments.js` (lines 94–99, 145, 159, 170, 179, 184), `src/data/store.js`
 - **Category:** Reusability
 - **Severity:** Medium
@@ -217,7 +217,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-011] Date-string sort creates `new Date()` objects per comparison — use lexicographic sort
+### ✅ [DEBT-011] Date-string sort creates `new Date()` objects per comparison — fixed in 8846ef3
 - **File:** `src/data/store.js` (line 161, line 736), `src/utils/txn-grouping.js` (line 88)
 - **Category:** Scalability
 - **Severity:** Low
@@ -240,7 +240,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-012] `income-modal.js` confirm step has a redundant dead-code bucket lookup
+### ✅ [DEBT-012] `income-modal.js` confirm step has a redundant dead-code bucket lookup — fixed in 4fc0a0a
 - **File:** `src/pages/income-modal.js` (lines 199–205)
 - **Category:** Refactor
 - **Severity:** Low
@@ -262,7 +262,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-013] Transaction history search triggers full DOM re-render on every keystroke — missing debounce
+### ✅ [DEBT-013] Transaction history search triggers full DOM re-render on every keystroke — fixed in 3b14a7b
 - **File:** `src/pages/transactions.js` (lines 261–264)
 - **Category:** Scalability
 - **Severity:** Medium
@@ -283,7 +283,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-014] Lazy dynamic `import('../router.js')` inside event handlers is unnecessary and creates error gaps
+### ✅ [DEBT-014] Lazy dynamic `import('../router.js')` inside event handlers — fixed in ad780df
 - **File:** `src/pages/commitments.js` (line 129), `src/pages/payday.js` (lines 136, 224–227)
 - **Category:** Structural
 - **Severity:** Low
@@ -438,7 +438,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-023] Post-sweep overdraft — `addTransaction` accepts expenses against already-swept buckets
+### ✅ [DEBT-023] Post-sweep overdraft — `addTransaction` accepts expenses against already-swept buckets — fixed in 430d943
 - **File:** `src/data/store.js` (`addTransaction`, lines 381–412; `runSweep`, lines 555–597)
 - **Category:** Structural
 - **Severity:** High
