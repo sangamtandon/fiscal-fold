@@ -83,9 +83,22 @@ function notify(key) {
 
 // ---- Getters ----
 
-/** @returns {import('./models.js').AppState} */
+/**
+ * Returns a shallow-cloned snapshot of state. Top-level arrays are also
+ * shallow-cloned so callers can't `.push()` into the live store. Mutations
+ * to a returned object DO NOT persist — go through a mutator (e.g.
+ * `updateBucket`) or you'll silently desync localStorage.
+ * @returns {import('./models.js').AppState}
+ */
 export function getState() {
-  return _state;
+  return {
+    ..._state,
+    cycles:       [..._state.cycles],
+    buckets:      [..._state.buckets],
+    transactions: [..._state.transactions],
+    commitments:  [..._state.commitments],
+    sweeps:       [..._state.sweeps],
+  };
 }
 
 /** @returns {import('./models.js').User|null} */

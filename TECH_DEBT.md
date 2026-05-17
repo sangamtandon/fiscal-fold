@@ -29,7 +29,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-002] `getState()` returns internal state by mutable reference — store integrity bypassed
+### ✅ [DEBT-002] `getState()` returns internal state by mutable reference — fixed (returns shallow copy)
 - **File:** `src/data/store.js` (line 88)
 - **Category:** Structural
 - **Severity:** High
