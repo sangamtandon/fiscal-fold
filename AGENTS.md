@@ -44,15 +44,17 @@ CI runs the same scripts; do not push if any fail locally.
 
 ```
 src/
-  main.js              app shell, dashboard wiring, FAB, toast, install banner
-  router.js            hash router — register new pages here
+  main.js              app shell, route registration, service worker init, FAB, toast, install banner
+  router.js            hash router — pages register routes via registerRoute()
   style.css            60+ design tokens, global components
-  pages/               one .js + .css per route, slug-prefixed CSS classes
+  pages/               one .js + .css per route — dashboard, onboarding, transactions, transaction-modal,
+                       commitments, income-modal, payday, settings (CSS classes are slug-prefixed)
   data/
     store.js           reactive store — ALL state writes go through this
     models.js          JSDoc typedefs (User / BudgetCycle / MicroBucket / Transaction / Commitment / Sweep)
     seed.js            demo data + dev toolbar
-  utils/               helpers.js (INR + escapeHtml), theme.js, toast.js, offlineQueue.js, export.js, txn-grouping.js
+  utils/               helpers.js (INR + escapeHtml), theme.js, toast.js, offlineQueue.js (sync stub),
+                       export.js (CSV/JSON), txn-grouping.js, day-of-month-picker.js (shared salary/due-date input)
 public/                manifest.json, sw.js, favicon.svg, icons.svg
 tests/
   unit/                Vitest, jsdom — store mutators, selectors, helpers, money precision
