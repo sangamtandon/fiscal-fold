@@ -529,10 +529,32 @@ function _handleTogglePin(container, bucketId) {
 function _handleRemoveBucket(container, bucketId) {
   const bucket = getBucketById(bucketId);
   if (!bucket) return;
-  if (!confirm(`Remove "${bucket.name}"? This won't delete past transactions.`)) return;
-  removeBucket(bucketId);
-  _refreshBucketsPanel(container);
-  showToast(`"${bucket.name}" removed`);
+
+  const rowEl = container.querySelector(`[data-bucket-id="${bucketId}"].settings-bucket-row`);
+  if (!rowEl) return;
+
+  // Don't fire a second confirm strip if one is already up for this row.
+  if (rowEl.dataset.confirming === '1') return;
+  rowEl.dataset.confirming = '1';
+
+  const originalHtml = rowEl.innerHTML;
+  rowEl.innerHTML = `
+    <span class="settings-bucket-row__emoji">${bucket.emoji}</span>
+    <span class="settings-bucket-row__name">Remove "${bucket.name}"? Past transactions are kept.</span>
+    <button class="btn btn-ghost btn-sm" data-confirm-cancel>Cancel</button>
+    <button class="btn settings-danger-zone__btn-confirm btn-sm" data-confirm-remove>Remove</button>
+  `;
+
+  rowEl.querySelector('[data-confirm-cancel]').addEventListener('click', () => {
+    rowEl.innerHTML = originalHtml;
+    delete rowEl.dataset.confirming;
+  });
+
+  rowEl.querySelector('[data-confirm-remove]').addEventListener('click', () => {
+    removeBucket(bucketId);
+    _refreshBucketsPanel(container);
+    showToast(`"${bucket.name}" removed`);
+  });
 }
 
 function _openBucketEditInline(container, bucketId, macro) {

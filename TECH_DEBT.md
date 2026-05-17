@@ -93,7 +93,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-004] `window.confirm()` used for destructive actions — breaks design system
+### ✅ [DEBT-004] `window.confirm()` used for destructive actions — fixed (inline Cancel/Confirm in both call sites)
 - **File:** `src/pages/settings.js` (line 537), `src/pages/transactions.js` (line 284)
 - **Category:** Refactor
 - **Severity:** Medium
