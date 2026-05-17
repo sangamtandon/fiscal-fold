@@ -407,7 +407,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-021] Page CSS files accumulate as global stylesheets and are never unloaded on navigation
+### ✅ [DEBT-021] Page CSS files accumulate as global stylesheets — fixed (convention documented in ARCHITECTURE.md)
 - **File:** `src/pages/onboarding.js:11`, `transactions.js:10`, `transaction-modal.js:11`, `commitments.js:12`, `payday.js:8`, `settings.js:8`, `income-modal.js:10`
 - **Category:** Scalability
 - **Severity:** Low
