@@ -397,6 +397,10 @@ export function addTransaction({ bucketId, amount, note, type = 'expense' }) {
 
   // Update bucket spent
   const bucket = _state.buckets.find(b => b.id === bucketId);
+  if (bucket && type === 'expense' && (bucket.swept ?? 0) > 0) {
+    _state.transactions.pop();
+    throw new Error(`addTransaction: bucket "${bucket.name}" has been swept — start a new cycle before logging expenses`);
+  }
   if (bucket) {
     if (type === 'expense') {
       bucket.spent += amount;
