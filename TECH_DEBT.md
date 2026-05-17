@@ -369,7 +369,7 @@ Fiscal Fold is a vanilla-JS, zero-framework PWA for envelope budgeting using the
 
 ---
 
-### [DEBT-019] `updateAllocCards()` and `renderDonut()` in onboarding use `document.querySelector` — should be scoped
+### ✅ [DEBT-019] `updateAllocCards()` and `renderDonut()` in onboarding — fixed (scope parameter, defaults to document)
 - **File:** `src/pages/onboarding.js` (lines 422–431, 434)
 - **Category:** Refactor
 - **Severity:** Low

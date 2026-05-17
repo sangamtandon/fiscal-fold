@@ -342,7 +342,7 @@ function renderStep3(container) {
   `;
 
   setNextEnabled(true);
-  renderDonut();
+  renderDonut(container);
 
   // Preset chips
   container.querySelectorAll('.onboarding__preset-chip').forEach(chip => {
@@ -360,8 +360,8 @@ function renderStep3(container) {
         formData.ratios = { ...PRESETS[preset] };
       }
 
-      updateAllocCards(salary);
-      renderDonut();
+      updateAllocCards(salary, container);
+      renderDonut(container);
     });
   });
 
@@ -388,8 +388,8 @@ function renderStep3(container) {
       container.querySelector('#slider-wants-val').textContent = `${formData.ratios.wants}%`;
       container.querySelector('#slider-future-val').textContent = `${futureVal}%`;
 
-      updateAllocCards(salary);
-      renderDonut();
+      updateAllocCards(salary, container);
+      renderDonut(container);
     });
   });
 }
@@ -419,9 +419,9 @@ function renderSlider(type, label, value) {
   `;
 }
 
-function updateAllocCards(salary) {
+function updateAllocCards(salary, scope = document) {
   ['needs', 'wants', 'future'].forEach(type => {
-    const card = document.querySelector(`#alloc-${type}`);
+    const card = scope.querySelector(`#alloc-${type}`);
     if (!card) return;
     const pct = formData.ratios[type];
     const amount = Math.round(salary * pct / 100);
@@ -430,8 +430,8 @@ function updateAllocCards(salary) {
   });
 }
 
-function renderDonut() {
-  const svg = document.getElementById('donut-chart');
+function renderDonut(scope = document) {
+  const svg = scope.querySelector('#donut-chart');
   if (!svg) return;
 
   // Read live CSS var values so the donut matches dashboard macro colors
