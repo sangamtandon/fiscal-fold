@@ -147,7 +147,7 @@ function _renderAmount(container) {
 
       <div class="txn-keypad">
         ${[1,2,3,4,5,6,7,8,9,'.',0,'⌫'].map(k => `
-          <button class="txn-key${k === '⌫' ? ' txn-key--back' : ''}${k === '.' ? ' txn-key--dot' : ''}" data-key="${k}">${k}</button>
+          <button class="txn-key${k === '⌫' ? ' txn-key--back' : ''}${k === '.' ? ' txn-key--dot' : ''}" data-key="${k}"${k === '⌫' ? ' aria-label="Backspace"' : ''}>${k}</button>
         `).join('')}
       </div>
 
