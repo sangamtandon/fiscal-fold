@@ -1,0 +1,3 @@
+## 2024-05-24 - Chained array methods cause memory churn in reactive state
+**Learning:** In a vanilla reactive state manager where selectors like `getBuckets` and `getMacroSummary` are called frequently (often per re-render of multiple components), chained `.filter()` or `.reduce()` calls allocate temporary arrays and closures. This causes unnecessary memory churn and GC pressure, which is especially noticeable in a PWA running on constrained mobile devices.
+**Action:** Replace chained `.filter()` and multiple `.reduce()` iterations inside critical path state selectors with a single `for` loop that filters and accumulates directly. This reduces memory allocation and speeds up data access.

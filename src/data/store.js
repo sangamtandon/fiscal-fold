@@ -135,9 +135,17 @@ export function isCycleExpired() {
  */
 export function getBuckets(macroType) {
   const cycleId = _state.currentCycleId;
-  let buckets = _state.buckets.filter(b => b.cycleId === cycleId);
-  if (macroType) buckets = buckets.filter(b => b.macroType === macroType);
-  return buckets.sort((a, b) => a.sortOrder - b.sortOrder);
+  // PERFORMANCE: Replaced chained .filter() arrays with a single pass
+  // Reduces memory allocation and garbage collection overhead on frequent re-renders
+  const result = [];
+  const len = _state.buckets.length;
+  for (let i = 0; i < len; i++) {
+    const b = _state.buckets[i];
+    if (b.cycleId === cycleId && (!macroType || b.macroType === macroType)) {
+      result.push(b);
+    }
+  }
+  return result.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 /**
@@ -169,10 +177,17 @@ export function getQuickBuckets() {
  */
 export function getTransactions({ limit, bucketId } = {}) {
   const cycleId = _state.currentCycleId;
-  let txns = _state.transactions.filter(t => t.cycleId === cycleId);
-  if (bucketId) txns = txns.filter(t => t.bucketId === bucketId);
+  // PERFORMANCE: Replaced chained .filter() arrays with a single pass
+  const txns = [];
+  const len = _state.transactions.length;
+  for (let i = 0; i < len; i++) {
+    const t = _state.transactions[i];
+    if (t.cycleId === cycleId && (!bucketId || t.bucketId === bucketId)) {
+      txns.push(t);
+    }
+  }
   txns.sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
-  if (limit) txns = txns.slice(0, limit);
+  if (limit) return txns.slice(0, limit);
   return txns;
 }
 
@@ -224,9 +239,19 @@ export function getSafeToSpend() {
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
-  const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
-  const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
+  // PERFORMANCE: Replaced 3 .reduce passes with a single loop to compute sum
+  let allocated = 0;
+  let spent = 0;
+  let swept = 0;
+  const len = buckets.length;
+  for (let i = 0; i < len; i++) {
+    const b = buckets[i];
+    allocated += b.allocated;
+    spent += b.spent;
+    swept += (b.swept ?? 0);
+  }
+
+  const remaining = Math.max(0, allocated - spent - swept);
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   const cycle = getCurrentCycle();
   const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
