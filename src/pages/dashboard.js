@@ -69,7 +69,6 @@ export function renderDashboardPage(container, hooks = {}) {
   const recentTxns = getTransactions({ limit: 5 });
   const quickBuckets = getQuickBuckets();
   const dueSoon = getDueSoonCommitments();
-
   // Build leak warnings — suppressed on an expired cycle, where bucket
   // pace is irrelevant and the payday banner is already shown above.
   const leaks = [];
@@ -128,6 +127,7 @@ export function renderDashboardPage(container, hooks = {}) {
               <div class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}">
                 <div class="quick-bucket__emoji">${escapeHtml(b.emoji)}</div>
                 <span class="quick-bucket__name">${escapeHtml(b.name)}</span>
+                <span class="text-mono" style="font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--accent-primary);">${formatCurrency(Math.max(0, b.allocated - b.spent))}</span>
               </div>
             `).join('')}
           </div>
@@ -298,9 +298,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
   const unallocated = summary.unallocated ?? 0;
   let fillClass = `health-bar__fill--${type}`;
 
-  if (isFresh) {
-    fillClass = 'health-bar__fill--fresh';
-  } else if (remainingPct <= 0) {
+  if (remainingPct <= 0) {
     fillClass = 'health-bar__fill--depleted';
   } else if (remainingPct <= 20 && type === 'wants') {
     fillClass = 'health-bar__fill--warn';
