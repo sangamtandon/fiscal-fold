@@ -1,0 +1,3 @@
+## 2025-05-19 - Screen Reader Accessibility for Icon-Only Buttons
+**Learning:** `title` attributes on icon-only buttons are generally insufficient for screen readers. While they provide tooltips on hover for sighted users, many assistive technologies either ignore `title` or require specific configurations to read them.
+**Action:** Always provide explicit `aria-label` attributes on buttons whose content is purely visual (like emojis or SVGs) to ensure screen readers announce their function accurately.
