@@ -562,13 +562,13 @@ function renderBucketItem(bucket, macroType) {
             placeholder="0"
           />
         </div>
-        <button class="onboarding__bucket-recurring ${bucket.isRecurring ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Fixed monthly bill — will be set up as a Commitment">
+        <button class="onboarding__bucket-recurring ${bucket.isRecurring ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Fixed monthly bill — will be set up as a Commitment" aria-label="Toggle recurring commitment">
           🔄
         </button>
-        <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket">
+        <button class="onboarding__bucket-pin ${bucket.isPinned ? 'is-active' : ''}" data-id="${bucket.id}" data-macro="${macroType}" title="Pin as Quick Bucket" aria-label="${bucket.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">
           📌
         </button>
-        <button class="onboarding__bucket-remove" data-id="${bucket.id}" data-macro="${macroType}" title="Remove">
+        <button class="onboarding__bucket-remove" data-id="${bucket.id}" data-macro="${macroType}" title="Remove" aria-label="Remove bucket">
           ×
         </button>
       </div>
