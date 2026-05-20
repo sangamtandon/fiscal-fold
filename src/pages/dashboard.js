@@ -21,6 +21,7 @@ import {
   getMacroSummary,
   getMacroReserved,
   isCycleExpired,
+  getCommitments,
 } from '../data/store.js';
 import {
   formatCurrency,
@@ -29,6 +30,7 @@ import {
   daysRemaining,
   cycleDayCount,
   escapeHtml,
+  ordinalSuffix,
 } from '../utils/helpers.js';
 import { navigate } from '../router.js';
 import { openTransactionModal } from './transaction-modal.js';
@@ -292,10 +294,63 @@ export function renderDashboardPage(container, hooks = {}) {
  * @param {number} [reserved=0]
  */
 function renderMacroBar(label, summary, type, reserved = 0) {
+  const unallocated = summary.unallocated ?? 0;
+  const buckets = getBuckets(type);
+  const activeCommitments = getCommitments().filter(c => c.macroType === type);
+  const commitmentMap = {};
+  activeCommitments.forEach(c => { commitmentMap[c.name.toLowerCase()] = c; });
+
+  const unallocatedBanner = unallocated !== 0 ? `
+    <div class="macro-card__unallocated"
+      role="button"
+      tabindex="0"
+      data-macro-jump-settings="1"
+      style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer;">
+      <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
+      <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
+      <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'left to assign — tap Settings to add it to a bucket' : 'over-allocated — tap Settings to trim a bucket'}</span>
+    </div>
+  ` : '';
+
+  // Future: locked goals list — no depleting bar (savings are reserved upfront, not spent down)
+  if (type === 'future') {
+    const totalLocked = summary.allocated;
+    return `
+      <div class="card macro-card" style="padding: var(--space-4);">
+        <div class="macro-card__header">
+          <span class="font-semibold" style="font-size: var(--text-sm);">Future</span>
+          <div class="flex items-center gap-2">
+            <span class="text-mono text-secondary" style="font-size: var(--text-sm);">${formatCurrency(totalLocked)} locked</span>
+            <svg class="macro-card__chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        ${unallocatedBanner}
+        <div class="macro-card__buckets">
+          <div class="macro-card__buckets-inner">
+            ${buckets.length > 0 ? buckets.map(b => `
+              <div class="micro-bucket-row">
+                <div class="micro-bucket-row__emoji">${escapeHtml(b.emoji)}</div>
+                <div class="micro-bucket-row__name">${escapeHtml(b.name)}</div>
+                <div class="micro-bucket-row__amount" style="color: var(--text-secondary);">${formatCurrency(b.allocated)}<span style="font-size: var(--text-xs); font-weight: normal; color: var(--text-tertiary);">/mo</span></div>
+                <div class="micro-bucket-row__progress" style="visibility: hidden;"></div>
+              </div>
+            `).join('') : `<p class="text-tertiary text-center" style="font-size: var(--text-xs); padding: var(--space-2);">No buckets configured.</p>`}
+            ${buckets.length > 0 ? `
+              <div style="display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-1); margin-top: var(--space-1); border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.06));">
+                <span style="font-size: 13px;">🔒</span>
+                <span class="text-tertiary" style="font-size: var(--text-xs);">Transfers out at payday</span>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // Needs + Wants: depleting health bar
   const remainingPct = 100 - summary.percent;
   const isOverspent = summary.percent > 100;
   const isFresh = summary.spent === 0 && summary.allocated > 0;
-  const unallocated = summary.unallocated ?? 0;
   let fillClass = `health-bar__fill--${type}`;
 
   if (remainingPct <= 0) {
@@ -304,7 +359,12 @@ function renderMacroBar(label, summary, type, reserved = 0) {
     fillClass = 'health-bar__fill--warn';
   }
 
-  const buckets = getBuckets(type);
+  const variableBuckets = buckets.filter(b => !commitmentMap[b.name.toLowerCase()]);
+  const variableRemaining = variableBuckets.reduce((acc, b) => acc + Math.max(0, b.allocated - b.spent), 0);
+  const available = variableRemaining;
+  const belowBarRight = isFresh
+    ? `<span class="text-tertiary" style="font-size: var(--text-xs);">Nothing tracked yet</span>`
+    : `<span class="text-tertiary" style="font-size: var(--text-xs);">${formatCurrency(available)} available</span>`;
 
   return `
     <div class="card macro-card" style="padding: var(--space-4);">
@@ -321,30 +381,34 @@ function renderMacroBar(label, summary, type, reserved = 0) {
       </div>
       <div class="flex justify-between mt-2">
         <span class="text-tertiary" style="font-size: var(--text-xs);">Spent ${formatCurrency(summary.spent)}</span>
-        <span class="text-tertiary" style="font-size: var(--text-xs);">${isFresh ? 'Nothing tracked yet' : `${Math.max(0, remainingPct)}% remaining`}</span>
+        ${belowBarRight}
       </div>
-      ${unallocated !== 0 ? `
-        <div class="macro-card__unallocated"
-          role="button"
-          tabindex="0"
-          data-macro-jump-settings="1"
-          style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer;">
-          <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
-          <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
-          <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'left to assign — tap Settings to add it to a bucket' : 'over-allocated — tap Settings to trim a bucket'}</span>
-        </div>
-      ` : ''}
-      ${reserved > 0 ? `
-        <div class="cm-reserved-hint" title="Recurring bills set aside before you spend. Manage in Settings → Commitments.">
-          <span>🔒</span>
-          <span class="cm-reserved-hint__amount">${formatCurrency(reserved)}</span>
-          <span>set aside for recurring bills</span>
-        </div>
-      ` : ''}
-
+      ${unallocatedBanner}
       <div class="macro-card__buckets">
         <div class="macro-card__buckets-inner">
           ${buckets.length > 0 ? buckets.map(b => {
+            const commitment = commitmentMap[b.name.toLowerCase()];
+            if (commitment) {
+              if (commitment.isPaid) {
+                return `
+                  <div class="micro-bucket-row" style="opacity: 0.45;">
+                    <div class="micro-bucket-row__emoji">${escapeHtml(b.emoji)}</div>
+                    <div class="micro-bucket-row__name">${escapeHtml(b.name)}</div>
+                    <div class="micro-bucket-row__amount" style="color: var(--accent-primary); font-size: var(--text-xs);">Paid ✓</div>
+                    <div class="micro-bucket-row__progress" style="visibility: hidden;"></div>
+                  </div>
+                `;
+              } else {
+                return `
+                  <div class="micro-bucket-row">
+                    <div class="micro-bucket-row__emoji" style="opacity: 0.6;">${escapeHtml(b.emoji)}</div>
+                    <div class="micro-bucket-row__name" style="color: var(--text-tertiary);">${escapeHtml(b.name)}</div>
+                    <div class="micro-bucket-row__amount" style="color: var(--warn); font-size: var(--text-xs);">Due ${commitment.dueDate}${ordinalSuffix(commitment.dueDate)}</div>
+                    <div class="micro-bucket-row__progress" style="visibility: hidden;"></div>
+                  </div>
+                `;
+              }
+            }
             const bRemainingPct = b.allocated > 0 ? Math.max(0, 100 - (b.spent / b.allocated) * 100) : 0;
             return `
               <div class="micro-bucket-row">
