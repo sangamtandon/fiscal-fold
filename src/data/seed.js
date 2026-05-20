@@ -37,21 +37,23 @@ function generateSeedState() {
   const salary = 168000;
   const ratios = { needs: 50, wants: 30, future: 20 };
   const allocations = {
-    needs: Math.round(salary * ratios.needs / 100),
-    wants: Math.round(salary * ratios.wants / 100),
-    future: Math.round(salary * ratios.future / 100),
+    needs: Math.round(salary * ratios.needs / 100),   // 84,000
+    wants: Math.round(salary * ratios.wants / 100),   // 50,400
+    future: Math.round(salary * ratios.future / 100), // 33,600
   };
 
   // --- Micro Buckets ---
   const buckets = [];
 
-  // Needs buckets
+  // Needs buckets — absolute amounts that sum to 84,000.
+  // Rent is deliberately allocated above the commitment (36k vs 28k paid)
+  // so the bucket never hits 80% spent and avoids a false leak warning.
   const needsBuckets = [
-    { name: 'Groceries', emoji: '🛒', pct: 0.35, pinned: true },
-    { name: 'Transport', emoji: '🚕', pct: 0.20, pinned: true },
-    { name: 'Utilities', emoji: '💡', pct: 0.15, pinned: false },
-    { name: 'Healthcare', emoji: '🏥', pct: 0.15, pinned: false },
-    { name: 'Household', emoji: '🏠', pct: 0.15, pinned: false },
+    { name: 'Rent',        emoji: '🏠', amount: 36000, pinned: false },
+    { name: 'Groceries',   emoji: '🛒', amount: 20000, pinned: true  },
+    { name: 'Transport',   emoji: '🚕', amount: 12000, pinned: true  },
+    { name: 'Electricity', emoji: '💡', amount: 12000, pinned: false },
+    { name: 'Internet',    emoji: '📡', amount:  4000, pinned: false },
   ];
 
   needsBuckets.forEach((b, i) => {
@@ -61,7 +63,7 @@ function generateSeedState() {
       macroType: 'needs',
       name: b.name,
       emoji: b.emoji,
-      allocated: Math.round(allocations.needs * b.pct),
+      allocated: b.amount,
       spent: 0,
       isPinned: b.pinned,
       sortOrder: i,
@@ -69,14 +71,14 @@ function generateSeedState() {
     });
   });
 
-  // Wants buckets
+  // Wants buckets — absolute amounts that sum to 50,400.
   const wantsBuckets = [
-    { name: 'Dining Out', emoji: '🍕', pct: 0.25, pinned: true },
-    { name: 'Entertainment', emoji: '🎬', pct: 0.20, pinned: true },
-    { name: 'Chai & Snacks', emoji: '☕', pct: 0.10, pinned: false },
-    { name: 'Shopping', emoji: '🛍️', pct: 0.20, pinned: false },
-    { name: 'Self Care', emoji: '💆', pct: 0.15, pinned: false },
-    { name: 'Subscriptions', emoji: '📱', pct: 0.10, pinned: false },
+    { name: 'Dining Out',    emoji: '🍽️', amount: 12600, pinned: true  },
+    { name: 'Subscriptions', emoji: '📺', amount:  5040, pinned: true  },
+    { name: 'Coffee',        emoji: '☕', amount:  5040, pinned: false },
+    { name: 'Shopping',      emoji: '🛍️', amount: 12600, pinned: false },
+    { name: 'Movies',        emoji: '🎬', amount:  7560, pinned: false },
+    { name: 'Gym',           emoji: '🏋️', amount:  7560, pinned: false },
   ];
 
   wantsBuckets.forEach((b, i) => {
@@ -86,7 +88,7 @@ function generateSeedState() {
       macroType: 'wants',
       name: b.name,
       emoji: b.emoji,
-      allocated: Math.round(allocations.wants * b.pct),
+      allocated: b.amount,
       spent: 0,
       isPinned: b.pinned,
       sortOrder: i,
@@ -94,11 +96,12 @@ function generateSeedState() {
     });
   });
 
-  // Future buckets
+  // Future buckets — clean round numbers that sum to 33,600.
+  // These show as locked goals (₹X /mo) on the dashboard, not as a depleting bar.
   const futureBuckets = [
-    { name: 'Emergency Fund', emoji: '🛡️', pct: 0.40, pinned: false },
-    { name: 'Japan Trip ✈️', emoji: '🌸', pct: 0.30, pinned: false },
-    { name: 'Value Investing', emoji: '📈', pct: 0.30, pinned: false },
+    { name: 'Emergency Fund', emoji: '🔐', amount: 10000, pinned: false },
+    { name: 'Mutual Funds',   emoji: '📈', amount: 15000, pinned: false },
+    { name: 'Stocks',         emoji: '📊', amount:  8600, pinned: false },
   ];
 
   futureBuckets.forEach((b, i) => {
@@ -108,7 +111,7 @@ function generateSeedState() {
       macroType: 'future',
       name: b.name,
       emoji: b.emoji,
-      allocated: Math.round(allocations.future * b.pct),
+      allocated: b.amount,
       spent: 0,
       isPinned: b.pinned,
       sortOrder: i,
@@ -117,50 +120,53 @@ function generateSeedState() {
   });
 
   // --- Transactions (simulate 12 days of spending) ---
+  // ids.needs: [0]=Rent, [1]=Groceries, [2]=Transport, [3]=Electricity, [4]=Internet
+  // ids.wants: [0]=Dining Out, [1]=Subscriptions, [2]=Coffee, [3]=Shopping, [4]=Movies, [5]=Gym
   const transactions = [];
 
   const txnData = [
-    // Day 1
-    { bucket: ids.needs[0], amount: 2450, note: 'Weekly groceries - BigBasket', daysAgo: 11 },
-    { bucket: ids.needs[1], amount: 350, note: 'Auto to office', daysAgo: 11 },
+    // Day 1 — rent hits on payday, groceries run, morning commute
+    { bucket: ids.needs[0], amount: 28000, note: 'Monthly rent',                  daysAgo: 11 },
+    { bucket: ids.needs[1], amount:  2450, note: 'Weekly groceries — BigBasket',  daysAgo: 11 },
+    { bucket: ids.needs[2], amount:   350, note: 'Auto to office',                daysAgo: 11 },
     // Day 2
-    { bucket: ids.wants[0], amount: 780, note: 'Dinner at Barbeque Nation', daysAgo: 10 },
-    { bucket: ids.wants[2], amount: 40, note: 'Cutting chai x2', daysAgo: 10 },
+    { bucket: ids.wants[0], amount:   780, note: 'Dinner at Barbeque Nation',     daysAgo: 10 },
+    { bucket: ids.wants[2], amount:    40, note: 'Cutting chai x2',               daysAgo: 10 },
     // Day 3
-    { bucket: ids.needs[1], amount: 280, note: 'Uber to meeting', daysAgo: 9 },
-    { bucket: ids.wants[5], amount: 199, note: 'Spotify monthly', daysAgo: 9 },
-    // Day 4
-    { bucket: ids.needs[2], amount: 3200, note: 'Electricity bill', daysAgo: 8 },
-    { bucket: ids.wants[2], amount: 80, note: 'Tea + samosa', daysAgo: 8 },
+    { bucket: ids.needs[2], amount:   280, note: 'Uber to meeting',               daysAgo:  9 },
+    { bucket: ids.wants[1], amount:   199, note: 'Netflix monthly',               daysAgo:  9 },
+    // Day 4 — electricity bill arrives
+    { bucket: ids.needs[3], amount:  3200, note: 'Electricity bill',              daysAgo:  8 },
+    { bucket: ids.wants[2], amount:    80, note: 'Coffee + snack',                daysAgo:  8 },
     // Day 5
-    { bucket: ids.wants[0], amount: 450, note: 'Lunch with team', daysAgo: 7 },
-    { bucket: ids.needs[0], amount: 890, note: 'Fruits & vegetables', daysAgo: 7 },
+    { bucket: ids.wants[0], amount:   450, note: 'Lunch with team',               daysAgo:  7 },
+    { bucket: ids.needs[1], amount:   890, note: 'Fruits & vegetables',           daysAgo:  7 },
     // Day 6
-    { bucket: ids.wants[1], amount: 599, note: 'Movie - Pushpa 3', daysAgo: 6 },
-    { bucket: ids.wants[2], amount: 60, note: 'Popcorn + cold coffee', daysAgo: 6 },
+    { bucket: ids.wants[4], amount:   599, note: 'Movie — Pushpa 3',             daysAgo:  6 },
+    { bucket: ids.wants[2], amount:    60, note: 'Cold coffee',                   daysAgo:  6 },
     // Day 7
-    { bucket: ids.needs[0], amount: 1850, note: 'Weekly groceries', daysAgo: 5 },
-    { bucket: ids.wants[3], amount: 2499, note: 'Running shoes - Decathlon', daysAgo: 5 },
+    { bucket: ids.needs[1], amount:  1850, note: 'Weekly groceries',             daysAgo:  5 },
+    { bucket: ids.wants[3], amount:  2499, note: 'Running shoes — Decathlon',    daysAgo:  5 },
     // Day 8
-    { bucket: ids.needs[1], amount: 420, note: 'Metro + auto', daysAgo: 4 },
-    { bucket: ids.wants[0], amount: 320, note: 'Biryani - Swiggy', daysAgo: 4 },
+    { bucket: ids.needs[2], amount:   420, note: 'Metro + auto',                 daysAgo:  4 },
+    { bucket: ids.wants[0], amount:   320, note: 'Biryani — Swiggy',            daysAgo:  4 },
     // Day 9
-    { bucket: ids.wants[4], amount: 1200, note: 'Haircut + grooming', daysAgo: 3 },
-    { bucket: ids.wants[2], amount: 30, note: 'Chai break', daysAgo: 3 },
+    { bucket: ids.wants[5], amount:  1200, note: 'Gym membership — monthly',     daysAgo:  3 },
+    { bucket: ids.wants[2], amount:    30, note: 'Coffee break',                 daysAgo:  3 },
     // Day 10
-    { bucket: ids.needs[3], amount: 850, note: 'Pharmacy - vitamins', daysAgo: 2 },
-    { bucket: ids.wants[0], amount: 650, note: 'Pizza party with friends', daysAgo: 2 },
+    { bucket: ids.wants[0], amount:   650, note: 'Dinner with friends',          daysAgo:  2 },
+    { bucket: ids.wants[2], amount:    80, note: 'Coffee break',                 daysAgo:  2 },
     // Day 11
-    { bucket: ids.needs[0], amount: 1240, note: 'Groceries', daysAgo: 1 },
-    { bucket: ids.wants[2], amount: 80, note: 'Chai & snacks', daysAgo: 1 },
+    { bucket: ids.needs[1], amount:  1240, note: 'Groceries',                    daysAgo:  1 },
+    { bucket: ids.wants[2], amount:    80, note: 'Morning coffee',               daysAgo:  1 },
     // Day 12 (today)
-    { bucket: ids.wants[0], amount: 450, note: 'Lunch - South Indian', daysAgo: 0 },
-    { bucket: ids.needs[1], amount: 280, note: 'Auto ride', daysAgo: 0 },
+    { bucket: ids.wants[0], amount:   450, note: 'Lunch — South Indian',        daysAgo:  0 },
+    { bucket: ids.needs[2], amount:   280, note: 'Auto ride',                    daysAgo:  0 },
   ];
 
   // One trade-off transaction
   const tradeOffTxn = {
-    bucket: ids.wants[1],
+    bucket: ids.wants[4],
     amount: 1500,
     note: 'Concert tickets (borrowed from Shopping)',
     daysAgo: 4,
@@ -216,11 +222,17 @@ function generateSeedState() {
   }
 
   // --- Commitments ---
+  // Paid: Rent (due 1st), Electricity (due 5th), Mutual Funds SIP (due 5th).
+  // Unpaid: Internet (due 15th), Mobile Bill (due 20th), Subscriptions (due 15th).
+  // getMacroReserved('needs') = 999 + 649 = 1,648  → shows hint above Needs bar.
+  // getMacroReserved('wants') = 649                → deducted from safe-to-spend.
   const commitments = [
-    { id: uid(), name: 'Rent', emoji: '🏠', amount: 25000, dueDate: 5, macroType: 'needs', isActive: true, isPaid: true, createdAt: cycleStart.toISOString() },
-    { id: uid(), name: 'WiFi', emoji: '📶', amount: 999, dueDate: 10, macroType: 'needs', isActive: true, isPaid: true, createdAt: cycleStart.toISOString() },
-    { id: uid(), name: 'Netflix', emoji: '🎬', amount: 649, dueDate: 15, macroType: 'wants', isActive: true, isPaid: false, createdAt: cycleStart.toISOString() },
-    { id: uid(), name: 'SIP - Mutual Fund', emoji: '📈', amount: 10000, dueDate: 5, macroType: 'future', isActive: true, isPaid: true, createdAt: cycleStart.toISOString() },
+    { id: uid(), name: 'Rent',        emoji: '🏠', amount: 28000, dueDate:  1, macroType: 'needs',  isActive: true, isPaid: true,  createdAt: cycleStart.toISOString() },
+    { id: uid(), name: 'Electricity', emoji: '💡', amount:  3200, dueDate:  5, macroType: 'needs',  isActive: true, isPaid: true,  createdAt: cycleStart.toISOString() },
+    { id: uid(), name: 'Internet',    emoji: '📡', amount:   999, dueDate: 15, macroType: 'needs',  isActive: true, isPaid: false, createdAt: cycleStart.toISOString() },
+    { id: uid(), name: 'Mobile Bill', emoji: '📱', amount:   649, dueDate: 20, macroType: 'needs',  isActive: true, isPaid: false, createdAt: cycleStart.toISOString() },
+    { id: uid(), name: 'Subscriptions', emoji: '📺', amount: 649, dueDate: 15, macroType: 'wants',  isActive: true, isPaid: false, createdAt: cycleStart.toISOString() },
+    { id: uid(), name: 'Mutual Funds', emoji: '📈', amount: 15000, dueDate: 5, macroType: 'future', isActive: true, isPaid: true,  createdAt: cycleStart.toISOString() },
   ];
 
   return {

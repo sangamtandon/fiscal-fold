@@ -240,6 +240,22 @@ function _renderRow(c) {
 function _openMarkPaid(pageContainer, commitment) {
   const buckets = getBuckets(commitment.macroType);
 
+  // Auto-match: if a bucket in the same macro shares the commitment name,
+  // skip the picker entirely and log directly.
+  const autoMatch = buckets.find(b => b.name.toLowerCase() === commitment.name.toLowerCase());
+  if (autoMatch) {
+    addTransaction({
+      bucketId: autoMatch.id,
+      amount: commitment.amount,
+      type: 'expense',
+      note: `Commitment: ${commitment.name}`,
+    });
+    updateCommitment(commitment.id, { isPaid: true });
+    _render(pageContainer);
+    showToast(`${commitment.name} paid — logged to ${autoMatch.name} ✓`, 'success');
+    return;
+  }
+
   const overlay = document.createElement('div');
   overlay.className = 'drawer-overlay is-open';
 
