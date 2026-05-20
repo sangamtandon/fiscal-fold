@@ -68,7 +68,7 @@ function _renderAmount() {
     <div class="income-drawer__header">
       <span style="font-size:24px;">💰</span>
       <h2 class="income-drawer__title">Add Income</h2>
-      <button class="btn-icon income-drawer__close" id="ic-close">✕</button>
+      <button class="btn-icon income-drawer__close" id="ic-close" aria-label="Close">✕</button>
     </div>
     <p class="income-drawer__subtitle text-secondary">Bonus, freelance, refund, or any extra income.</p>
 
@@ -133,9 +133,9 @@ function _renderBucket() {
 
   _drawer.innerHTML = `
     <div class="income-drawer__header">
-      <button class="btn-icon" id="ic-back">←</button>
+      <button class="btn-icon" id="ic-back" aria-label="Back">←</button>
       <h2 class="income-drawer__title">Where should ${formatCurrency(_amount)} go?</h2>
-      <button class="btn-icon income-drawer__close" id="ic-close">✕</button>
+      <button class="btn-icon income-drawer__close" id="ic-close" aria-label="Close">✕</button>
     </div>
 
     <div class="income-bucket-list">
@@ -203,9 +203,9 @@ function _renderConfirm() {
 
   _drawer.innerHTML = `
     <div class="income-drawer__header">
-      <button class="btn-icon" id="ic-back">←</button>
+      <button class="btn-icon" id="ic-back" aria-label="Back">←</button>
       <h2 class="income-drawer__title">Confirm Income</h2>
-      <button class="btn-icon income-drawer__close" id="ic-close">✕</button>
+      <button class="btn-icon income-drawer__close" id="ic-close" aria-label="Close">✕</button>
     </div>
 
     <div class="income-confirm-card card card--glass">
@@ -221,7 +221,7 @@ function _renderConfirm() {
 
     <div class="income-note-wrap">
       <input type="text" class="input-field" id="ic-note"
-        placeholder="Note (optional)" value="${escapeHtml(_note)}" maxlength="60" />
+        placeholder="Note (optional)" aria-label="Note" value="${escapeHtml(_note)}" maxlength="60" />
     </div>
 
     <div class="income-drawer__footer">
