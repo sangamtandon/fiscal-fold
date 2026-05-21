@@ -1,0 +1,3 @@
+## 2024-05-21 - Avoiding Chained Array Methods in Reactive Selectors
+**Learning:** In the custom local reactive state manager (`src/data/store.js`), chained array methods (like `.filter().reduce()` or multiple `.filter()` calls) in selectors create high garbage collection overhead due to the frequent re-renders typical of this vanilla architecture. This architecture recomputes derived state aggressively.
+**Action:** Always prefer single-pass `for` loops in hot-path selector functions within the store instead of chained, declarative array methods to minimize GC pauses and keep memory stable.
