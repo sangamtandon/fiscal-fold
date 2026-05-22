@@ -135,8 +135,14 @@ export function isCycleExpired() {
  */
 export function getBuckets(macroType) {
   const cycleId = _state.currentCycleId;
-  let buckets = _state.buckets.filter(b => b.cycleId === cycleId);
-  if (macroType) buckets = buckets.filter(b => b.macroType === macroType);
+  const buckets = [];
+  // ⚡ Bolt: Single-pass filter loop avoids intermediate array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.buckets.length; i++) {
+    const b = _state.buckets[i];
+    if (b.cycleId === cycleId && (!macroType || b.macroType === macroType)) {
+      buckets.push(b);
+    }
+  }
   return buckets.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
@@ -155,9 +161,15 @@ export function getBucketById(id) {
  */
 export function getQuickBuckets() {
   const cycleId = _state.currentCycleId;
-  return _state.buckets
-    .filter(b => b.cycleId === cycleId && b.isPinned)
-    .sort((a, b) => a.sortOrder - b.sortOrder);
+  const quickBuckets = [];
+  // ⚡ Bolt: Single-pass filter loop avoids array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.buckets.length; i++) {
+    const b = _state.buckets[i];
+    if (b.cycleId === cycleId && b.isPinned) {
+      quickBuckets.push(b);
+    }
+  }
+  return quickBuckets.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 /**
@@ -169,16 +181,28 @@ export function getQuickBuckets() {
  */
 export function getTransactions({ limit, bucketId } = {}) {
   const cycleId = _state.currentCycleId;
-  let txns = _state.transactions.filter(t => t.cycleId === cycleId);
-  if (bucketId) txns = txns.filter(t => t.bucketId === bucketId);
+  const txns = [];
+  // ⚡ Bolt: Single-pass filter loop avoids intermediate array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.transactions.length; i++) {
+    const t = _state.transactions[i];
+    if (t.cycleId === cycleId && (!bucketId || t.bucketId === bucketId)) {
+      txns.push(t);
+    }
+  }
   txns.sort((a, b) => (b.timestamp > a.timestamp ? 1 : b.timestamp < a.timestamp ? -1 : 0));
-  if (limit) txns = txns.slice(0, limit);
+  if (limit) return txns.slice(0, limit);
   return txns;
 }
 
 /** @returns {import('./models.js').Commitment[]} */
 export function getCommitments() {
-  return _state.commitments.filter(c => c.isActive);
+  const commitments = [];
+  // ⚡ Bolt: Single-pass filter loop avoids array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.commitments.length; i++) {
+    const c = _state.commitments[i];
+    if (c.isActive) commitments.push(c);
+  }
+  return commitments;
 }
 
 /** Returns all commitments regardless of active status — for management UIs.
@@ -195,9 +219,15 @@ export function getAllCommitments() {
  * @returns {number}
  */
 export function getMacroReserved(macroType) {
-  return _state.commitments
-    .filter(c => c.isActive && !c.isPaid && c.macroType === macroType)
-    .reduce((sum, c) => sum + c.amount, 0);
+  let sum = 0;
+  // ⚡ Bolt: Single-pass loop avoids array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.commitments.length; i++) {
+    const c = _state.commitments[i];
+    if (c.isActive && !c.isPaid && c.macroType === macroType) {
+      sum += c.amount;
+    }
+  }
+  return sum;
 }
 
 /**
@@ -206,7 +236,12 @@ export function getMacroReserved(macroType) {
  */
 export function getSafeToSpend() {
   const wantsBuckets = getBuckets('wants');
-  const remaining = wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent - (b.swept ?? 0)), 0);
+  let remaining = 0;
+  // ⚡ Bolt: Single-pass loop avoids GC overhead on frequent re-renders from .reduce()
+  for (let i = 0; i < wantsBuckets.length; i++) {
+    const b = wantsBuckets[i];
+    remaining += Math.max(0, b.allocated - b.spent - (b.swept ?? 0));
+  }
   const reserved = getMacroReserved('wants');
   return Math.max(0, remaining - reserved);
 }
@@ -224,9 +259,17 @@ export function getSafeToSpend() {
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
-  const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
-  const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
+  let allocated = 0;
+  let spent = 0;
+  let swept = 0;
+  // ⚡ Bolt: Single-pass loop replaces three .reduce() calls, avoiding GC overhead on frequent re-renders
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i];
+    allocated += b.allocated;
+    spent += b.spent;
+    swept += (b.swept ?? 0);
+  }
+  const remaining = Math.max(0, allocated - spent - swept);
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   const cycle = getCurrentCycle();
   const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
@@ -240,9 +283,15 @@ export function getMacroSummary(macroType) {
  * @returns {number}
  */
 export function getCommitmentsTotal(macroType) {
-  return _state.commitments
-    .filter(c => c.isActive && c.macroType === macroType)
-    .reduce((sum, c) => sum + c.amount, 0);
+  let sum = 0;
+  // ⚡ Bolt: Single-pass loop avoids array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.commitments.length; i++) {
+    const c = _state.commitments[i];
+    if (c.isActive && c.macroType === macroType) {
+      sum += c.amount;
+    }
+  }
+  return sum;
 }
 
 /**
@@ -251,8 +300,14 @@ export function getCommitmentsTotal(macroType) {
  * @returns {import('./models.js').Sweep[]}
  */
 export function getSweeps(cycleId) {
-  if (cycleId) return _state.sweeps.filter(s => s.cycleId === cycleId);
-  return [..._state.sweeps];
+  if (!cycleId) return [..._state.sweeps];
+  const sweeps = [];
+  // ⚡ Bolt: Single-pass filter loop avoids array allocations and GC overhead on frequent re-renders
+  for (let i = 0; i < _state.sweeps.length; i++) {
+    const s = _state.sweeps[i];
+    if (s.cycleId === cycleId) sweeps.push(s);
+  }
+  return sweeps;
 }
 
 // ---- Mutators ----
