@@ -195,9 +195,16 @@ export function getAllCommitments() {
  * @returns {number}
  */
 export function getMacroReserved(macroType) {
-  return _state.commitments
-    .filter(c => c.isActive && !c.isPaid && c.macroType === macroType)
-    .reduce((sum, c) => sum + c.amount, 0);
+  // OPTIMIZATION: Avoid chained array methods to reduce GC overhead during frequent re-renders.
+  let sum = 0;
+  const commitments = _state.commitments;
+  for (let i = 0; i < commitments.length; i++) {
+    const c = commitments[i];
+    if (c.isActive && !c.isPaid && c.macroType === macroType) {
+      sum += c.amount;
+    }
+  }
+  return sum;
 }
 
 /**
@@ -205,8 +212,16 @@ export function getMacroReserved(macroType) {
  * @returns {number}
  */
 export function getSafeToSpend() {
-  const wantsBuckets = getBuckets('wants');
-  const remaining = wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent - (b.swept ?? 0)), 0);
+  // OPTIMIZATION: Use single pass for-loop instead of getBuckets().reduce() to reduce allocations.
+  let remaining = 0;
+  const cycleId = _state.currentCycleId;
+  const buckets = _state.buckets;
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i];
+    if (b.cycleId === cycleId && b.macroType === 'wants') {
+      remaining += Math.max(0, b.allocated - b.spent - (b.swept ?? 0));
+    }
+  }
   const reserved = getMacroReserved('wants');
   return Math.max(0, remaining - reserved);
 }
@@ -223,10 +238,22 @@ export function getSafeToSpend() {
  * @returns {{ allocated: number, spent: number, remaining: number, percent: number, cycleAllocation: number, unallocated: number }}
  */
 export function getMacroSummary(macroType) {
-  const buckets = getBuckets(macroType);
-  const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
-  const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
+  // OPTIMIZATION: Single pass over buckets avoids filtering, sorting, and multiple reduces.
+  const cycleId = _state.currentCycleId;
+  let allocated = 0;
+  let spent = 0;
+  let swept = 0;
+  const buckets = _state.buckets;
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i];
+    if (b.cycleId === cycleId && b.macroType === macroType) {
+      allocated += b.allocated;
+      spent += b.spent;
+      swept += (b.swept ?? 0);
+    }
+  }
+
+  const remaining = Math.max(0, allocated - spent - swept);
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   const cycle = getCurrentCycle();
   const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
@@ -240,9 +267,16 @@ export function getMacroSummary(macroType) {
  * @returns {number}
  */
 export function getCommitmentsTotal(macroType) {
-  return _state.commitments
-    .filter(c => c.isActive && c.macroType === macroType)
-    .reduce((sum, c) => sum + c.amount, 0);
+  // OPTIMIZATION: Avoid chained array methods to reduce GC overhead during frequent re-renders.
+  let sum = 0;
+  const commitments = _state.commitments;
+  for (let i = 0; i < commitments.length; i++) {
+    const c = commitments[i];
+    if (c.isActive && c.macroType === macroType) {
+      sum += c.amount;
+    }
+  }
+  return sum;
 }
 
 /**
