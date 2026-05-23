@@ -1,0 +1,3 @@
+## 2024-05-23 - Avoid chained array methods in reactive selectors
+**Learning:** In a vanilla JS architecture using frequent re-renders via `innerHTML`, chained array methods like `.filter().reduce()` in core store selectors (e.g., `getSafeToSpend`, `getMacroReserved`) create significant Garbage Collection (GC) overhead. This is due to creating intermediate arrays and heavy closure usage on every render pass.
+**Action:** Always use single-pass `for` loops for data aggregation in high-frequency selectors instead of chained array iterations to minimize object allocations and avoid GC-induced jank.
