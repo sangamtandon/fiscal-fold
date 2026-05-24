@@ -96,7 +96,7 @@ export function renderDashboardPage(container, hooks = {}) {
     <div class="flex flex-col gap-6">
       <!-- Payday Banner — shown when cycle has expired -->
       ${cycleExpired ? `
-        <div class="card payday-banner" id="payday-banner" data-testid="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
+        <div class="card payday-banner" id="payday-banner" data-testid="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer; text-align: left;">
           <div class="flex items-center gap-3">
             <span style="font-size: 28px;">🎉</span>
             <div style="flex: 1; min-width: 0;">
@@ -126,11 +126,11 @@ export function renderDashboardPage(container, hooks = {}) {
           </div>
           <div class="quick-buckets">
             ${quickBuckets.map(b => `
-              <div class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}">
-                <div class="quick-bucket__emoji">${escapeHtml(b.emoji)}</div>
+              <button type="button" class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}" aria-label="Log expense for ${escapeHtml(b.name)}">
+                <div class="quick-bucket__emoji" aria-hidden="true">${escapeHtml(b.emoji)}</div>
                 <span class="quick-bucket__name">${escapeHtml(b.name)}</span>
                 <span class="text-mono" style="font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--accent-primary);">${formatCurrency(Math.max(0, b.allocated - b.spent))}</span>
-              </div>
+              </button>
             `).join('')}
           </div>
         </div>
@@ -181,7 +181,7 @@ export function renderDashboardPage(container, hooks = {}) {
 
       <!-- Leak Warnings (hidden on expired cycle — see leak gate above) -->
       ${cycleExpired ? '' : (leaks.length > 0 ? leaks.map(b => `
-        <div class="card leak-warning-card" data-leak-bucket-id="${escapeHtml(b.id)}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
+        <div class="card leak-warning-card" data-leak-bucket-id="${escapeHtml(b.id)}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer; text-align: left;">
           <div class="flex items-center gap-3">
             <span style="font-size: 24px;">⚡</span>
             <div style="flex: 1; min-width: 0;">
@@ -264,8 +264,14 @@ export function renderDashboardPage(container, hooks = {}) {
   }
 
   // Expand/collapse macro bars
+  // Macro cards accordion
   const macroBarsContainer = container.querySelector('#macro-bars-container');
   if (macroBarsContainer) {
+    const toggleCard = (card) => {
+      const isExpanded = card.classList.toggle('is-expanded');
+      card.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    };
+
     macroBarsContainer.addEventListener('click', (e) => {
       const unallocBanner = e.target.closest('.macro-card__unallocated');
       if (unallocBanner) {
@@ -275,7 +281,20 @@ export function renderDashboardPage(container, hooks = {}) {
       }
       const card = e.target.closest('.macro-card');
       if (card) {
-        card.classList.toggle('is-expanded');
+        toggleCard(card);
+      }
+    });
+
+    macroBarsContainer.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        const unallocBanner = e.target.closest('.macro-card__unallocated');
+        if (unallocBanner) return; // handled natively by button
+
+        const card = e.target.closest('.macro-card');
+        if (card) {
+          e.preventDefault();
+          toggleCard(card);
+        }
       }
     });
   }
@@ -301,22 +320,20 @@ function renderMacroBar(label, summary, type, reserved = 0) {
   activeCommitments.forEach(c => { commitmentMap[c.name.toLowerCase()] = c; });
 
   const unallocatedBanner = unallocated !== 0 ? `
-    <div class="macro-card__unallocated"
-      role="button"
-      tabindex="0"
+    <button type="button" class="macro-card__unallocated"
       data-macro-jump-settings="1"
-      style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer;">
+      style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer; text-align: left;">
       <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
       <span class="text-mono font-semibold" style="font-size: var(--text-xs); color: ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'};">${formatCurrency(Math.abs(unallocated))}</span>
       <span class="text-tertiary" style="font-size: var(--text-xs); flex:1;">${unallocated > 0 ? 'left to assign — tap Settings to add it to a bucket' : 'over-allocated — tap Settings to trim a bucket'}</span>
-    </div>
+    </button>
   ` : '';
 
   // Future: locked goals list — no depleting bar (savings are reserved upfront, not spent down)
   if (type === 'future') {
     const totalLocked = summary.allocated;
     return `
-      <div class="card macro-card" style="padding: var(--space-4);">
+      <div class="card macro-card" role="button" tabindex="0" aria-expanded="false" style="padding: var(--space-4);">
         <div class="macro-card__header">
           <span class="font-semibold" style="font-size: var(--text-sm);">Future</span>
           <div class="flex items-center gap-2">
@@ -367,7 +384,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
     : `<span class="text-tertiary" style="font-size: var(--text-xs);">${formatCurrency(available)} available</span>`;
 
   return `
-    <div class="card macro-card" style="padding: var(--space-4);">
+    <div class="card macro-card" role="button" tabindex="0" aria-expanded="false" style="padding: var(--space-4);">
       <div class="macro-card__header">
         <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
         <div class="flex items-center gap-2">
