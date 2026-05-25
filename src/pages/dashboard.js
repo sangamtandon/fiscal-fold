@@ -96,9 +96,9 @@ export function renderDashboardPage(container, hooks = {}) {
     <div class="flex flex-col gap-6">
       <!-- Payday Banner — shown when cycle has expired -->
       ${cycleExpired ? `
-        <div class="card payday-banner" id="payday-banner" data-testid="payday-banner" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
+        <div class="card payday-banner" id="payday-banner" data-testid="payday-banner" role="button" tabindex="0" aria-label="Start payday ritual" style="border-color: var(--accent-primary); border-left-width: 3px; background: linear-gradient(135deg, rgba(52, 211, 153, 0.08), transparent); cursor: pointer;">
           <div class="flex items-center gap-3">
-            <span style="font-size: 28px;">🎉</span>
+            <span style="font-size: 28px;" aria-hidden="true">🎉</span>
             <div style="flex: 1; min-width: 0;">
               <p class="font-semibold" style="font-size: var(--text-sm); color: var(--accent-primary);">It's payday!</p>
               <p class="text-tertiary" style="font-size: var(--text-xs);">Roll over your savings to start fresh.</p>
@@ -126,11 +126,11 @@ export function renderDashboardPage(container, hooks = {}) {
           </div>
           <div class="quick-buckets">
             ${quickBuckets.map(b => `
-              <div class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}">
-                <div class="quick-bucket__emoji">${escapeHtml(b.emoji)}</div>
+              <button type="button" class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}" aria-label="Log spend for ${escapeHtml(b.name)}">
+                <div class="quick-bucket__emoji" aria-hidden="true">${escapeHtml(b.emoji)}</div>
                 <span class="quick-bucket__name">${escapeHtml(b.name)}</span>
                 <span class="text-mono" style="font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--accent-primary);">${formatCurrency(Math.max(0, b.allocated - b.spent))}</span>
-              </div>
+              </button>
             `).join('')}
           </div>
         </div>
@@ -181,9 +181,9 @@ export function renderDashboardPage(container, hooks = {}) {
 
       <!-- Leak Warnings (hidden on expired cycle — see leak gate above) -->
       ${cycleExpired ? '' : (leaks.length > 0 ? leaks.map(b => `
-        <div class="card leak-warning-card" data-leak-bucket-id="${escapeHtml(b.id)}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
+        <div class="card leak-warning-card" role="button" tabindex="0" aria-label="Log spend or adjust budget for ${escapeHtml(b.name)}" data-leak-bucket-id="${escapeHtml(b.id)}" style="border-color: var(--warn); border-left-width: 3px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), transparent); cursor: pointer;">
           <div class="flex items-center gap-3">
-            <span style="font-size: 24px;">⚡</span>
+            <span style="font-size: 24px;" aria-hidden="true">⚡</span>
             <div style="flex: 1; min-width: 0;">
               <p class="font-semibold" style="font-size: var(--text-sm); color: var(--warn);">${escapeHtml(b.name)} — ${percent(b.spent, b.allocated)}% spent with ${daysLeft} day${daysLeft === 1 ? '' : 's'} left</p>
               <p class="text-tertiary" style="font-size: var(--text-xs);">Tap to log a spend here or adjust the budget.</p>
@@ -275,10 +275,22 @@ export function renderDashboardPage(container, hooks = {}) {
       }
       const card = e.target.closest('.macro-card');
       if (card) {
-        card.classList.toggle('is-expanded');
+        const isExpanded = card.classList.toggle('is-expanded');
+        card.setAttribute('aria-expanded', isExpanded.toString());
       }
     });
   }
+
+  // Keyboard accessibility for div/card buttons
+  container.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const roleBtn = e.target.closest('[role="button"]');
+      if (roleBtn) {
+        e.preventDefault();
+        roleBtn.click();
+      }
+    }
+  });
 
   hooks.onRenderComplete?.();
 
@@ -304,6 +316,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
     <div class="macro-card__unallocated"
       role="button"
       tabindex="0"
+      aria-label="${unallocated > 0 ? 'Assign unallocated budget in settings' : 'Fix over-allocated budget in settings'}"
       data-macro-jump-settings="1"
       style="margin-top: var(--space-2); display:flex; align-items:center; gap: var(--space-2); width:100%; padding: var(--space-2) var(--space-3); background: ${unallocated > 0 ? 'rgba(245, 158, 11, 0.10)' : 'rgba(239, 68, 68, 0.10)'}; border: 1px solid ${unallocated > 0 ? 'var(--warn)' : 'var(--danger, #ef4444)'}; border-radius: var(--radius-md); cursor: pointer;">
       <span style="font-size: 14px;">${unallocated > 0 ? '💡' : '⚠️'}</span>
@@ -317,7 +330,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
     const totalLocked = summary.allocated;
     return `
       <div class="card macro-card" style="padding: var(--space-4);">
-        <div class="macro-card__header">
+        <div class="macro-card__header" role="button" tabindex="0" aria-expanded="false" aria-label="Toggle Future buckets">
           <span class="font-semibold" style="font-size: var(--text-sm);">Future</span>
           <div class="flex items-center gap-2">
             <span class="text-mono text-secondary" style="font-size: var(--text-sm);">${formatCurrency(totalLocked)} locked</span>
@@ -368,7 +381,7 @@ function renderMacroBar(label, summary, type, reserved = 0) {
 
   return `
     <div class="card macro-card" style="padding: var(--space-4);">
-      <div class="macro-card__header">
+      <div class="macro-card__header" role="button" tabindex="0" aria-expanded="false" aria-label="Toggle ${label} buckets">
         <span class="font-semibold" style="font-size: var(--text-sm);">${label}</span>
         <div class="flex items-center gap-2">
           ${isOverspent ? `<span class="badge badge--amber" style="font-size: var(--text-xs);">Overspent by ${summary.percent - 100}%</span>` : ''}

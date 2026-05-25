@@ -1,0 +1,3 @@
+## 2026-05-25 - Interactive Cards Lacking Keyboard Support
+**Learning:** Complex interactive components styled as `div` or `card` lack native keyboard focus (`tabindex="0"`) and events (Enter/Space), meaning screen readers and keyboard users cannot trigger them even if they contain click listeners.
+**Action:** When building interactive UI elements, strictly prefer native `<button type="button">`. If using `<div>` is unavoidable due to layout, manually add `role="button"`, `tabindex="0"`, descriptive `aria-label`s, and a delegated `keydown` listener handling `Enter` and `Space` to simulate `click`.
