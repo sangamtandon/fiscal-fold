@@ -1,0 +1,3 @@
+## 2024-05-24 - Chained Array Methods in Vanilla Store Selectors Cause GC Overhead
+**Learning:** In the custom reactive store (`src/data/store.js`) of this vanilla JS application, state selectors are called frequently during each reactive re-render. Using chained array methods like `.filter().map()` or `.filter().reduce()` in these selectors creates significant garbage collection overhead by allocating multiple intermediate arrays that are immediately discarded.
+**Action:** Always prefer single-pass `for` loops inside heavily accessed selector functions (e.g., `getBuckets`, `getTransactions`, `getMacroSummary`) instead of elegant but allocation-heavy functional array methods. This drastically reduces memory pressure in environments lacking VDOM diffing.
