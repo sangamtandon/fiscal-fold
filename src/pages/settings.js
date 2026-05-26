@@ -541,8 +541,8 @@ function _handleRemoveBucket(container, bucketId) {
 
   const originalHtml = rowEl.innerHTML;
   rowEl.innerHTML = `
-    <span class="settings-bucket-row__emoji">${bucket.emoji}</span>
-    <span class="settings-bucket-row__name">Remove "${bucket.name}"? Past transactions are kept.</span>
+    <span class="settings-bucket-row__emoji">${escapeHtml(bucket.emoji)}</span>
+    <span class="settings-bucket-row__name">Remove "${escapeHtml(bucket.name)}"? Past transactions are kept.</span>
     <button class="btn btn-ghost btn-sm" data-confirm-cancel>Cancel</button>
     <button class="btn settings-danger-zone__btn-confirm btn-sm" data-confirm-remove>Remove</button>
   `;
@@ -570,9 +570,9 @@ function _openBucketEditInline(container, bucketId, macro) {
     <span class="settings-bucket-row__emoji" style="cursor:pointer;" data-action="pick-emoji" data-bucket-id="${escapeHtml(bucketId)}" id="emoji-picker-target-${escapeHtml(bucketId)}">${escapeHtml(bucket.emoji)}</span>
     <input type="text" class="input-field settings-inline-input" id="edit-bucket-name-${escapeHtml(bucketId)}"
       value="${escapeHtml(bucket.name)}" placeholder="Bucket name" maxlength="25" style="flex:1;" />
-    <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${bucketId}"
+    <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${escapeHtml(bucketId)}"
       inputmode="numeric" value="${bucket.allocated > 0 ? formatNumber(bucket.allocated) : ''}" placeholder="₹0" style="max-width:90px;" />
-    <button class="btn btn-primary btn-sm" data-save-bucket="${bucketId}">Save</button>
+    <button class="btn btn-primary btn-sm" data-save-bucket="${escapeHtml(bucketId)}">Save</button>
     <button class="btn btn-ghost btn-sm" data-cancel-bucket>✕</button>
   `;
 
