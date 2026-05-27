@@ -541,8 +541,8 @@ function _handleRemoveBucket(container, bucketId) {
 
   const originalHtml = rowEl.innerHTML;
   rowEl.innerHTML = `
-    <span class="settings-bucket-row__emoji">${bucket.emoji}</span>
-    <span class="settings-bucket-row__name">Remove "${bucket.name}"? Past transactions are kept.</span>
+    <span class="settings-bucket-row__emoji">${escapeHtml(bucket.emoji)}</span>
+    <span class="settings-bucket-row__name">Remove "${escapeHtml(bucket.name)}"? Past transactions are kept.</span>
     <button class="btn btn-ghost btn-sm" data-confirm-cancel>Cancel</button>
     <button class="btn settings-danger-zone__btn-confirm btn-sm" data-confirm-remove>Remove</button>
   `;
