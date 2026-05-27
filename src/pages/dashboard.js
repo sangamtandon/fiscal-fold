@@ -124,13 +124,13 @@ export function renderDashboardPage(container, hooks = {}) {
             <span class="section-header__title">Quick Buckets</span>
             <span class="text-tertiary" style="font-size: var(--text-xs); margin-left: var(--space-2);">— tap to log a spend</span>
           </div>
-          <div class="quick-buckets">
+          <div class="quick-buckets" role="group" aria-label="Quick Buckets">
             ${quickBuckets.map(b => `
-              <div class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}">
-                <div class="quick-bucket__emoji">${escapeHtml(b.emoji)}</div>
+              <button type="button" class="quick-bucket" data-bucket-id="${escapeHtml(b.id)}" aria-label="${escapeHtml(b.name)}, ${formatCurrency(Math.max(0, b.allocated - b.spent))} available">
+                <div class="quick-bucket__emoji" aria-hidden="true">${escapeHtml(b.emoji)}</div>
                 <span class="quick-bucket__name">${escapeHtml(b.name)}</span>
                 <span class="text-mono" style="font-size:var(--text-xs); font-weight:var(--weight-semibold); color:var(--accent-primary);">${formatCurrency(Math.max(0, b.allocated - b.spent))}</span>
-              </div>
+              </button>
             `).join('')}
           </div>
         </div>
