@@ -195,9 +195,16 @@ export function getAllCommitments() {
  * @returns {number}
  */
 export function getMacroReserved(macroType) {
-  return _state.commitments
-    .filter(c => c.isActive && !c.isPaid && c.macroType === macroType)
-    .reduce((sum, c) => sum + c.amount, 0);
+  // ⚡ Bolt Optimization: Use a single-pass loop instead of filter().reduce()
+  // to avoid intermediate array allocations and GC overhead on frequent re-renders.
+  let sum = 0;
+  for (let i = 0; i < _state.commitments.length; i++) {
+    const c = _state.commitments[i];
+    if (c.isActive && !c.isPaid && c.macroType === macroType) {
+      sum += c.amount;
+    }
+  }
+  return sum;
 }
 
 /**
@@ -206,7 +213,12 @@ export function getMacroReserved(macroType) {
  */
 export function getSafeToSpend() {
   const wantsBuckets = getBuckets('wants');
-  const remaining = wantsBuckets.reduce((sum, b) => sum + Math.max(0, b.allocated - b.spent - (b.swept ?? 0)), 0);
+  // ⚡ Bolt Optimization: Use a single-pass loop instead of reduce()
+  let remaining = 0;
+  for (let i = 0; i < wantsBuckets.length; i++) {
+    const b = wantsBuckets[i];
+    remaining += Math.max(0, b.allocated - b.spent - (b.swept ?? 0));
+  }
   const reserved = getMacroReserved('wants');
   return Math.max(0, remaining - reserved);
 }
@@ -224,9 +236,19 @@ export function getSafeToSpend() {
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
-  const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
-  const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
+  // ⚡ Bolt Optimization: Calculate allocated, spent, and swept in a single pass
+  // to avoid three separate reduce() calls and multiple iterations.
+  let allocated = 0;
+  let spent = 0;
+  let totalSwept = 0;
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i];
+    allocated += b.allocated;
+    spent += b.spent;
+    totalSwept += (b.swept ?? 0);
+  }
+
+  const remaining = Math.max(0, allocated - spent - totalSwept);
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   const cycle = getCurrentCycle();
   const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
@@ -240,9 +262,15 @@ export function getMacroSummary(macroType) {
  * @returns {number}
  */
 export function getCommitmentsTotal(macroType) {
-  return _state.commitments
-    .filter(c => c.isActive && c.macroType === macroType)
-    .reduce((sum, c) => sum + c.amount, 0);
+  // ⚡ Bolt Optimization: Use a single-pass loop instead of filter().reduce()
+  let sum = 0;
+  for (let i = 0; i < _state.commitments.length; i++) {
+    const c = _state.commitments[i];
+    if (c.isActive && c.macroType === macroType) {
+      sum += c.amount;
+    }
+  }
+  return sum;
 }
 
 /**
