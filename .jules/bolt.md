@@ -1,0 +1,3 @@
+## 2025-05-18 - Chained Array Methods in Vanilla JS Reactive Selectors
+**Learning:** In a vanilla JS reactive architecture with frequent re-renders, chained array methods like `.filter().filter()` or `.filter().reduce()` in selectors create high garbage collection (GC) overhead by instantiating intermediate arrays on every update cycle.
+**Action:** Always prefer single-pass `for` loops for heavily called selector functions in `src/data/store.js` to avoid redundant intermediate allocations and reduce GC pressure.
