@@ -148,7 +148,6 @@ function renderStep1(container) {
       <p class="onboarding__subtitle">So your plan feels like yours, not a template. You can change this later.</p>
     </div>
     <div class="onboarding__field">
-      <label class="sr-only" for="input-name">Your first name</label>
       <input
         type="text"
         class="input-field onboarding__name-input"
@@ -197,7 +196,6 @@ function renderStep2(container) {
     </div>
 
     <div class="onboarding__salary-input-wrap">
-      <label class="sr-only" for="input-salary">Your monthly income</label>
       <span class="onboarding__currency-symbol">₹</span>
       <input
         type="text"
@@ -211,8 +209,8 @@ function renderStep2(container) {
     </div>
 
     <div class="onboarding__field mt-6">
-      <label class="input-group__label" for="ob-salary-date">When do you get paid?</label>
-      ${renderDayPicker({ value: formData.salaryDate, selectId: 'ob-salary-date' })}
+      <label class="input-group__label">When do you get paid?</label>
+      ${renderDayPicker({ value: formData.salaryDate })}
     </div>
 
     <div class="onboarding__preview card card--glass mt-4" id="salary-preview" style="${formData.salary > 0 ? '' : 'opacity: 0.3;'}">
@@ -248,7 +246,7 @@ function renderStep2(container) {
   });
 
   // Date chips
-  bindDayPicker(container, { selectId: 'ob-salary-date' }, v => {
+  bindDayPicker(container, {}, v => {
     formData.salaryDate = v;
     previewDate.textContent = formatPayday(v);
   });
@@ -576,7 +574,7 @@ function renderBucketItem(bucket, macroType) {
       </div>
       ${bucket.isRecurring ? `
         <div class="onboarding__bucket-due" data-bucket-id="${bucket.id}" data-macro="${macroType}">
-          <label class="onboarding__bucket-due__label" for="due-${bucket.id}">Due on</label>
+          <span class="onboarding__bucket-due__label">Due on</span>
           ${renderDayPicker({ value: bucket.dueDate ?? 1, selectId: `due-${bucket.id}` })}
         </div>
       ` : ''}

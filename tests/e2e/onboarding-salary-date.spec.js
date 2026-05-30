@@ -13,7 +13,7 @@ test('Step 2 shows the four preset date chips and a custom dropdown', async ({ p
   await expect(page.locator('.day-picker__chip[data-day="7"]')).toBeVisible();
   await expect(page.locator('.day-picker__chip[data-day="25"]')).toBeVisible();
   await expect(page.locator('.day-picker__chip[data-day="30"]')).toBeVisible();
-  await expect(page.locator('#ob-salary-date')).toBeVisible();
+  await expect(page.locator('#day-picker-select')).toBeVisible();
 });
 
 test('selecting "30th" chip updates the preview text', async ({ page }) => {
@@ -32,6 +32,6 @@ test('picking a day from the custom dropdown updates the preview', async ({ page
   await page.locator('#btn-next').click();
   await page.fill('#input-salary', '50000');
 
-  await page.locator('#ob-salary-date').selectOption('15');
+  await page.locator('#day-picker-select').selectOption('15');
   await expect(page.locator('#preview-date')).toContainText(/15th of every month/i);
 });

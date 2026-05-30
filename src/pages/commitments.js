@@ -387,7 +387,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Name -->
       <div class="cm-form__section">
-        <label class="cm-form__label" for="cf-name">Name</label>
+        <p class="cm-form__label">Name</p>
         <input
           type="text"
           class="input-field"
@@ -400,7 +400,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Amount -->
       <div class="cm-form__section">
-        <label class="cm-form__label" for="cf-amount">Monthly Amount</label>
+        <p class="cm-form__label">Monthly Amount</p>
         <div class="cm-amount-wrap">
           <span class="cm-amount-symbol">₹</span>
           <input
@@ -430,7 +430,7 @@ function _renderForm(existing, pageContainer) {
 
       <!-- Due date -->
       <div class="cm-form__section">
-        <label class="cm-form__label" for="cf-due-select">Due Date (day of month)</label>
+        <p class="cm-form__label">Due Date (day of month)</p>
         ${renderDayPicker({ value: state.dueDate, selectId: 'cf-due-select' })}
       </div>
 
