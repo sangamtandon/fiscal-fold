@@ -1,0 +1,3 @@
+## 2025-02-28 - Avoid chained array methods in reactive selectors
+**Learning:** In the custom reactive vanilla JS architecture, using multiple chained array methods like `.filter()` and `.reduce()` inside store selectors (`src/data/store.js`) generates heavy garbage collection overhead. Since the UI aggressively re-renders by calling these selectors frequently, the intermediate array allocations cause noticeable UI blocking and frame drops.
+**Action:** Always replace chained array methods with single-pass `for` loops in hot path selectors. Even if `.reduce()` or `.filter()` looks cleaner, a standard `for` loop is significantly faster and prevents memory thrashing when the store scales up.

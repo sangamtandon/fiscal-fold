@@ -224,9 +224,21 @@ export function getSafeToSpend() {
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
-  const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
-  const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
+
+  // OPTIMIZATION: Single-pass iteration to reduce GC overhead during frequent re-renders
+  // Replaces 3 separate O(N) array.reduce calls with one loop
+  let allocated = 0;
+  let spent = 0;
+  let totalSwept = 0;
+
+  for (let i = 0; i < buckets.length; i++) {
+    const b = buckets[i];
+    allocated += b.allocated;
+    spent += b.spent;
+    totalSwept += (b.swept ?? 0);
+  }
+
+  const remaining = Math.max(0, allocated - spent - totalSwept);
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   const cycle = getCurrentCycle();
   const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;
