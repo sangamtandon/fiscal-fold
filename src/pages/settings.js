@@ -540,9 +540,10 @@ function _handleRemoveBucket(container, bucketId) {
   rowEl.dataset.confirming = '1';
 
   const originalHtml = rowEl.innerHTML;
+  // 🛡️ Sentinel: Escape user input (bucket.emoji, bucket.name) to prevent XSS when rendering via innerHTML
   rowEl.innerHTML = `
-    <span class="settings-bucket-row__emoji">${bucket.emoji}</span>
-    <span class="settings-bucket-row__name">Remove "${bucket.name}"? Past transactions are kept.</span>
+    <span class="settings-bucket-row__emoji">${escapeHtml(bucket.emoji)}</span>
+    <span class="settings-bucket-row__name">Remove "${escapeHtml(bucket.name)}"? Past transactions are kept.</span>
     <button class="btn btn-ghost btn-sm" data-confirm-cancel>Cancel</button>
     <button class="btn settings-danger-zone__btn-confirm btn-sm" data-confirm-remove>Remove</button>
   `;
@@ -555,6 +556,7 @@ function _handleRemoveBucket(container, bucketId) {
   rowEl.querySelector('[data-confirm-remove]').addEventListener('click', () => {
     removeBucket(bucketId);
     _refreshBucketsPanel(container);
+    // showToast uses textContent, so it doesn't need escapeHtml which could show HTML entities.
     showToast(`"${bucket.name}" removed`);
   });
 }
