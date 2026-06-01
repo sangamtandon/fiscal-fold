@@ -1,0 +1,3 @@
+## 2025-02-12 - Optimize Array Getters to Reduce GC Overhead
+**Learning:** Due to the vanilla JS architecture, frequent re-renders in the local reactive state manager (`src/data/store.js`) cause chained array methods (e.g. multiple `.filter()` or `.reduce()`) to create high garbage collection overhead because they continuously generate intermediate arrays and trigger array prototypes.
+**Action:** Always replace chained array operations in store getters with single-pass `for` loops. This avoids creating unnecessary arrays and provides a slight performance boost by lessening the GC pressure during frequent renders.
