@@ -207,13 +207,16 @@ function _renderBucketGroup(macroType, label) {
           <span class="settings-bucket-row__alloc text-mono text-tertiary">${formatCurrency(b.allocated)}</span>
           <button class="btn-icon settings-bucket-btn${b.isPinned ? ' is-pinned' : ''}"
             data-action="toggle-pin" data-bucket-id="${escapeHtml(b.id)}"
-            title="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">📌</button>
+            title="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}"
+            aria-label="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">📌</button>
           <button class="btn-icon settings-bucket-btn"
             data-action="edit-bucket" data-bucket-id="${escapeHtml(b.id)}" data-macro="${macroType}"
-            title="Edit bucket">✏️</button>
+            title="Edit bucket"
+            aria-label="Edit bucket">✏️</button>
           <button class="btn-icon settings-bucket-btn settings-bucket-btn--danger"
             data-action="remove-bucket" data-bucket-id="${escapeHtml(b.id)}"
-            title="Remove">×</button>
+            title="Remove"
+            aria-label="Remove">×</button>
         </div>
       `).join('')}
       ${canAdd ? `
