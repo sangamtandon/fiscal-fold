@@ -207,13 +207,14 @@ function _renderBucketGroup(macroType, label) {
           <span class="settings-bucket-row__alloc text-mono text-tertiary">${formatCurrency(b.allocated)}</span>
           <button class="btn-icon settings-bucket-btn${b.isPinned ? ' is-pinned' : ''}"
             data-action="toggle-pin" data-bucket-id="${escapeHtml(b.id)}"
+            aria-label="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}"
             title="${b.isPinned ? 'Unpin Quick Bucket' : 'Pin as Quick Bucket'}">📌</button>
           <button class="btn-icon settings-bucket-btn"
             data-action="edit-bucket" data-bucket-id="${escapeHtml(b.id)}" data-macro="${macroType}"
-            title="Edit bucket">✏️</button>
+            aria-label="Edit bucket" title="Edit bucket">✏️</button>
           <button class="btn-icon settings-bucket-btn settings-bucket-btn--danger"
             data-action="remove-bucket" data-bucket-id="${escapeHtml(b.id)}"
-            title="Remove">×</button>
+            aria-label="Remove bucket" title="Remove">×</button>
         </div>
       `).join('')}
       ${canAdd ? `
@@ -305,7 +306,7 @@ function _openProfileEdit(container, field) {
       <input type="text" class="input-field settings-inline-input" id="edit-input-name"
         value="${escapeHtml(user?.name || '')}" placeholder="Your name" maxlength="20" />
       <button class="btn btn-primary btn-sm" data-save="name">Save</button>
-      <button class="btn btn-ghost btn-sm" data-cancel="name">✕</button>
+      <button class="btn btn-ghost btn-sm" data-cancel="name" aria-label="Cancel" title="Cancel">✕</button>
     `;
     container.querySelector('[data-save="name"]').addEventListener('click', () => {
       const val = container.querySelector('#edit-input-name').value.trim();
@@ -325,7 +326,7 @@ function _openProfileEdit(container, field) {
       <input type="text" class="input-field settings-inline-input" id="edit-input-salary"
         inputmode="numeric" value="${user?.salary ? formatNumber(user.salary) : ''}" placeholder="0" style="max-width:120px;" />
       <button class="btn btn-primary btn-sm" data-save="salary">Save</button>
-      <button class="btn btn-ghost btn-sm" data-cancel="salary">✕</button>
+      <button class="btn btn-ghost btn-sm" data-cancel="salary" aria-label="Cancel" title="Cancel">✕</button>
     `;
     container.querySelector('[data-save="salary"]').addEventListener('click', () => {
       const raw = container.querySelector('#edit-input-salary').value.replace(/[^0-9]/g, '');
@@ -366,7 +367,7 @@ function _openProfileEdit(container, field) {
         <div style="display:flex; gap: var(--space-2); align-items:center;">
           <span class="text-tertiary" style="font-size: var(--text-xs);" id="edit-ratio-sum">Total: ${current.needs + current.wants + current.future}%</span>
           <button class="btn btn-primary btn-sm" data-save="ratios">Save</button>
-          <button class="btn btn-ghost btn-sm" data-cancel="ratios">✕</button>
+          <button class="btn btn-ghost btn-sm" data-cancel="ratios" aria-label="Cancel" title="Cancel">✕</button>
         </div>
       </div>
     `;
@@ -406,7 +407,7 @@ function _openProfileEdit(container, field) {
     rightEl.innerHTML = `
       ${renderDayPicker({ value: current > 31 ? 1 : current })}
       <button class="btn btn-primary btn-sm" id="save-salary-date">Save</button>
-      <button class="btn btn-ghost btn-sm" id="cancel-salary-date">✕</button>
+      <button class="btn btn-ghost btn-sm" id="cancel-salary-date" aria-label="Cancel" title="Cancel">✕</button>
     `;
     let selectedDate = current;
     bindDayPicker(rightEl, {}, v => {
@@ -573,7 +574,7 @@ function _openBucketEditInline(container, bucketId, macro) {
     <input type="text" class="input-field settings-inline-input" id="edit-bucket-alloc-${bucketId}"
       inputmode="numeric" value="${bucket.allocated > 0 ? formatNumber(bucket.allocated) : ''}" placeholder="₹0" style="max-width:90px;" />
     <button class="btn btn-primary btn-sm" data-save-bucket="${bucketId}">Save</button>
-    <button class="btn btn-ghost btn-sm" data-cancel-bucket>✕</button>
+    <button class="btn btn-ghost btn-sm" data-cancel-bucket aria-label="Cancel" title="Cancel">✕</button>
   `;
 
   let selectedEmoji = bucket.emoji;
@@ -634,7 +635,7 @@ function _openAddBucketInline(container, macro) {
       <input type="text" class="input-field settings-inline-input" id="add-bucket-alloc-${macro}"
         inputmode="numeric" placeholder="₹0" style="max-width:80px;" />
       <button class="btn btn-primary btn-sm" id="save-add-bucket-${macro}">Add</button>
-      <button class="btn btn-ghost btn-sm" id="cancel-add-bucket-${macro}">✕</button>
+      <button class="btn btn-ghost btn-sm" id="cancel-add-bucket-${macro}" aria-label="Cancel" title="Cancel">✕</button>
     `;
     return form;
   })());
