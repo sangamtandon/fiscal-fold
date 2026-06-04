@@ -135,8 +135,14 @@ export function isCycleExpired() {
  */
 export function getBuckets(macroType) {
   const cycleId = _state.currentCycleId;
-  let buckets = _state.buckets.filter(b => b.cycleId === cycleId);
-  if (macroType) buckets = buckets.filter(b => b.macroType === macroType);
+  // ⚡ Bolt: Single-pass loop replaces chained filters to avoid intermediate array allocations
+  const buckets = [];
+  for (let i = 0; i < _state.buckets.length; i++) {
+    const b = _state.buckets[i];
+    if (b.cycleId === cycleId && (!macroType || b.macroType === macroType)) {
+      buckets.push(b);
+    }
+  }
   return buckets.sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
@@ -224,9 +230,16 @@ export function getSafeToSpend() {
  */
 export function getMacroSummary(macroType) {
   const buckets = getBuckets(macroType);
-  const allocated = buckets.reduce((s, b) => s + b.allocated, 0);
-  const spent = buckets.reduce((s, b) => s + b.spent, 0);
-  const remaining = Math.max(0, allocated - spent - buckets.reduce((s, b) => s + (b.swept ?? 0), 0));
+  // ⚡ Bolt: Single-pass calculation replaces multiple reduces to prevent unnecessary iterations
+  let allocated = 0;
+  let spent = 0;
+  let swept = 0;
+  for (let i = 0; i < buckets.length; i++) {
+    allocated += buckets[i].allocated;
+    spent += buckets[i].spent;
+    swept += (buckets[i].swept ?? 0);
+  }
+  const remaining = Math.max(0, allocated - spent - swept);
   const percent = allocated > 0 ? Math.round((spent / allocated) * 100) : 0;
   const cycle = getCurrentCycle();
   const cycleAllocation = cycle?.allocations?.[macroType] ?? 0;

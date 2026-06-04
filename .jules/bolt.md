@@ -1,0 +1,3 @@
+## 2024-06-04 - Avoid chained array methods in Vanilla JS reactive store
+**Learning:** Chained array methods (e.g., `filter().filter()`, `reduce()`) in store selectors create significant intermediate array allocations and garbage collection overhead. Since the store is completely reactive (pub/sub triggering `innerHTML` updates on the vanilla UI) and re-evaluates selectors on every render cycle, this causes measurable layout thrashing and stutter.
+**Action:** Always prefer single-pass `for` loops in hot path state selectors instead of chained array iterations to minimize GC pressure and DOM locking.
