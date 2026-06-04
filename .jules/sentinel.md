@@ -1,0 +1,4 @@
+## 2024-05-27 - Cross-Site Scripting (XSS) in Bucket Deletion Confirmations
+**Vulnerability:** Found unescaped user input (bucket names and emojis) concatenated directly into innerHTML templates in `src/pages/settings.js` (`_handleRemoveBucket`). Specifically, `${bucket.emoji}` and `${bucket.name}` were used in `rowEl.innerHTML` without `escapeHtml`.
+**Learning:** Even internal UI state elements like confirmation overlays that temporarily overwrite a row's DOM need escaping if they render dynamic user-generated fields (like bucket name/emoji). The vanilla JS architecture's reliance on `innerHTML` makes this a recurring risk pattern if not vigilantly checked everywhere dynamic data is interpolated.
+**Prevention:** Always use the `escapeHtml` utility when injecting any user-supplied data (such as bucket names, notes, or emojis) into `innerHTML`, regardless of whether the UI state is a primary view or a transient confirmation state.
