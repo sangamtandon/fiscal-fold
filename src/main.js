@@ -92,7 +92,7 @@ function _renderInstallBanner() {
       <span class="pwa-install-banner__sub">Works offline · Faster · Home screen icon</span>
     </div>
     <button class="btn btn-primary pwa-install-banner__cta" id="pwa-install-btn">Add to Home Screen</button>
-    <button class="btn-icon pwa-install-banner__dismiss" id="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
+    <button class="btn-icon pwa-install-banner__dismiss" id="pwa-dismiss-btn" title="Dismiss" aria-label="Dismiss">✕</button>
   `;
   document.body.appendChild(banner);
 
