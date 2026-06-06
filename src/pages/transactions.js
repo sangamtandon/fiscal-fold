@@ -45,7 +45,7 @@ function _render(container) {
   container.innerHTML = `
     <div class="txn-history-page">
       <div class="txn-history-page__header">
-        <button class="btn-icon" id="txn-btn-back" title="Back" style="padding: var(--space-1);">
+        <button class="btn-icon" id="txn-btn-back" title="Back" aria-label="Back" style="padding: var(--space-1);">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <h1 class="txn-history-page__title">Transactions</h1>
