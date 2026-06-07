@@ -1,0 +1,3 @@
+## 2023-10-24 - Avoid Chained Array Methods in Selectors
+**Learning:** In the vanilla JS architecture, frequent re-renders coupled with chained array methods (e.g., `.filter().reduce()`) in reactive state selectors (like in `src/data/store.js`) create high garbage collection overhead due to the repeated creation of intermediate arrays.
+**Action:** Use single-pass `for` loops instead of chained array methods for complex data transformations in frequently called selectors to minimize memory allocation and improve rendering performance.
