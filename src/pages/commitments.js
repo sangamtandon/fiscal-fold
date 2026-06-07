@@ -272,7 +272,7 @@ function _openMarkPaid(pageContainer, commitment) {
     <div class="cm-form">
       <div class="cm-form__header">
         <span class="cm-form__title">Mark "${escapeHtml(commitment.name)}" paid</span>
-        <button class="btn btn-ghost" data-close-mp>✕</button>
+        <button class="btn btn-ghost" data-close-mp aria-label="Close" title="Close">✕</button>
       </div>
       <p class="cm-mp-amount text-mono">${formatCurrency(commitment.amount)}</p>
       ${buckets.length === 0 ? `
@@ -372,7 +372,7 @@ function _renderForm(existing, pageContainer) {
     <div class="cm-form">
       <div class="cm-form__header">
         <span class="cm-form__title">${isEdit ? 'Edit' : 'Add'} Commitment</span>
-        <button class="btn btn-ghost" id="cf-close">✕</button>
+        <button class="btn btn-ghost" id="cf-close" aria-label="Close" title="Close">✕</button>
       </div>
 
       <!-- Emoji picker -->
