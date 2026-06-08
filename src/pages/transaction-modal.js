@@ -129,7 +129,7 @@ function _renderAmount(container) {
   container.innerHTML = `
     <div class="txn-step">
       <div class="txn-header">
-        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
+        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close" title="Close">✕</button>
         <span class="txn-header__title">${_targetBucket ? escapeHtml(bucketLabel) : 'Log Expense'}</span>
         <button class="btn btn-ghost txn-income-link" id="txn-income-link" data-testid="txn-income-link">Income →</button>
       </div>
@@ -263,7 +263,7 @@ function _renderBucket(container) {
       <div class="txn-header">
         <button class="btn btn-ghost txn-back-btn" id="txn-back">← Back</button>
         <span class="txn-header__title">${formatCurrency(_amount)}</span>
-        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
+        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close" title="Close">✕</button>
       </div>
 
       <p class="txn-subtitle">Charge this to which bucket?</p>
@@ -323,7 +323,7 @@ function _renderNote(container) {
       <div class="txn-header">
         <button class="btn btn-ghost txn-back-btn" id="txn-back">← Back</button>
         <span class="txn-header__title">Confirm</span>
-        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
+        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close" title="Close">✕</button>
       </div>
 
       <div class="txn-confirm-card">
@@ -416,7 +416,7 @@ function _renderTradeOff(container) {
       <div class="txn-header">
         <button class="btn btn-ghost txn-back-btn" id="txn-back">← Back</button>
         <span class="txn-header__title">Over Budget</span>
-        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
+        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close" title="Close">✕</button>
       </div>
 
       <div class="txn-tradeoff-alert">
@@ -507,7 +507,7 @@ function _renderTradeOffConfirm(container) {
       <div class="txn-header">
         <button class="btn btn-ghost txn-back-btn" id="txn-back">← Back</button>
         <span class="txn-header__title">Review Split</span>
-        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close">✕</button>
+        <button class="btn btn-ghost txn-close-btn" id="txn-close" aria-label="Close" title="Close">✕</button>
       </div>
 
       <div class="txn-split-card">
