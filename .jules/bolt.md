@@ -1,0 +1,3 @@
+## 2024-06-09 - Chained Array Methods in Vanilla Architecture
+**Learning:** In this highly reactive local architecture, UI components frequently re-render, leading to repeated calls to selector functions like `getMacroReserved` and `getMacroSummary`. Chained array methods (e.g., `.filter().reduce()`) and multiple separate array iterations for sums create excessive temporary closures and array copies, generating high garbage collection (GC) overhead that negatively impacts performance.
+**Action:** Replace chained array methods and multiple `.reduce()` calls in store selectors with single-pass `for` loops to minimize GC overhead and iteration counts.
